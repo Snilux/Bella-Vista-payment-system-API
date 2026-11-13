@@ -1,7 +1,6 @@
 import { ROLES, requiresApproval, roleAssignmentViolations } from '@bella-vista/shared';
 import { sql } from 'drizzle-orm';
-import { afterAll, describe, expect, it } from 'vitest';
-import { createDb, type Transaction } from '../../../src/db/client.js';
+import { describe, expect, it } from 'vitest';
 import {
   agreement,
   approval,
@@ -13,158 +12,13 @@ import {
   section,
   userAccount,
 } from '../../../src/db/schema/index.js';
+import { bootstrap, folioPattern, one, pgError, testDatabaseUrl, useTestDb } from './helpers.js';
 
 // Verifies the constraints of the "organization and access" block against a real database.
 // Every case runs inside a transaction that is always rolled back.
 
-const url = process.env.DATABASE_URL_TEST;
-
-class Rollback extends Error {}
-
-/** Year and month (YYYYMM) of "now" in the business time zone, as used in folios. */
-function currentYearMonth(): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Mexico_City',
-    year: 'numeric',
-    month: '2-digit',
-  }).formatToParts(new Date());
-  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
-  return get('year') + get('month');
-}
-
-/** The single row a `returning()` query must produce. */
-function one<T>(rows: T[]): T {
-  const [row] = rows;
-  if (row === undefined || rows.length !== 1) throw new Error(`expected 1 row, got ${rows.length}`);
-  return row;
-}
-
-/** Postgres error fields, whether thrown directly or wrapped by Drizzle. */
-interface PgErrorLike {
-  code?: string;
-  constraint_name?: string;
-  cause?: unknown;
-}
-
-function pgError(error: unknown): PgErrorLike {
-  let current = error as PgErrorLike | undefined;
-  while (current && !current.code && current.cause) current = current.cause as PgErrorLike;
-  return current ?? {};
-}
-
-describe.skipIf(!url)('organization and access schema', () => {
-  const { db, sql: client } = createDb(url ?? '', { max: 2 });
-  afterAll(() => client.end());
-
-  /** Runs `fn` in a transaction and rolls it back. */
-  async function rollback(fn: (tx: Transaction) => Promise<void>): Promise<void> {
-    await expect(
-      db.transaction(async (tx) => {
-        await fn(tx);
-        throw new Rollback();
-      }),
-    ).rejects.toBeInstanceOf(Rollback);
-  }
-
-  /** Expects `fn` to violate `constraint`; runs in a savepoint so the outer tx survives. */
-  async function expectViolation(
-    tx: Transaction,
-    constraint: string,
-    fn: (sp: Transaction) => Promise<unknown>,
-  ): Promise<void> {
-    let caught: unknown;
-    try {
-      await tx.transaction(async (sp) => {
-        await fn(sp);
-      });
-    } catch (error) {
-      caught = error;
-    }
-    expect(caught, `expected violation of ${constraint}`).toBeDefined();
-    expect(pgError(caught).constraint_name).toBe(constraint);
-  }
-
-  /** First superadmin: person, assignment and account with created_by null (bootstrap). */
-  async function bootstrap(tx: Transaction) {
-    const saPerson = one(
-      await tx
-        .insert(person)
-        .values({ givenNames: 'Admin', paternalSurname: 'Sistema', registeredOn: '2026-01-01' })
-        .returning(),
-    );
-    const saAssignment = one(
-      await tx
-        .insert(roleAssignment)
-        .values({ personId: saPerson.id, role: 'superadmin', startDate: '2026-01-01' })
-        .returning(),
-    );
-    const sa = one(
-      await tx
-        .insert(userAccount)
-        .values({ roleAssignmentId: saAssignment.id, username: 'admin', passwordHash: 'x' })
-        .returning(),
-    );
-    const s1 = one(
-      await tx
-        .insert(section)
-        .values({ code: 'S1', name: 'Sección 1', createdBy: sa.id })
-        .returning(),
-    );
-    const m01 = one(
-      await tx
-        .insert(block)
-        .values({ sectionId: s1.id, code: 'M01', createdBy: sa.id })
-        .returning(),
-    );
-    const m02 = one(
-      await tx
-        .insert(block)
-        .values({ sectionId: s1.id, code: 'M02', createdBy: sa.id })
-        .returning(),
-    );
-
-    let n = 0;
-    const newPerson = async (givenNames = `Persona${++n}`, paternalSurname = 'Prueba') => {
-      const row = one(
-        await tx
-          .insert(person)
-          .values({ givenNames, paternalSurname, registeredOn: '2026-01-01', createdBy: sa.id })
-          .returning(),
-      );
-      return row;
-    };
-    const newApproval = async () => {
-      const row = one(
-        await tx
-          .insert(approval)
-          .values({
-            type: 'role_assignment',
-            reason: 'Alta de cargo',
-            requestedBy: sa.id,
-            createdBy: sa.id,
-          })
-          .returning(),
-      );
-      return row;
-    };
-    const assign = async (values: {
-      personId: number;
-      role: 'president' | 'treasurer' | 'secretary' | 'member' | 'block_leader';
-      blockId?: number;
-      contactPhone?: string;
-      endDate?: string;
-    }) => {
-      const { id: approvalId } = await newApproval();
-      const row = one(
-        await tx
-          .insert(roleAssignment)
-          .values({ startDate: '2026-01-01', approvalId, createdBy: sa.id, ...values })
-          .returning(),
-      );
-      return row;
-    };
-    return { sa, saPerson, saAssignment, s1, m01, m02, newPerson, newApproval, assign };
-  }
+describe.skipIf(!testDatabaseUrl)('organization and access schema', () => {
+  const { rollback, expectViolation } = useTestDb();
 
   describe('section and block', () => {
     it('rejects duplicate section code and name', () =>
@@ -201,7 +55,7 @@ describe.skipIf(!url)('organization and access schema', () => {
     it('assigns P-AAAAMM-NNNNNN folios from the sequence', () =>
       rollback(async (tx) => {
         const { saPerson } = await bootstrap(tx);
-        expect(saPerson.folio).toMatch(new RegExp(`^P-${currentYearMonth()}-\\d{6}$`));
+        expect(saPerson.folio).toMatch(folioPattern('P'));
       }));
 
     it('normalizes names: joins, collapses spaces, strips accents, lowercases', () =>
@@ -537,7 +391,7 @@ describe.skipIf(!url)('organization and access schema', () => {
           createdBy: sa.id,
         };
         const row = one(await tx.insert(agreement).values(base).returning());
-        expect(row.folio).toMatch(new RegExp(`^AC-${currentYearMonth()}-\\d{6}$`));
+        expect(row.folio).toMatch(folioPattern('AC'));
         await expectViolation(tx, 'agreement_votes_non_negative', (sp) =>
           sp.insert(agreement).values({ ...base, votesAgainst: -1 }),
         );
