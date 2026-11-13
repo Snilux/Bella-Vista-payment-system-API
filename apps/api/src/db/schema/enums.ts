@@ -26,3 +26,5 @@ export const approvalType = pgEnum('approval_type', [
 ]);
 
 export const approvalResult = pgEnum('approval_result', ['approved', 'rejected']);
+
+export const unitChangeType = pgEnum('unit_change_type', ['deactivation', 'holder_change']);
