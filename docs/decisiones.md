@@ -30,6 +30,7 @@ Fuente: documento 1.1 de Notion, sección 2. Todas están confirmadas por el com
 | D-24 | Fontanero                | No usa la app. Salario fijo con historial, periodicidad y acuerdo; cada pago es un gasto de la caja del comité; un periodo se paga una sola vez.                                                                        |
 | D-25 | Sin procesos programados | Mensualidades, vencimientos y recargos **se calculan al consultar**. Al pagar, la tarifa y el recargo quedan fijos en el pago.                                                                                          |
 | D-26 | Sin archivos             | No se suben fotos ni documentos; comprobantes y actas son referencias de texto.                                                                                                                                         |
+| D-27 | Arranque inicial         | El sistema se inicializa **una sola vez** con un script técnico (`pnpm db:seed`) que crea la cuenta del SA (contraseña temporal), registra a PRE, TES y SEC elegidos en junta con su acuerdo como **autorizados por arranque**, y crea la caja del comité, las categorías de gasto y los conceptos sin importe. Después todo entra por los flujos normales de la app. Detalle en 3.1 ([estructura.md](estructura.md#plan-de-implementación)). |
 
 ## Cálculo del estado de cuenta (D-01, D-02, D-06, D-25)
 

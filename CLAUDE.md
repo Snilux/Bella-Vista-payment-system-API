@@ -4,6 +4,8 @@ Mobile app and API for the Bella Vista community water committee: resident regis
 
 Read `docs/README.md` first. The business rules in `docs/decisiones.md` override any assumption.
 
+**Before each block, review "3.1 Plan de implementación" in Notion (https://app.notion.com/p/417088c27ae0815b89bcf1c5577b1755); if it differs from `docs/`, Notion wins** and `docs/` is updated in a separate `docs` commit. The block order and status live in `docs/estructura.md` ("Plan de implementación").
+
 ## Language
 
 - Code, comments, identifiers, commit messages and this file: **English**.
