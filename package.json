@@ -1,0 +1,43 @@
+{
+  "name": "bella-vista-payment-system-api",
+  "private": true,
+  "description": "Bella Vista water payment system (monorepo: API and shared package)",
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "dev": "pnpm --filter @bella-vista/api dev",
+    "build": "pnpm -r build",
+    "start": "pnpm --filter @bella-vista/api start",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm --filter @bella-vista/api test:watch",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "db:generate": "pnpm --filter @bella-vista/api db:generate",
+    "db:migrate": "pnpm --filter @bella-vista/api db:migrate",
+    "db:studio": "pnpm --filter @bella-vista/api db:studio",
+    "docker:up": "docker compose up -d --build",
+    "docker:rebuild": "docker compose up -d --build --renew-anon-volumes api",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f api",
+    "docker:reset-db": "docker compose down -v && docker compose up -d db"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
+    "@types/node": "26.6.6",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "typescript": "7.0.2"
+  },
+  "lint-staged": {
+    "*.{ts,js,mjs,json,jsonc}": "biome check --write --no-errors-on-unmatched"
+  }
+}

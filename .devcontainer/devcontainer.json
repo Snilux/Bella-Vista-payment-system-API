@@ -1,0 +1,49 @@
+{
+  // Opens the project inside the "api" container (with the database next to it).
+  // The host only needs Docker, Git and VS Code with the Dev Containers extension.
+  "name": "agua-bella-vista",
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.devcontainer.yml"],
+  "service": "api",
+  "runServices": ["db", "api"],
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+
+  // Same user as in the Dockerfile; on Linux it is adjusted to your host user's UID/GID.
+  "remoteUser": "node",
+  "containerUser": "node",
+  "updateRemoteUserUID": true,
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  },
+
+  // Claude Code session and config live in a volume: they survive a container rebuild.
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude"
+  },
+
+  // Creates the repository if missing (commit hooks need it) and installs dependencies.
+  "postCreateCommand": "[ -d .git ] || git init -b main; [ -f .env ] || cp .env.example .env; pnpm install",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "vitest.explorer",
+        "anthropic.claude-code",
+        "ckolkman.vscode-postgres"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "biomejs.biome",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports.biome": "explicit"
+        },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}

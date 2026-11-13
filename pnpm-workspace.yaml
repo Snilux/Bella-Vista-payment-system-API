@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Dependencies allowed to run install scripts
+# (argon2 builds/downloads its native binary; esbuild is used by tsx, vitest and drizzle-kit).
+allowBuilds:
+  argon2: true
+  esbuild: true

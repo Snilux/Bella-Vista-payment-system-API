@@ -1,0 +1,10 @@
+# Dev Container overrides. Merged with ../docker-compose.yml.
+# The "api" container stays up without starting the API: start it with `pnpm dev` in the terminal.
+services:
+  api:
+    command: sleep infinity
+    volumes:
+      - claude-config:/home/node/.claude
+
+volumes:
+  claude-config:
