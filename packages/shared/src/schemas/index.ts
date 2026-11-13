@@ -1,2 +1,1 @@
-// TODO: see docs/estructura.md
-export {};
+export * from './role-assignment.js';
