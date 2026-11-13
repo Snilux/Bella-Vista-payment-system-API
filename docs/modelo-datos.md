@@ -115,3 +115,16 @@ Solo para habilitar restricciones únicas, protegida con FK compuestas: `periodo
 - Una tarifa autorizada por mes; una cancelación autorizada por pago; un pago al fontanero por periodo.
 - Sin movimientos en meses con corte cerrado (trigger en las tablas de dinero).
 - Periodos siempre en día 1.
+
+## Usuarios de base de datos
+
+| Usuario | Uso | Permisos |
+| --- | --- | --- |
+| `agua` (dueño) | Migraciones (`DATABASE_URL_MIGRACIONES`) | Todo |
+| `agua_api` | La API en ejecución (`DATABASE_URL`) | SELECT en todo; INSERT en todas las tablas; UPDATE solo en columnas de estado (confirmación de entrega, pago y rechazo de gasto, revisión y cierre de corte, resolución de autorización, cuenta de usuario, fechas de baja e historiales); DELETE solo en `periodo_cubierto`, `token_refresco` e `idempotencia`. Sin UPDATE ni DELETE en pago, pago_mes, recibo_papel, ingreso y bitacora |
+
+Así la regla de que el dinero no se edita se cumple en la base de datos y no solo en el código. Se implementa en el bloque 7 ([estructura.md](estructura.md#plan-de-implementación)).
+
+## Orden de creación y arranque
+
+Las tablas se crean en 8 bloques en el orden de 3.1 Plan de implementación ([estructura.md](estructura.md#base-de-datos)): las cajas van con la cobranza porque `pago` apunta a `caja`, y `aclaracion` va con los cortes. El último bloque es el script de arranque inicial (D-27).

@@ -51,13 +51,62 @@ Módulos y casos de uso (nombres en inglés según [glosario.md](glosario.md)): 
 - Toda función del dominio recibe el "ahora" como parámetro (sin `new Date()` interno) para poder probarla.
 - Cada endpoint declara su esquema de respuesta: Fastify no envía campos que no estén en él.
 
-## Orden sugerido de desarrollo
+## Plan de implementación
 
-1. Base: `config/env.ts`, cliente de BD, `AppError` y manejador de errores, `/health` con verificación de BD, `app.ts` separado de `server.ts` para las pruebas.
-2. Esquema de BD por bloques con sus migraciones: organización y acceso → padrón y tomas → tarifas → cobranza → cajas → comité → cortes, autorizaciones y bitácora → vistas y triggers.
-3. `auth` y `accounts` (login, refresco, cambio de contraseña, alta por SA) con permisos.
-4. `organization`, `approvals` (bandeja), `registry`, `connections`.
-5. `rates` y la función de estado de cuenta en `shared/domain` con pruebas exhaustivas (D-01 a D-06).
-6. `billing` (previsualizar, pagar, reposición, cancelación) con idempotencia.
-7. `cashboxes` (saldos, entregas, aclaraciones), `committee` (ingresos, gastos, fontanero).
-8. `closings`, `reports`, `audit`.
+Fuente: documento 3.1 de Notion. **Antes de cada bloque, revisa 3.1 en Notion; si difiere de `docs/`, manda Notion** y se actualiza `docs/` en un commit `docs` aparte.
+
+### Cómo se trabaja cada bloque
+
+1. Leer 3.1, 2.2 Modelo de datos y 2.3 Contrato de API, y sincronizar `docs/` si difiere.
+2. Proponer el plan (modo plan) y esperar revisión.
+3. Implementar el bloque completo: esquema Drizzle, migración generada y migración SQL escrita a mano para lo que Drizzle no expresa (CHECK, índices parciales sobre expresiones, triggers, permisos).
+4. Aplicar con `pnpm db:migrate` y escribir pruebas de integración que demuestren que la base rechaza los datos inválidos del bloque.
+5. `pnpm check` en verde.
+6. Commit según `CONTRIBUTING.md` (alcance `db` para esquema y migraciones), solo después de la revisión del usuario.
+
+**Terminado:** migraciones aplicadas desde cero sin errores (`pnpm docker:reset-db` o base de pruebas vacía), pruebas de restricciones en verde, `docs/` sincronizado y commit hecho.
+
+### Base de datos
+
+| Bloque | Tablas | Pruebas mínimas de restricciones | Estado |
+| --- | --- | --- | --- |
+| 1. Organización y acceso | seccion, manzana, persona, acuerdo, autorizacion, asignacion_cargo, usuario, token_refresco + `f_normalizar` | Homónimo sin distintivo; dos jefes vigentes en una manzana; una persona jefe de dos manzanas; dos presidentes vigentes; dos cuentas para la misma asignación | **Hecho** |
+| 2. Padrón y tomas | solicitud_toma, toma, toma_manzana, unidad, unidad_titular, suspension, solicitud_cambio_unidad | Dos manzanas vigentes para una toma; dos titulares vigentes en una unidad; suspensión con toma y unidad a la vez (o ninguna); unidad activada sin periodo_inicio_cobro; periodo que no es día 1 | Pendiente |
+| 3. Tarifas y conceptos | tarifa, concepto, concepto_importe, cargo_extraordinario | Cargo extraordinario con más de un destino; dos aperturas vigentes para la misma solicitud; tarifa con importe 0 | Pendiente |
+| 4. Cajas y cobranza | caja, saldo_inicial, pago, pago_mes, periodo_cubierto, pago_concepto, recibo_papel, pago_cancelacion | Mismo mes pagado dos veces en una unidad; folio de papel repetido en la misma caja; dos recibos originales para un pago; segunda caja del comité; caja de manzana sin manzana; misma clave de idempotencia | Pendiente |
+| 5. Entregas y comité | entrega, ingreso, categoria_gasto, gasto, gasto_reintegro, fontanero, fontanero_salario, fontanero_pago | Entrega retirada y confirmada a la vez; dos categorías de salario del fontanero; mismo periodo del fontanero pagado dos veces | Pendiente |
+| 6. Cortes y control | corte, aclaracion, bitacora, idempotencia | Dos cortes mensuales de la misma caja y mes; aclaración ligada a entrega y corte a la vez | Pendiente |
+| 7. Vistas, triggers y permisos | Vistas de [modelo-datos.md](modelo-datos.md#vistas); triggers; usuario de BD de la API | Ver abajo | Pendiente |
+| 8. Arranque inicial | Script `pnpm db:seed` (D-27) y datos de desarrollo `pnpm db:seed:dev` | Ver abajo | Pendiente |
+
+**Por qué este orden:** `pago` apunta a `caja`, así que la caja va en el bloque 4 con la cobranza; `aclaracion` apunta a `corte`, así que va en el bloque 6; las vistas necesitan todas las tablas.
+
+**Bloque 7 — vistas, triggers y permisos.**
+
+- Vistas: v_manzana, v_toma, v_solicitud_toma, v_unidad, v_pago_importe, v_caja_movimiento, v_saldo_caja, v_entrega, v_gasto, v_corte, v_autorizacion_pendiente; cada una con una prueba que compruebe su resultado con datos conocidos.
+- Triggers: periodo cerrado (rechaza inserciones en tablas de dinero con fecha dentro de un mes con corte cerrado de la misma caja, D-14); una sola tarifa autorizada por `periodo_vigencia`; una sola cancelación autorizada por pago; el `tipo` de la autorización coincide con la tabla que la referencia.
+- Usuarios de BD `agua` y `agua_api` (ver [modelo-datos.md](modelo-datos.md#usuarios-de-base-de-datos)). En desarrollo, `agua_api` lo crea un script nuevo en `docker/postgres/init/` y los permisos los otorga una migración. Hay que agregar `DATABASE_URL_MIGRACIONES` a `.env.example`, `docker-compose.yml` y `drizzle.config.ts`. Prueba obligatoria: con `agua_api`, un UPDATE o DELETE sobre `pago` falla.
+
+**Bloque 8 — arranque inicial (D-27).** Como no hay registro público (D-19) y la asignación del primer presidente necesitaría que un presidente la confirme, el sistema arranca con `pnpm db:seed`, que se ejecuta una sola vez:
+
+- Lee `arranque.json`, que **no se versiona** (solo `arranque.example.json`): nombre y usuario del superadministrador; presidente, tesorero y secretario con fecha de inicio; datos del acuerdo de la junta que los eligió.
+- En una transacción crea:
+  - La persona, la asignación `superadmin` y su cuenta con una contraseña temporal que se imprime una sola vez (debe cambiarla al entrar).
+  - El acuerdo de elección y las asignaciones de presidente, tesorero y secretario con su autorización **autorizada por arranque** (resuelta por el superadministrador, motivo con el folio del acuerdo). Sus cuentas las crea después el superadministrador desde la app.
+  - La caja del comité, las categorías de gasto (electricidad, reparaciones, materiales, instalaciones, salario del fontanero, otros) y los conceptos (apertura de toma, reinstalación, reparación a usuario) sin importe; el tesorero captura los importes desde la app.
+  - Registros técnicos en la bitácora.
+- Si ya existe un superadministrador, no hace nada y lo informa.
+- `pnpm db:seed:dev` carga datos de desarrollo (secciones, manzanas, jefes, homónimos, tomas con varias familias, tarifas históricas y algunos pagos) y se niega a ejecutarse si `NODE_ENV=production`.
+
+### API
+
+| Paso | Contenido | Pruebas clave |
+| --- | --- | --- |
+| 1. Base | `app.ts` separado de `server.ts`; manejador de errores con `{ error: { codigo, mensaje, detalles } }`; `/health` que consulta la base; plugin de autenticación y permisos (cargo de la cuenta + manzana + vigencia); plugin de idempotencia; contexto de bitácora | Error de validación con formato correcto; `/health` falla si la base no responde |
+| 2. auth y cuentas | Login, refresco rotativo, salir, cambio de contraseña obligatorio, bloqueo tras 5 intentos; alta de cuenta por el SA para una asignación sin cuenta, restablecer, bloquear, desactivar | Reutilizar un token de refresco revoca la familia; cargo cerrado no entra; nadie más que el SA crea cuentas |
+| 3. organización y autorizaciones | Secciones, manzanas, asignaciones (con autorización), sustitución de jefe; bandeja y resolución | Un jefe por manzana; solo PRE resuelve |
+| 4. padrón y tomas | Búsqueda, homónimos, personas, tomas preexistentes, unidades, suspensiones, solicitudes, acuerdos, activación | JM no ve pagos de otra manzana; familia en toma no activa rechazada |
+| 5. Estado de cuenta (`packages/shared/src/domain`) | Función pura (ver [decisiones.md](decisiones.md#cálculo-del-estado-de-cuenta-d-01-d-02-d-06-d-25)) | Pruebas de tabla: D-01, D-02 (pago parcial con recargo), D-03, D-05, D-06, cambio de tarifa, anticipos, mes en curso |
+| 6. tarifas y cobranza | Tarifas y conceptos; previsualizar, registrar pago, reposición, cancelación | Idempotencia; TOTAL_CAMBIO; orden de meses; folio repetido; doble pago concurrente |
+| 7. cajas y comité | Saldos, entregas, aclaraciones; ingresos, gastos, fontanero | Entrega mayor al saldo; gasto sin saldo; periodo del fontanero repetido |
+| 8. cortes, reportes, auditoría | Cortes y cierre de periodo; datos de los dos reportes; bitácora | Movimiento en mes cerrado rechazado; totales del reporte comunitario cuadran con los cortes |

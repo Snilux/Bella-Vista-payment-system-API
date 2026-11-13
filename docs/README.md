@@ -1,13 +1,15 @@
 # Documentación
 
-Resumen del análisis (Fase 1) y del diseño (Fase 2) necesario para programar la API. La versión completa y vigente está en Notion; si algo no coincide, manda Notion y hay que actualizar estos archivos.
+Resumen del análisis (Fase 1), del diseño (Fase 2) y del plan de implementación (Fase 3) necesario para programar la API. La versión completa y vigente está en Notion; si algo no coincide, manda Notion y hay que actualizar estos archivos.
+
+**Antes de cada bloque, revisa 3.1 Plan de implementación en Notion; si difiere de `docs/`, manda Notion** (y se actualiza `docs/` en un commit `docs` aparte).
 
 | Archivo                            | Contenido                                                                    |
 | ---------------------------------- | ---------------------------------------------------------------------------- |
 | [decisiones.md](decisiones.md)     | Reglas de negocio confirmadas por el comité (D-01 a D-26). **Leer primero.** |
 | [modelo-datos.md](modelo-datos.md) | Tablas, columnas, restricciones y vistas de PostgreSQL                       |
 | [api.md](api.md)                   | Convenciones, endpoints, permisos y códigos de error                         |
-| [estructura.md](estructura.md)     | Cómo se organiza un módulo, convenciones de código y orden de desarrollo     |
+| [estructura.md](estructura.md)     | Cómo se organiza un módulo, convenciones de código y plan de implementación (bloques de BD y pasos de la API) |
 | [glosario.md](glosario.md)         | Traducción español → inglés de módulos, tablas, columnas y enums para el código |
 
 ## Documentos en Notion
@@ -19,6 +21,7 @@ Resumen del análisis (Fase 1) y del diseño (Fase 2) necesario para programar l
 - 2.1 Arquitectura — https://app.notion.com/p/405088c27ae081569ea4fd515b1a6858
 - 2.2 Modelo de datos — https://app.notion.com/p/405088c27ae081e5952aee5d462fdcb5
 - 2.3 Contrato de API — https://app.notion.com/p/405088c27ae0813da0bfd664dc026068
+- 3.1 Plan de implementación — https://app.notion.com/p/417088c27ae0815b89bcf1c5577b1755
 - Diseño en Figma — https://www.figma.com/design/O3K6EY21ZnlCkMPohvvaJp
 
 ## Glosario
