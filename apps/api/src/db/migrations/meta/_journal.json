@@ -22,6 +22,20 @@
       "when": 1794545473034,
       "tag": "0002_folio_year_month",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794548795058,
+      "tag": "0003_registry_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794548800484,
+      "tag": "0004_registry_history_rules",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,2364 @@
+{
+  "id": "bc163487-5578-41c2-a0fa-3e3adaa915d6",
+  "prevId": "939683f5-303e-42f7-829e-81aeff5d544f",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.refresh_token": {
+      "name": "refresh_token",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "refresh_token_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "user_account_id": {
+          "name": "user_account_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "replaced_by_id": {
+          "name": "replaced_by_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "refresh_token_user_account_id_idx": {
+          "name": "refresh_token_user_account_id_idx",
+          "columns": [
+            {
+              "expression": "user_account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "refresh_token_user_account_id_user_account_id_fk": {
+          "name": "refresh_token_user_account_id_user_account_id_fk",
+          "tableFrom": "refresh_token",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "user_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "refresh_token_replaced_by_id_refresh_token_id_fk": {
+          "name": "refresh_token_replaced_by_id_refresh_token_id_fk",
+          "tableFrom": "refresh_token",
+          "tableTo": "refresh_token",
+          "columnsFrom": [
+            "replaced_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "refresh_token_created_by_user_account_id_fk": {
+          "name": "refresh_token_created_by_user_account_id_fk",
+          "tableFrom": "refresh_token",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "refresh_token_token_hash_unique": {
+          "name": "refresh_token_token_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "refresh_token_not_self_replaced": {
+          "name": "refresh_token_not_self_replaced",
+          "value": "\"refresh_token\".\"replaced_by_id\" <> \"refresh_token\".\"id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.user_account": {
+      "name": "user_account",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "user_account_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "role_assignment_id": {
+          "name": "role_assignment_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "must_change_password": {
+          "name": "must_change_password",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "deactivated_at": {
+          "name": "deactivated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_attempts": {
+          "name": "failed_attempts",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_account_role_assignment_id_role_assignment_id_fk": {
+          "name": "user_account_role_assignment_id_role_assignment_id_fk",
+          "tableFrom": "user_account",
+          "tableTo": "role_assignment",
+          "columnsFrom": [
+            "role_assignment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_account_created_by_user_account_id_fk": {
+          "name": "user_account_created_by_user_account_id_fk",
+          "tableFrom": "user_account",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_account_role_assignment_id_unique": {
+          "name": "user_account_role_assignment_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "role_assignment_id"
+          ]
+        },
+        "user_account_username_unique": {
+          "name": "user_account_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "user_account_username_format": {
+          "name": "user_account_username_format",
+          "value": "\"user_account\".\"username\" = lower(btrim(\"user_account\".\"username\")) AND \"user_account\".\"username\" <> ''"
+        },
+        "user_account_failed_attempts": {
+          "name": "user_account_failed_attempts",
+          "value": "\"user_account\".\"failed_attempts\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.agreement": {
+      "name": "agreement",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "agreement_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "folio": {
+          "name": "folio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'AC-' || to_char(now() AT TIME ZONE 'America/Mexico_City', 'YYYYMM') || '-' || lpad(nextval('agreement_folio_seq')::text, 6, '0')"
+        },
+        "meeting_date": {
+          "name": "meeting_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "topic": {
+          "name": "topic",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result": {
+          "name": "result",
+          "type": "agreement_result",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "votes_for": {
+          "name": "votes_for",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "votes_against": {
+          "name": "votes_against",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "abstentions": {
+          "name": "abstentions",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "minutes_reference": {
+          "name": "minutes_reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "corrects_id": {
+          "name": "corrects_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "agreement_corrects_id_agreement_id_fk": {
+          "name": "agreement_corrects_id_agreement_id_fk",
+          "tableFrom": "agreement",
+          "tableTo": "agreement",
+          "columnsFrom": [
+            "corrects_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "agreement_created_by_user_account_id_fk": {
+          "name": "agreement_created_by_user_account_id_fk",
+          "tableFrom": "agreement",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "agreement_folio_unique": {
+          "name": "agreement_folio_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "folio"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "agreement_topic_not_blank": {
+          "name": "agreement_topic_not_blank",
+          "value": "btrim(\"agreement\".\"topic\") <> ''"
+        },
+        "agreement_votes_non_negative": {
+          "name": "agreement_votes_non_negative",
+          "value": "coalesce(\"agreement\".\"votes_for\", 0) >= 0 AND coalesce(\"agreement\".\"votes_against\", 0) >= 0 AND coalesce(\"agreement\".\"abstentions\", 0) >= 0"
+        },
+        "agreement_not_self_correction": {
+          "name": "agreement_not_self_correction",
+          "value": "\"agreement\".\"corrects_id\" <> \"agreement\".\"id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval": {
+      "name": "approval",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "approval_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "type": {
+          "name": "type",
+          "type": "approval_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requested_by": {
+          "name": "requested_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requested_at": {
+          "name": "requested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "result": {
+          "name": "result",
+          "type": "approval_result",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_by": {
+          "name": "resolved_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolution_reason": {
+          "name": "resolution_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "approval_pending_idx": {
+          "name": "approval_pending_idx",
+          "columns": [
+            {
+              "expression": "requested_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"approval\".\"result\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "approval_requested_by_user_account_id_fk": {
+          "name": "approval_requested_by_user_account_id_fk",
+          "tableFrom": "approval",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "requested_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "approval_resolved_by_user_account_id_fk": {
+          "name": "approval_resolved_by_user_account_id_fk",
+          "tableFrom": "approval",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "resolved_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "approval_created_by_user_account_id_fk": {
+          "name": "approval_created_by_user_account_id_fk",
+          "tableFrom": "approval",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "approval_reason_not_blank": {
+          "name": "approval_reason_not_blank",
+          "value": "btrim(\"approval\".\"reason\") <> ''"
+        },
+        "approval_resolution_complete": {
+          "name": "approval_resolution_complete",
+          "value": "num_nulls(\"approval\".\"result\", \"approval\".\"resolved_by\", \"approval\".\"resolved_at\") IN (0, 3)"
+        },
+        "approval_rejection_reason": {
+          "name": "approval_rejection_reason",
+          "value": "\"approval\".\"result\" IS DISTINCT FROM 'rejected' OR nullif(btrim(\"approval\".\"resolution_reason\"), '') IS NOT NULL"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.connection": {
+      "name": "connection",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "connection_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "folio": {
+          "name": "folio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'T-' || to_char(now() AT TIME ZONE 'America/Mexico_City', 'YYYYMM') || '-' || lpad(nextval('connection_folio_seq')::text, 6, '0')"
+        },
+        "connection_request_id": {
+          "name": "connection_request_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activated_on": {
+          "name": "activated_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deactivated_on": {
+          "name": "deactivated_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deactivation_reason": {
+          "name": "deactivation_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "connection_connection_request_id_connection_request_id_fk": {
+          "name": "connection_connection_request_id_connection_request_id_fk",
+          "tableFrom": "connection",
+          "tableTo": "connection_request",
+          "columnsFrom": [
+            "connection_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "connection_created_by_user_account_id_fk": {
+          "name": "connection_created_by_user_account_id_fk",
+          "tableFrom": "connection",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "connection_folio_unique": {
+          "name": "connection_folio_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "folio"
+          ]
+        },
+        "connection_connection_request_id_unique": {
+          "name": "connection_connection_request_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "connection_request_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "connection_address_not_blank": {
+          "name": "connection_address_not_blank",
+          "value": "btrim(\"connection\".\"address\") <> ''"
+        },
+        "connection_deactivation_reason": {
+          "name": "connection_deactivation_reason",
+          "value": "(\"connection\".\"deactivated_on\" IS NULL) = (\"connection\".\"deactivation_reason\" IS NULL) AND (\"connection\".\"deactivation_reason\" IS NULL OR btrim(\"connection\".\"deactivation_reason\") <> '')"
+        },
+        "connection_deactivated_after_activation": {
+          "name": "connection_deactivated_after_activation",
+          "value": "\"connection\".\"deactivated_on\" IS NULL OR \"connection\".\"deactivated_on\" >= \"connection\".\"activated_on\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.connection_block": {
+      "name": "connection_block",
+      "schema": "",
+      "columns": {
+        "connection_id": {
+          "name": "connection_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block_id": {
+          "name": "block_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_to": {
+          "name": "valid_to",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "connection_block_current_uq": {
+          "name": "connection_block_current_uq",
+          "columns": [
+            {
+              "expression": "connection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"connection_block\".\"valid_to\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "connection_block_block_id_idx": {
+          "name": "connection_block_block_id_idx",
+          "columns": [
+            {
+              "expression": "block_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "connection_block_connection_id_connection_id_fk": {
+          "name": "connection_block_connection_id_connection_id_fk",
+          "tableFrom": "connection_block",
+          "tableTo": "connection",
+          "columnsFrom": [
+            "connection_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "connection_block_block_id_block_id_fk": {
+          "name": "connection_block_block_id_block_id_fk",
+          "tableFrom": "connection_block",
+          "tableTo": "block",
+          "columnsFrom": [
+            "block_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "connection_block_created_by_user_account_id_fk": {
+          "name": "connection_block_created_by_user_account_id_fk",
+          "tableFrom": "connection_block",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "connection_block_pk": {
+          "name": "connection_block_pk",
+          "columns": [
+            "connection_id",
+            "valid_from"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "connection_block_valid_range": {
+          "name": "connection_block_valid_range",
+          "value": "\"connection_block\".\"valid_to\" IS NULL OR \"connection_block\".\"valid_to\" > \"connection_block\".\"valid_from\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.connection_request": {
+      "name": "connection_request",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "connection_request_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "folio": {
+          "name": "folio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ST-' || to_char(now() AT TIME ZONE 'America/Mexico_City', 'YYYYMM') || '-' || lpad(nextval('connection_request_folio_seq')::text, 6, '0')"
+        },
+        "applicant_id": {
+          "name": "applicant_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block_id": {
+          "name": "block_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requested_on": {
+          "name": "requested_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agreement_id": {
+          "name": "agreement_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolution_reason": {
+          "name": "resolution_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_on": {
+          "name": "cancelled_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancellation_reason": {
+          "name": "cancellation_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "connection_request_block_id_idx": {
+          "name": "connection_request_block_id_idx",
+          "columns": [
+            {
+              "expression": "block_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "connection_request_applicant_id_idx": {
+          "name": "connection_request_applicant_id_idx",
+          "columns": [
+            {
+              "expression": "applicant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "connection_request_applicant_id_person_id_fk": {
+          "name": "connection_request_applicant_id_person_id_fk",
+          "tableFrom": "connection_request",
+          "tableTo": "person",
+          "columnsFrom": [
+            "applicant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "connection_request_block_id_block_id_fk": {
+          "name": "connection_request_block_id_block_id_fk",
+          "tableFrom": "connection_request",
+          "tableTo": "block",
+          "columnsFrom": [
+            "block_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "connection_request_agreement_id_agreement_id_fk": {
+          "name": "connection_request_agreement_id_agreement_id_fk",
+          "tableFrom": "connection_request",
+          "tableTo": "agreement",
+          "columnsFrom": [
+            "agreement_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "connection_request_created_by_user_account_id_fk": {
+          "name": "connection_request_created_by_user_account_id_fk",
+          "tableFrom": "connection_request",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "connection_request_folio_unique": {
+          "name": "connection_request_folio_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "folio"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "connection_request_address_not_blank": {
+          "name": "connection_request_address_not_blank",
+          "value": "btrim(\"connection_request\".\"address\") <> ''"
+        },
+        "connection_request_resolution_needs_agreement": {
+          "name": "connection_request_resolution_needs_agreement",
+          "value": "\"connection_request\".\"resolution_reason\" IS NULL OR (\"connection_request\".\"agreement_id\" IS NOT NULL AND btrim(\"connection_request\".\"resolution_reason\") <> '')"
+        },
+        "connection_request_cancellation_reason": {
+          "name": "connection_request_cancellation_reason",
+          "value": "(\"connection_request\".\"cancelled_on\" IS NULL) = (\"connection_request\".\"cancellation_reason\" IS NULL) AND (\"connection_request\".\"cancellation_reason\" IS NULL OR btrim(\"connection_request\".\"cancellation_reason\") <> '')"
+        },
+        "connection_request_cancelled_after_request": {
+          "name": "connection_request_cancelled_after_request",
+          "value": "\"connection_request\".\"cancelled_on\" IS NULL OR \"connection_request\".\"cancelled_on\" >= \"connection_request\".\"requested_on\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.block": {
+      "name": "block",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "block_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "section_id": {
+          "name": "section_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "block_section_id_section_id_fk": {
+          "name": "block_section_id_section_id_fk",
+          "tableFrom": "block",
+          "tableTo": "section",
+          "columnsFrom": [
+            "section_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "block_created_by_user_account_id_fk": {
+          "name": "block_created_by_user_account_id_fk",
+          "tableFrom": "block",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "block_section_id_code_unique": {
+          "name": "block_section_id_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "section_id",
+            "code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "block_code_not_blank": {
+          "name": "block_code_not_blank",
+          "value": "btrim(\"block\".\"code\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.person": {
+      "name": "person",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "person_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "folio": {
+          "name": "folio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'P-' || to_char(now() AT TIME ZONE 'America/Mexico_City', 'YYYYMM') || '-' || lpad(nextval('person_folio_seq')::text, 6, '0')"
+        },
+        "given_names": {
+          "name": "given_names",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paternal_surname": {
+          "name": "paternal_surname",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "maternal_surname": {
+          "name": "maternal_surname",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "distinguishing_note": {
+          "name": "distinguishing_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registered_on": {
+          "name": "registered_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "person_created_by_user_account_id_fk": {
+          "name": "person_created_by_user_account_id_fk",
+          "tableFrom": "person",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "person_folio_unique": {
+          "name": "person_folio_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "folio"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "person_given_names_not_blank": {
+          "name": "person_given_names_not_blank",
+          "value": "btrim(\"person\".\"given_names\") <> ''"
+        },
+        "person_paternal_surname_not_blank": {
+          "name": "person_paternal_surname_not_blank",
+          "value": "btrim(\"person\".\"paternal_surname\") <> ''"
+        },
+        "person_distinguishing_note_not_blank": {
+          "name": "person_distinguishing_note_not_blank",
+          "value": "\"person\".\"distinguishing_note\" IS NULL OR btrim(\"person\".\"distinguishing_note\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.role_assignment": {
+      "name": "role_assignment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "role_assignment_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block_id": {
+          "name": "block_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_phone": {
+          "name": "contact_phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approval_id": {
+          "name": "approval_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "role_assignment_open_leader_block_uq": {
+          "name": "role_assignment_open_leader_block_uq",
+          "columns": [
+            {
+              "expression": "block_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"role_assignment\".\"role\" = 'block_leader' AND \"role_assignment\".\"end_date\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "role_assignment_open_leader_person_uq": {
+          "name": "role_assignment_open_leader_person_uq",
+          "columns": [
+            {
+              "expression": "person_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"role_assignment\".\"role\" = 'block_leader' AND \"role_assignment\".\"end_date\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "role_assignment_open_officer_uq": {
+          "name": "role_assignment_open_officer_uq",
+          "columns": [
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"role_assignment\".\"role\" IN ('president', 'treasurer', 'secretary') AND \"role_assignment\".\"end_date\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "role_assignment_person_id_person_id_fk": {
+          "name": "role_assignment_person_id_person_id_fk",
+          "tableFrom": "role_assignment",
+          "tableTo": "person",
+          "columnsFrom": [
+            "person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "role_assignment_block_id_block_id_fk": {
+          "name": "role_assignment_block_id_block_id_fk",
+          "tableFrom": "role_assignment",
+          "tableTo": "block",
+          "columnsFrom": [
+            "block_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "role_assignment_approval_id_approval_id_fk": {
+          "name": "role_assignment_approval_id_approval_id_fk",
+          "tableFrom": "role_assignment",
+          "tableTo": "approval",
+          "columnsFrom": [
+            "approval_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "role_assignment_created_by_user_account_id_fk": {
+          "name": "role_assignment_created_by_user_account_id_fk",
+          "tableFrom": "role_assignment",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "role_assignment_approval_id_unique": {
+          "name": "role_assignment_approval_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "approval_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "role_assignment_contact_phone_not_blank": {
+          "name": "role_assignment_contact_phone_not_blank",
+          "value": "\"role_assignment\".\"contact_phone\" IS NULL OR btrim(\"role_assignment\".\"contact_phone\") <> ''"
+        },
+        "role_assignment_block_leader_fields": {
+          "name": "role_assignment_block_leader_fields",
+          "value": "\"role_assignment\".\"role\" <> 'block_leader' OR (\"role_assignment\".\"block_id\" IS NOT NULL AND \"role_assignment\".\"contact_phone\" IS NOT NULL)"
+        },
+        "role_assignment_block_only_for_leader": {
+          "name": "role_assignment_block_only_for_leader",
+          "value": "\"role_assignment\".\"role\" = 'block_leader' OR \"role_assignment\".\"block_id\" IS NULL"
+        },
+        "role_assignment_approval_unless_superadmin": {
+          "name": "role_assignment_approval_unless_superadmin",
+          "value": "(\"role_assignment\".\"role\" = 'superadmin') = (\"role_assignment\".\"approval_id\" IS NULL)"
+        },
+        "role_assignment_dates": {
+          "name": "role_assignment_dates",
+          "value": "\"role_assignment\".\"end_date\" IS NULL OR \"role_assignment\".\"end_date\" >= \"role_assignment\".\"start_date\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.section": {
+      "name": "section",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "section_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "section_created_by_user_account_id_fk": {
+          "name": "section_created_by_user_account_id_fk",
+          "tableFrom": "section",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "section_code_unique": {
+          "name": "section_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        },
+        "section_name_unique": {
+          "name": "section_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "section_code_not_blank": {
+          "name": "section_code_not_blank",
+          "value": "btrim(\"section\".\"code\") <> ''"
+        },
+        "section_name_not_blank": {
+          "name": "section_name_not_blank",
+          "value": "btrim(\"section\".\"name\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.suspension": {
+      "name": "suspension",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "suspension_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "connection_id": {
+          "name": "connection_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit_id": {
+          "name": "unit_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "period_from": {
+          "name": "period_from",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period_to": {
+          "name": "period_to",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agreement_id": {
+          "name": "agreement_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "suspension_connection_id_idx": {
+          "name": "suspension_connection_id_idx",
+          "columns": [
+            {
+              "expression": "connection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "suspension_unit_id_idx": {
+          "name": "suspension_unit_id_idx",
+          "columns": [
+            {
+              "expression": "unit_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "suspension_connection_id_connection_id_fk": {
+          "name": "suspension_connection_id_connection_id_fk",
+          "tableFrom": "suspension",
+          "tableTo": "connection",
+          "columnsFrom": [
+            "connection_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "suspension_unit_id_unit_id_fk": {
+          "name": "suspension_unit_id_unit_id_fk",
+          "tableFrom": "suspension",
+          "tableTo": "unit",
+          "columnsFrom": [
+            "unit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "suspension_agreement_id_agreement_id_fk": {
+          "name": "suspension_agreement_id_agreement_id_fk",
+          "tableFrom": "suspension",
+          "tableTo": "agreement",
+          "columnsFrom": [
+            "agreement_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "suspension_created_by_user_account_id_fk": {
+          "name": "suspension_created_by_user_account_id_fk",
+          "tableFrom": "suspension",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "suspension_single_target": {
+          "name": "suspension_single_target",
+          "value": "num_nonnulls(\"suspension\".\"connection_id\", \"suspension\".\"unit_id\") = 1"
+        },
+        "suspension_period_from_first_of_month": {
+          "name": "suspension_period_from_first_of_month",
+          "value": "extract(day from \"suspension\".\"period_from\") = 1"
+        },
+        "suspension_period_to_first_of_month": {
+          "name": "suspension_period_to_first_of_month",
+          "value": "\"suspension\".\"period_to\" IS NULL OR extract(day from \"suspension\".\"period_to\") = 1"
+        },
+        "suspension_period_range": {
+          "name": "suspension_period_range",
+          "value": "\"suspension\".\"period_to\" IS NULL OR \"suspension\".\"period_to\" >= \"suspension\".\"period_from\""
+        },
+        "suspension_reason_not_blank": {
+          "name": "suspension_reason_not_blank",
+          "value": "btrim(\"suspension\".\"reason\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.unit": {
+      "name": "unit",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "unit_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "folio": {
+          "name": "folio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'U-' || to_char(now() AT TIME ZONE 'America/Mexico_City', 'YYYYMM') || '-' || lpad(nextval('unit_folio_seq')::text, 6, '0')"
+        },
+        "connection_id": {
+          "name": "connection_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference": {
+          "name": "reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registered_on": {
+          "name": "registered_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activated_on": {
+          "name": "activated_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "billing_start_period": {
+          "name": "billing_start_period",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deactivated_on": {
+          "name": "deactivated_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "unit_connection_id_idx": {
+          "name": "unit_connection_id_idx",
+          "columns": [
+            {
+              "expression": "connection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "unit_connection_id_connection_id_fk": {
+          "name": "unit_connection_id_connection_id_fk",
+          "tableFrom": "unit",
+          "tableTo": "connection",
+          "columnsFrom": [
+            "connection_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "unit_created_by_user_account_id_fk": {
+          "name": "unit_created_by_user_account_id_fk",
+          "tableFrom": "unit",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unit_folio_unique": {
+          "name": "unit_folio_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "folio"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "unit_billing_start_when_active": {
+          "name": "unit_billing_start_when_active",
+          "value": "\"unit\".\"activated_on\" IS NULL OR \"unit\".\"billing_start_period\" IS NOT NULL"
+        },
+        "unit_billing_start_first_of_month": {
+          "name": "unit_billing_start_first_of_month",
+          "value": "\"unit\".\"billing_start_period\" IS NULL OR extract(day from \"unit\".\"billing_start_period\") = 1"
+        },
+        "unit_activated_after_registration": {
+          "name": "unit_activated_after_registration",
+          "value": "\"unit\".\"activated_on\" IS NULL OR \"unit\".\"activated_on\" >= \"unit\".\"registered_on\""
+        },
+        "unit_deactivated_after_registration": {
+          "name": "unit_deactivated_after_registration",
+          "value": "\"unit\".\"deactivated_on\" IS NULL OR \"unit\".\"deactivated_on\" >= \"unit\".\"registered_on\""
+        },
+        "unit_reference_not_blank": {
+          "name": "unit_reference_not_blank",
+          "value": "\"unit\".\"reference\" IS NULL OR btrim(\"unit\".\"reference\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.unit_change_request": {
+      "name": "unit_change_request",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "unit_change_request_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "unit_id": {
+          "name": "unit_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "unit_change_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "new_holder_id": {
+          "name": "new_holder_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approval_id": {
+          "name": "approval_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "unit_change_request_unit_id_idx": {
+          "name": "unit_change_request_unit_id_idx",
+          "columns": [
+            {
+              "expression": "unit_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "unit_change_request_unit_id_unit_id_fk": {
+          "name": "unit_change_request_unit_id_unit_id_fk",
+          "tableFrom": "unit_change_request",
+          "tableTo": "unit",
+          "columnsFrom": [
+            "unit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "unit_change_request_new_holder_id_person_id_fk": {
+          "name": "unit_change_request_new_holder_id_person_id_fk",
+          "tableFrom": "unit_change_request",
+          "tableTo": "person",
+          "columnsFrom": [
+            "new_holder_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "unit_change_request_approval_id_approval_id_fk": {
+          "name": "unit_change_request_approval_id_approval_id_fk",
+          "tableFrom": "unit_change_request",
+          "tableTo": "approval",
+          "columnsFrom": [
+            "approval_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "unit_change_request_created_by_user_account_id_fk": {
+          "name": "unit_change_request_created_by_user_account_id_fk",
+          "tableFrom": "unit_change_request",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unit_change_request_approval_id_unique": {
+          "name": "unit_change_request_approval_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "approval_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "unit_change_request_new_holder": {
+          "name": "unit_change_request_new_holder",
+          "value": "(\"unit_change_request\".\"type\" = 'holder_change') = (\"unit_change_request\".\"new_holder_id\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.unit_holder": {
+      "name": "unit_holder",
+      "schema": "",
+      "columns": {
+        "unit_id": {
+          "name": "unit_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_to": {
+          "name": "valid_to",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "unit_holder_current_uq": {
+          "name": "unit_holder_current_uq",
+          "columns": [
+            {
+              "expression": "unit_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"unit_holder\".\"valid_to\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "unit_holder_person_id_idx": {
+          "name": "unit_holder_person_id_idx",
+          "columns": [
+            {
+              "expression": "person_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "unit_holder_unit_id_unit_id_fk": {
+          "name": "unit_holder_unit_id_unit_id_fk",
+          "tableFrom": "unit_holder",
+          "tableTo": "unit",
+          "columnsFrom": [
+            "unit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "unit_holder_person_id_person_id_fk": {
+          "name": "unit_holder_person_id_person_id_fk",
+          "tableFrom": "unit_holder",
+          "tableTo": "person",
+          "columnsFrom": [
+            "person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "unit_holder_created_by_user_account_id_fk": {
+          "name": "unit_holder_created_by_user_account_id_fk",
+          "tableFrom": "unit_holder",
+          "tableTo": "user_account",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "unit_holder_pk": {
+          "name": "unit_holder_pk",
+          "columns": [
+            "unit_id",
+            "valid_from"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "unit_holder_valid_range": {
+          "name": "unit_holder_valid_range",
+          "value": "\"unit_holder\".\"valid_to\" IS NULL OR \"unit_holder\".\"valid_to\" > \"unit_holder\".\"valid_from\""
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.agreement_result": {
+      "name": "agreement_result",
+      "schema": "public",
+      "values": [
+        "approved_by_majority",
+        "rejected"
+      ]
+    },
+    "public.approval_result": {
+      "name": "approval_result",
+      "schema": "public",
+      "values": [
+        "approved",
+        "rejected"
+      ]
+    },
+    "public.approval_type": {
+      "name": "approval_type",
+      "schema": "public",
+      "values": [
+        "role_assignment",
+        "rate",
+        "plumber_salary",
+        "opening_balance",
+        "unit_deactivation",
+        "holder_change",
+        "payment_cancellation",
+        "adjustment",
+        "expense_refund"
+      ]
+    },
+    "public.role": {
+      "name": "role",
+      "schema": "public",
+      "values": [
+        "superadmin",
+        "president",
+        "treasurer",
+        "secretary",
+        "member",
+        "block_leader"
+      ]
+    },
+    "public.unit_change_type": {
+      "name": "unit_change_type",
+      "schema": "public",
+      "values": [
+        "deactivation",
+        "holder_change"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {
+    "public.agreement_folio_seq": {
+      "name": "agreement_folio_seq",
+      "schema": "public",
+      "increment": "1",
+      "startWith": "1",
+      "minValue": "1",
+      "maxValue": "9223372036854775807",
+      "cache": "1",
+      "cycle": false
+    },
+    "public.connection_folio_seq": {
+      "name": "connection_folio_seq",
+      "schema": "public",
+      "increment": "1",
+      "startWith": "1",
+      "minValue": "1",
+      "maxValue": "9223372036854775807",
+      "cache": "1",
+      "cycle": false
+    },
+    "public.connection_request_folio_seq": {
+      "name": "connection_request_folio_seq",
+      "schema": "public",
+      "increment": "1",
+      "startWith": "1",
+      "minValue": "1",
+      "maxValue": "9223372036854775807",
+      "cache": "1",
+      "cycle": false
+    },
+    "public.person_folio_seq": {
+      "name": "person_folio_seq",
+      "schema": "public",
+      "increment": "1",
+      "startWith": "1",
+      "minValue": "1",
+      "maxValue": "9223372036854775807",
+      "cache": "1",
+      "cycle": false
+    },
+    "public.unit_folio_seq": {
+      "name": "unit_folio_seq",
+      "schema": "public",
+      "increment": "1",
+      "startWith": "1",
+      "minValue": "1",
+      "maxValue": "9223372036854775807",
+      "cache": "1",
+      "cycle": false
+    }
+  },
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

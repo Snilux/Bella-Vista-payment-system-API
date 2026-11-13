@@ -131,6 +131,18 @@ Lo que ve el usuario final (mensajes de error, recibos, fechas y montos con form
 | `tipo`                           | `type`                               |
 | `solicitado_por` / `solicitado_en` | `requested_by` / `requested_at`    |
 | `motivo_resolucion`              | `resolution_reason`                  |
+| `solicitante_id`                 | `applicant_id`                       |
+| `fecha_solicitud`                | `requested_on`                       |
+| `cancelada_en` (date)            | `cancelled_on`                       |
+| `motivo_cancelacion`             | `cancellation_reason`                |
+| `motivo_baja`                    | `deactivation_reason`                |
+| `solicitud_toma_id`, `toma_id`, `unidad_id`, `acuerdo_id` | `connection_request_id`, `connection_id`, `unit_id`, `agreement_id` |
+| `referencia`                     | `reference`                          |
+| `periodo_inicio_cobro`           | `billing_start_period`               |
+| `periodo_desde` / `periodo_hasta`| `period_from` / `period_to`          |
+| `nuevo_titular_id`               | `new_holder_id`                      |
+
+Las columnas `*_en` de tipo `date` (no `timestamptz`) terminan en `_on`, igual que las `fecha_*`: `cancelada_en` → `cancelled_on`. La regla `_en` → `_at` es para timestamps.
 
 ## Funciones de base de datos
 

@@ -36,6 +36,12 @@ Fuente: documento 2.2 de Notion (versión normalizada 1.1, con el cambio de cuen
 | `suspension`              | id, toma_id?, unidad_id?, periodo_desde, periodo_hasta?, motivo, acuerdo_id                                                                        | exactamente uno de toma_id o unidad_id (`num_nonnulls = 1`)                                           |
 | `solicitud_cambio_unidad` | id, unidad_id, tipo (baja, cambio_titular), nuevo_titular_id?, autorizacion_id                                                                     | nuevo titular solo en cambio_titular; el motivo vive en la autorización; autorizacion_id único                               |
 
+Implementación (bloque 2):
+
+- En los historiales (`toma_manzana`, `unidad_titular`) `hasta` es **exclusivo**: al cambiar de manzana o de titular, la fila nueva empieza el mismo día en que termina la anterior. Además del único parcial, una restricción `EXCLUDE` (extensión `btree_gist`) impide que dos periodos, abiertos o cerrados, se encimen.
+- En `suspension`, `periodo_hasta` es inclusivo (último mes suspendido).
+- `solicitud_toma`: si el acuerdo ligado es `rechazado`, un trigger exige `motivo_resolucion`.
+
 ## Tarifas y conceptos
 
 | Tabla                  | Columnas                                                                              | Reglas                                                                                                                        |

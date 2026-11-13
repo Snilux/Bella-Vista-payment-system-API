@@ -2,5 +2,7 @@
 export * from './access.js';
 export * from './agreement.js';
 export * from './approval.js';
+export * from './connections.js';
 export * from './enums.js';
 export * from './organization.js';
+export * from './registry.js';
