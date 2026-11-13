@@ -1,0 +1,3 @@
+ALTER TABLE "agreement" ALTER COLUMN "folio" SET DEFAULT 'AC-' || to_char(now() AT TIME ZONE 'America/Mexico_City', 'YYYYMM') || '-' || lpad(nextval('agreement_folio_seq')::text, 6, '0');--> statement-breakpoint
+ALTER TABLE "person" ALTER COLUMN "folio" SET DEFAULT 'P-' || to_char(now() AT TIME ZONE 'America/Mexico_City', 'YYYYMM') || '-' || lpad(nextval('person_folio_seq')::text, 6, '0');--> statement-breakpoint
+ALTER TABLE "role_assignment" ADD CONSTRAINT "role_assignment_contact_phone_not_blank" CHECK ("role_assignment"."contact_phone" IS NULL OR btrim("role_assignment"."contact_phone") <> '');

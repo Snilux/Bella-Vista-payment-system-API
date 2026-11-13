@@ -6,7 +6,7 @@ Fuente: documento 2.2 de Notion (versión normalizada 1.1, con el cambio de cuen
 
 - Tablas y columnas descritas en español; en el código van en inglés, `snake_case`, singular, según [glosario.md](glosario.md).
 - PK `id bigint generated always as identity`, salvo tablas de relación con PK compuesta.
-- Folios visibles por secuencia: `P-` persona, `T-` toma, `U-` unidad, `ST-` solicitud de toma, `PG-` pago, `EN-` entrega, `GA-` gasto, `IN-` ingreso, `AC-` acuerdo, `CO-` corte.
+- Folios visibles con formato `<PREFIJO>-AAAAMM-NNNNNN` (ej. `P-202611-000001`): año y mes de creación en `America/Mexico_City` más un consecutivo global por secuencia que no se reinicia cada mes. Prefijos: `P-` persona, `T-` toma, `U-` unidad, `ST-` solicitud de toma, `PG-` pago, `EN-` entrega, `GA-` gasto, `IN-` ingreso, `AC-` acuerdo, `CO-` corte.
 - Dinero `bigint` en centavos. Periodos `date` en día 1 (`CHECK (extract(day from periodo) = 1)`).
 - Todas las tablas: `creado_por` (FK usuario) y `creado_en timestamptz default now()`.
 - **No se guarda lo que se puede calcular** (estados, totales, saldos, diferencias): se obtiene en vistas.

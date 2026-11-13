@@ -113,6 +113,30 @@ Lo que ve el usuario final (mensajes de error, recibos, fechas y montos con form
 | `revisado_*`, `cerrado_*`, `confirmada_*`, `cancelada_*`, `rechazado_*`, `retirada_*`, `resuelto_*`, `revocado_*`, `desactivado_*` | `reviewed_*`, `closed_*`, `confirmed_*`, `cancelled_*`, `rejected_*`, `withdrawn_*`, `resolved_*`, `revoked_*`, `deactivated_*` (`_en` → `_at`, `_por` → `_by`) |
 | `antes` / `despues`              | `before` / `after`                   |
 | `es_tecnica`                     | `is_technical`                       |
+| `seccion_id`, `manzana_id`, `persona_id` | `section_id`, `block_id`, `person_id` |
+| `autorizacion_id`, `asignacion_cargo_id`, `usuario_id` | `approval_id`, `role_assignment_id`, `user_account_id` |
+| `cargo` (columna de asignación)  | `role`                               |
+| `telefono_contacto`              | `contact_phone`                      |
+| `usuario` (columna de usuario)   | `username`                           |
+| `token_hash`                     | `token_hash`                         |
+| `expira_en`                      | `expires_at`                         |
+| `reemplazado_por`                | `replaced_by_id`                     |
+| `fecha_junta`                    | `meeting_date`                       |
+| `tema`                           | `topic`                              |
+| `resultado`                      | `result`                             |
+| `votos_favor` / `votos_contra`   | `votes_for` / `votes_against`        |
+| `abstenciones`                   | `abstentions`                        |
+| `referencia_acta`                | `minutes_reference`                  |
+| `corrige_a_id`                   | `corrects_id`                        |
+| `tipo`                           | `type`                               |
+| `solicitado_por` / `solicitado_en` | `requested_by` / `requested_at`    |
+| `motivo_resolucion`              | `resolution_reason`                  |
+
+## Funciones de base de datos
+
+| Español        | Inglés             |
+| -------------- | ------------------ |
+| `f_normalizar` | `f_normalize_name` |
 
 ## Valores de enum
 
