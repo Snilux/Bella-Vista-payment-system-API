@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
@@ -212,5 +213,22 @@ export async function bootstrap(tx: Transaction) {
     );
   };
 
-  return { sa, saPerson, saAssignment, s1, m01, m02, newPerson, newApproval, assign };
+  /** Resolves an approval as the superadmin (the resolver's role is checked by the API). */
+  const resolve = async (
+    approvalId: number,
+    result: 'approved' | 'rejected' = 'approved',
+    resolvedAt = new Date('2026-03-20T18:00:00Z'),
+  ) => {
+    await tx
+      .update(approval)
+      .set({
+        result,
+        resolvedBy: sa.id,
+        resolvedAt,
+        resolutionReason: result === 'rejected' ? 'Rechazada en prueba' : null,
+      })
+      .where(eq(approval.id, approvalId));
+  };
+
+  return { sa, saPerson, saAssignment, s1, m01, m02, newPerson, newApproval, assign, resolve };
 }

@@ -12,3 +12,4 @@ export * from './enums.js';
 export * from './organization.js';
 export * from './rates.js';
 export * from './registry.js';
+export * from './views.js';

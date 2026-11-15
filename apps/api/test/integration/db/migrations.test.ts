@@ -61,6 +61,21 @@ const expectedTables = [
   'idempotency_key',
 ];
 
+/** Views of block 7 (2.2 §5), created by hand in migration 0013. */
+const expectedViews = [
+  'v_block',
+  'v_connection',
+  'v_connection_request',
+  'v_unit',
+  'v_payment_amount',
+  'v_cashbox_movement',
+  'v_cashbox_balance',
+  'v_handover',
+  'v_expense',
+  'v_closing',
+  'v_pending_approval',
+];
+
 describe.skipIf(!testDatabaseUrl)('migrations from scratch', () => {
   it('applies all migrations on an empty database', { timeout: 60_000 }, () =>
     withFreshDatabase(async (url) => {
@@ -80,6 +95,10 @@ describe.skipIf(!testDatabaseUrl)('migrations from scratch', () => {
           WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`;
         const tables = rows.map((row) => row.table_name);
         expect(tables).toEqual(expect.arrayContaining(expectedTables));
+
+        const views = await fresh<{ table_name: string }[]>`
+          SELECT table_name FROM information_schema.views WHERE table_schema = 'public'`;
+        expect(views.map((row) => row.table_name).sort()).toEqual([...expectedViews].sort());
       } finally {
         await fresh.end();
       }
