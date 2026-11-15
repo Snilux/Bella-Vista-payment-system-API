@@ -160,9 +160,8 @@ export const paperReceipt = pgTable(
   ],
 );
 
-// Request to cancel a payment, resolved through its approval (D-15). TODO(block 7): a
-// trigger on approval resolution must allow a single approved cancellation per payment; it
-// is not enforced yet (see COMMENT ON TABLE payment_cancellation in migration 0008).
+// Request to cancel a payment, resolved through its approval (D-15). A trigger allows a
+// single approved cancellation per payment (migration 0014).
 export const paymentCancellation = pgTable(
   'payment_cancellation',
   {

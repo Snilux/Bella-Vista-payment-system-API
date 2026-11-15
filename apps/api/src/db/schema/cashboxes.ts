@@ -71,8 +71,8 @@ export const handoverFolioSeq = pgSequence('handover_folio_seq');
 // Cash a block or support cashbox hands over to the committee cashbox (the destination is
 // always the committee box). Its status and difference are derived in v_handover. The source
 // cashbox only goes down by received_amount; a shortfall stays in it until an approved
-// adjustment (D-16). TODO(block 7): a trigger must require the source cashbox to be of type
-// block or support; it is not enforced yet (see COMMENT ON TABLE handover in migration 0010).
+// adjustment (D-16). A trigger requires the source cashbox to be of type block or support
+// (migration 0014).
 export const handover = pgTable(
   'handover',
   {

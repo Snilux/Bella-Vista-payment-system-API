@@ -25,7 +25,7 @@ export const closingFolioSeq = pgSequence('closing_folio_seq');
 // difference and status are derived in v_closing; counted_cash null = draft. A monthly
 // closing covers a whole calendar month; an extraordinary one any range (e.g. the handover
 // record when a block leader changes, D-08). Closing it locks the period (D-14).
-// TODO(block 7): the closed-period trigger on money tables is not enforced yet.
+// The closed-period trigger on money tables is in migration 0014.
 export const closing = pgTable(
   'closing',
   {
