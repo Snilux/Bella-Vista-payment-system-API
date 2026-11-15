@@ -34,3 +34,5 @@ export const feeType = pgEnum('fee_type', ['opening', 'reconnection', 'repair', 
 export const cashboxType = pgEnum('cashbox_type', ['block', 'committee', 'support']);
 
 export const receiptType = pgEnum('receipt_type', ['original', 'replacement']);
+
+export const salaryFrequency = pgEnum('salary_frequency', ['weekly', 'biweekly', 'monthly']);

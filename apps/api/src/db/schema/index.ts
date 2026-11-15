@@ -4,6 +4,7 @@ export * from './agreement.js';
 export * from './approval.js';
 export * from './billing.js';
 export * from './cashboxes.js';
+export * from './committee.js';
 export * from './connections.js';
 export * from './enums.js';
 export * from './organization.js';

@@ -147,6 +147,14 @@ Lo que ve el usuario final (mensajes de error, recibos, fechas y montos con form
 | `periodo_inicio_cobro`           | `billing_start_period`               |
 | `periodo_desde` / `periodo_hasta`| `period_from` / `period_to`          |
 | `nuevo_titular_id`               | `new_holder_id`                      |
+| `concepto` (columna de ingreso)  | `concept`                            |
+| `descripcion`                    | `description`                        |
+| `es_salario_fontanero`           | `is_plumber_salary`                  |
+| `fecha_pago`                     | `paid_on`                            |
+| `motivo_rechazo`                 | `rejection_reason`                   |
+| `periodicidad`                   | `frequency`                          |
+| `periodo_inicio`                 | `period_start`                       |
+| `categoria_id`, `gasto_id`, `fontanero_id`, `fontanero_salario_id` | `category_id`, `expense_id`, `plumber_id`, `plumber_salary_id` |
 
 Las columnas `*_en` de tipo `date` (no `timestamptz`) terminan en `_on`, igual que las `fecha_*`: `cancelada_en` → `cancelled_on`. La regla `_en` → `_at` es para timestamps.
 
@@ -165,7 +173,7 @@ Las columnas `*_en` de tipo `date` (no `timestamptz`) terminan en `_on`, igual q
 | tipo de corte: mensual, extraordinario                                                   | `monthly`, `extraordinary`                                                             |
 | tipo de concepto (`fee_type`): apertura, reinstalacion, reparacion, otro                 | `opening`, `reconnection`, `repair`, `other`                                           |
 | tipo de recibo (`receipt_type`): original, reposicion                                    | `original`, `replacement`                                                              |
-| periodicidad: semanal, quincenal, mensual                                                | `weekly`, `biweekly`, `monthly`                                                        |
+| periodicidad (`salary_frequency`): semanal, quincenal, mensual                           | `weekly`, `biweekly`, `monthly`                                                        |
 | resultado de acuerdo: aprobado_mayoria, rechazado                                        | `approved_by_majority`, `rejected`                                                     |
 | resultado de autorización: autorizada, rechazada                                         | `approved`, `rejected`                                                                 |
 | tipo de solicitud de cambio: baja, cambio_titular                                        | `deactivation`, `holder_change`                                                        |
