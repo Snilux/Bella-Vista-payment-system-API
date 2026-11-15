@@ -1,8 +1,17 @@
 import { sql } from 'drizzle-orm';
-import { type AnyPgColumn, check, date, pgTable, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  type AnyPgColumn,
+  check,
+  date,
+  index,
+  pgSequence,
+  pgTable,
+  text,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import { userAccount } from './access.js';
 import { approval } from './approval.js';
-import { createdAt, createdBy, fk, id, money } from './columns.js';
+import { createdAt, createdBy, fk, folioDefault, id, money, timestamptz } from './columns.js';
 import { cashboxType } from './enums.js';
 import { block, person } from './organization.js';
 
@@ -54,4 +63,50 @@ export const openingBalance = pgTable(
     createdAt: createdAt(),
   },
   (t) => [check('opening_balance_amount_positive', sql`${t.amount} > 0`)],
+);
+
+export const handoverFolioSeq = pgSequence('handover_folio_seq');
+
+// Cash a block or support cashbox hands over to the committee cashbox (the destination is
+// always the committee box). Its status and difference are derived in v_handover. The source
+// cashbox only goes down by received_amount; a shortfall stays in it until an approved
+// adjustment (D-16). TODO(block 7): a trigger must require the source cashbox to be of type
+// block or support; it is not enforced yet (see COMMENT ON TABLE handover in migration 0010).
+export const handover = pgTable(
+  'handover',
+  {
+    id: id(),
+    folio: text()
+      .notNull()
+      .unique('handover_folio_unique')
+      .default(folioDefault('EN', 'handover_folio_seq')),
+    sourceCashboxId: fk()
+      .notNull()
+      .references((): AnyPgColumn => cashbox.id),
+    declaredAmount: money().notNull(),
+    date: date({ mode: 'string' }).notNull(),
+    notes: text(),
+    withdrawnAt: timestamptz(),
+    receivedAmount: money(),
+    confirmedAt: timestamptz(),
+    confirmedBy: fk().references(userAccountId),
+    createdBy: createdBy(userAccountId),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('handover_source_cashbox_id_idx').on(t.sourceCashboxId),
+    check('handover_declared_amount_positive', sql`${t.declaredAmount} > 0`),
+    // Zero is allowed: the treasurer may receive none of the declared cash (D-16).
+    check('handover_received_amount_not_negative', sql`${t.receivedAmount} >= 0`),
+    // A withdrawn handover cannot be confirmed, and a confirmed one cannot be withdrawn.
+    check(
+      'handover_not_withdrawn_and_confirmed',
+      sql`${t.withdrawnAt} IS NULL OR ${t.confirmedAt} IS NULL`,
+    ),
+    // Confirmation data (amount received, when and by whom) is recorded all at once.
+    check(
+      'handover_confirmation_complete',
+      sql`num_nonnulls(${t.receivedAmount}, ${t.confirmedAt}, ${t.confirmedBy}) IN (0, 3)`,
+    ),
+  ],
 );

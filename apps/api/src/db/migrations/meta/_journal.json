@@ -64,6 +64,20 @@
       "when": 1794717064630,
       "tag": "0008_cashboxes_billing_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794718229123,
+      "tag": "0009_handovers_committee",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794718229808,
+      "tag": "0010_handovers_committee_rules",
+      "breakpoints": true
     }
   ]
 }

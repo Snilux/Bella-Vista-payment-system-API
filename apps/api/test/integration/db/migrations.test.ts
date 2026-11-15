@@ -45,6 +45,15 @@ const expectedTables = [
   'payment_charge',
   'paper_receipt',
   'payment_cancellation',
+  // Block 5: handovers and committee
+  'handover',
+  'income',
+  'expense_category',
+  'expense',
+  'expense_refund',
+  'plumber',
+  'plumber_salary',
+  'plumber_payment',
 ];
 
 describe.skipIf(!testDatabaseUrl)('migrations from scratch', () => {
