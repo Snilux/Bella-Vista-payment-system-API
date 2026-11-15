@@ -1,3 +1,8 @@
+import { randomBytes } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import postgres from 'postgres';
 import { afterAll, expect } from 'vitest';
 import { createDb, type Transaction } from '../../../src/db/client.js';
 import {
@@ -14,6 +19,40 @@ import {
 // Every case runs inside a transaction that is always rolled back.
 
 export const testDatabaseUrl = process.env.DATABASE_URL_TEST;
+
+export const migrationsFolder = fileURLToPath(
+  new URL('../../../src/db/migrations', import.meta.url),
+);
+
+/** Applies every migration in `migrationsFolder` to the database at `url`. */
+export async function migrateDatabase(url: string): Promise<void> {
+  const client = postgres(url, { max: 1, onnotice: () => {} });
+  try {
+    await migrate(drizzle({ client }), { migrationsFolder });
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * Creates a new, empty database on the DATABASE_URL_TEST server, passes its URL to `fn` and
+ * drops it afterwards. For tests that must commit data or start from nothing without
+ * touching the shared test database.
+ */
+export async function withFreshDatabase(fn: (url: string) => Promise<void>): Promise<void> {
+  const adminUrl = new URL(testDatabaseUrl ?? '');
+  const dbName = `agua_test_tmp_${randomBytes(4).toString('hex')}`;
+  const freshUrl = new URL(adminUrl);
+  freshUrl.pathname = `/${dbName}`;
+  const admin = postgres(adminUrl.toString(), { max: 1, onnotice: () => {} });
+  try {
+    await admin.unsafe(`CREATE DATABASE ${dbName}`);
+    await fn(freshUrl.toString());
+  } finally {
+    await admin.unsafe(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
+    await admin.end();
+  }
+}
 
 class Rollback extends Error {}
 

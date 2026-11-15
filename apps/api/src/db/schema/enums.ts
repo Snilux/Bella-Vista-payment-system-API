@@ -30,3 +30,7 @@ export const approvalResult = pgEnum('approval_result', ['approved', 'rejected']
 export const unitChangeType = pgEnum('unit_change_type', ['deactivation', 'holder_change']);
 
 export const feeType = pgEnum('fee_type', ['opening', 'reconnection', 'repair', 'other']);
+
+export const cashboxType = pgEnum('cashbox_type', ['block', 'committee', 'support']);
+
+export const receiptType = pgEnum('receipt_type', ['original', 'replacement']);
