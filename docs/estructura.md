@@ -75,7 +75,7 @@ Fuente: documento 3.1 de Notion. **Antes de cada bloque, revisa 3.1 en Notion; s
 | 3. Tarifas y conceptos | tarifa, concepto, concepto_importe, cargo_extraordinario | Cargo extraordinario con más de un destino; dos aperturas vigentes para la misma solicitud; tarifa con importe 0 | **Hecho** |
 | 4. Cajas y cobranza | caja, saldo_inicial, pago, pago_mes, periodo_cubierto, pago_concepto, recibo_papel, pago_cancelacion | Mismo mes pagado dos veces en una unidad; folio de papel repetido en la misma caja; dos recibos originales para un pago; segunda caja del comité; caja de manzana sin manzana; misma clave de idempotencia | **Hecho** |
 | 5. Entregas y comité | entrega, ingreso, categoria_gasto, gasto, gasto_reintegro, fontanero, fontanero_salario, fontanero_pago | Entrega retirada y confirmada a la vez; dos categorías de salario del fontanero; mismo periodo del fontanero pagado dos veces | **Hecho** |
-| 6. Cortes y control | corte, aclaracion, bitacora, idempotencia | Dos cortes mensuales de la misma caja y mes; aclaración ligada a entrega y corte a la vez | Pendiente |
+| 6. Cortes y control | corte, aclaracion, bitacora, idempotencia | Dos cortes mensuales de la misma caja y mes; aclaración ligada a entrega y corte a la vez | **Hecho** |
 | 7. Vistas, triggers y permisos | Vistas de [modelo-datos.md](modelo-datos.md#vistas); triggers; usuario de BD de la API | Ver abajo | Pendiente |
 | 8. Arranque inicial | Script `pnpm db:seed` (D-27) y datos de desarrollo `pnpm db:seed:dev` | Ver abajo | Pendiente |
 
