@@ -187,6 +187,20 @@ Las columnas `*_en` de tipo `date` (no `timestamptz`) terminan en `_on`, igual q
 | tipo de solicitud de cambio: baja, cambio_titular                                        | `deactivation`, `holder_change`                                                        |
 | tipo de autorización: asignacion_cargo, tarifa, salario_fontanero, saldo_inicial, baja_unidad, cambio_titular, cancelacion_pago, aclaracion, reintegro_gasto | `role_assignment`, `rate`, `plumber_salary`, `opening_balance`, `unit_deactivation`, `holder_change`, `payment_cancellation`, `adjustment`, `expense_refund` |
 
+## Estados calculados en vistas
+
+No se guardan: las vistas los derivan de las fechas de cada hecho (columna `status`, texto).
+
+| Español | Inglés |
+| --- | --- |
+| toma (`v_connection`): activa, suspendida, baja | `active`, `suspended`, `deactivated` |
+| solicitud de toma (`v_connection_request`): solicitada, aprobada pendiente de pago, pendiente de instalación, rechazada, cancelada, instalada | `requested`, `approved_pending_payment`, `pending_installation`, `rejected`, `cancelled`, `installed` |
+| unidad (`v_unit`): pendiente de activación, activa, suspendida, baja | `pending_activation`, `active`, `suspended`, `deactivated` |
+| entrega (`v_handover`): pendiente, retirada, confirmada, con diferencia, aclarada | `pending`, `withdrawn`, `confirmed`, `with_difference`, `adjusted` |
+| gasto (`v_expense`): pendiente de pago, pagado, rechazado, reintegrado | `pending_payment`, `paid`, `rejected`, `refunded` |
+| corte (`v_closing`): borrador, contado, revisado, cerrado | `draft`, `counted`, `reviewed`, `closed` |
+| tipo de movimiento de caja (`v_cashbox_movement.kind`): saldo inicial, pago, cancelación de pago, entrega (salida), entrega (entrada), ingreso, gasto, reintegro, aclaración | `opening_balance`, `payment`, `payment_cancellation`, `handover_out`, `handover_in`, `income`, `expense`, `expense_refund`, `adjustment` |
+
 ## Conceptos de dominio
 
 | Español                     | Inglés               |
