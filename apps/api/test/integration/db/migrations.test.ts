@@ -99,6 +99,16 @@ describe.skipIf(!testDatabaseUrl)('migrations from scratch', () => {
         const views = await fresh<{ table_name: string }[]>`
           SELECT table_name FROM information_schema.views WHERE table_schema = 'public'`;
         expect(views.map((row) => row.table_name).sort()).toEqual([...expectedViews].sort());
+
+        // Block 7: the API role exists and can read every view.
+        const [role] = await fresh<{ exists: boolean }[]>`
+          SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agua_api') AS exists`;
+        expect(role?.exists).toBe(true);
+        const denied = await fresh<{ table_name: string }[]>`
+          SELECT table_name FROM information_schema.views
+          WHERE table_schema = 'public'
+            AND NOT has_table_privilege('agua_api', format('%I.%I', table_schema, table_name), 'SELECT')`;
+        expect(denied).toEqual([]);
       } finally {
         await fresh.end();
       }
