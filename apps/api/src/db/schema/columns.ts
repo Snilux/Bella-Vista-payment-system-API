@@ -11,6 +11,12 @@ export const id = () => bigint({ mode: 'number' }).primaryKey().generatedAlwaysA
 /** Foreign key column holding a `bigint` id. */
 export const fk = () => bigint({ mode: 'number' });
 
+/**
+ * Money in cents: `bigint` in the DB, integer `number` in TS (safe up to 2^53 cents, far
+ * beyond any amount this system handles).
+ */
+export const money = () => bigint({ mode: 'number' });
+
 export const timestamptz = () => timestamp({ withTimezone: true, mode: 'date' });
 
 export const createdAt = () => timestamptz().notNull().defaultNow();
@@ -34,3 +40,6 @@ export const folioDefault = (prefix: string, sequence: string) =>
   sql.raw(
     `'${prefix}-' || to_char(now() AT TIME ZONE 'America/Mexico_City', 'YYYYMM') || '-' || lpad(nextval('${sequence}')::text, 6, '0')`,
   );
+
+/** CHECK expression: a period column holds the first day of a month. */
+export const firstOfMonth = (column: AnyPgColumn) => sql`extract(day from ${column}) = 1`;

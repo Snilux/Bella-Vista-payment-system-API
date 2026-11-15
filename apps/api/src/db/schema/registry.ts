@@ -13,15 +13,12 @@ import {
 import { userAccount } from './access.js';
 import { agreement } from './agreement.js';
 import { approval } from './approval.js';
-import { createdAt, createdBy, fk, folioDefault, id } from './columns.js';
+import { createdAt, createdBy, firstOfMonth, fk, folioDefault, id } from './columns.js';
 import { connection } from './connections.js';
 import { unitChangeType } from './enums.js';
 import { person } from './organization.js';
 
 const userAccountId = (): AnyPgColumn => userAccount.id;
-
-/** CHECK expression: a period column holds the first day of a month. */
-const firstOfMonth = (column: AnyPgColumn) => sql`extract(day from ${column}) = 1`;
 
 export const unitFolioSeq = pgSequence('unit_folio_seq');
 
