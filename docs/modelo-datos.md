@@ -127,9 +127,32 @@ Solo para habilitar restricciones únicas, protegida con FK compuestas: `periodo
 | Usuario | Uso | Permisos |
 | --- | --- | --- |
 | `agua` (dueño) | Migraciones (`DATABASE_URL_MIGRACIONES`) | Todo |
-| `agua_api` | La API en ejecución (`DATABASE_URL`) | SELECT en todo; INSERT en todas las tablas; UPDATE solo en columnas de estado (confirmación de entrega, pago y rechazo de gasto, revisión y cierre de corte, resolución de autorización, cuenta de usuario, fechas de baja e historiales); DELETE solo en `periodo_cubierto`, `token_refresco` e `idempotencia`. Sin UPDATE ni DELETE en pago, pago_mes, recibo_papel, ingreso y bitacora |
+| `agua_api` | La API en ejecución (`DATABASE_URL`) | SELECT en todo; INSERT en todas las tablas; UPDATE solo en columnas de estado (confirmación de entrega, pago y rechazo de gasto, revisión y cierre de corte, resolución de autorización, cuenta de usuario, fechas de baja e historiales) y en los datos de contacto: `persona.telefono`, `persona.distintivo` y `fontanero.telefono`, cada cambio registrado en la bitácora; DELETE solo en `periodo_cubierto`, `token_refresco` e `idempotencia`. Sin UPDATE ni DELETE en pago, pago_mes, recibo_papel, ingreso y bitacora, ni en el resto de las columnas de persona; sin DELETE en persona ni fontanero |
 
 Así la regla de que el dinero no se edita se cumple en la base de datos y no solo en el código. Se implementa en el bloque 7 ([estructura.md](estructura.md#plan-de-implementación)).
+
+Columnas con UPDATE para `agua_api` (migración 0015):
+
+| Tabla | Columnas |
+| --- | --- |
+| `autorizacion` | resultado, resuelto_por, resuelto_en, motivo_resolucion |
+| `entrega` | retirada_en, importe_recibido, confirmada_en, confirmada_por |
+| `gasto` | fecha_pago, rechazado_en, motivo_rechazo |
+| `corte` | efectivo_contado, observaciones, revisado_por, revisado_en, cerrado_por, cerrado_en |
+| `usuario` | contrasena_hash, debe_cambiar_contrasena, desactivado_en, bloqueado_hasta, intentos_fallidos |
+| `token_refresco` | revocado_en, reemplazado_por |
+| `asignacion_cargo` | fecha_fin |
+| `toma` | fecha_baja, motivo_baja |
+| `unidad` | fecha_activacion, periodo_inicio_cobro, fecha_baja |
+| `solicitud_toma` | acuerdo_id, motivo_resolucion, cancelada_en, motivo_cancelacion |
+| `toma_manzana`, `unidad_titular` | hasta |
+| `suspension` | periodo_hasta |
+| `cargo_extraordinario` | cancelado_en |
+| `seccion`, `manzana` | activa |
+| `persona` | telefono, distintivo (con registro en bitácora) |
+| `fontanero` | telefono (con registro en bitácora), activo |
+
+El registro en bitácora de los datos de contacto lo hace la propia base con un trigger: la API indica en cada transacción la cuenta que actúa (`SET LOCAL app.user_account_id`) y, sin ella, el cambio se rechaza.
 
 ## Orden de creación y arranque
 
