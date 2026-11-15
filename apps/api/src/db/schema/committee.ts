@@ -65,9 +65,8 @@ export const expenseCategory = pgTable(
 
 // Committee expense (D-17). Its status and effective amount are derived in v_expense. A
 // plumber payment has no amount or agreement of its own: both come from plumber_salary.
-// TODO(block 7): a deferred trigger must require amount and agreement_id unless the expense
-// has a plumber_payment (inserted after the expense); see COMMENT ON TABLE expense in
-// migration 0010.
+// A deferred trigger requires amount and agreement_id unless the expense has a
+// plumber_payment, which is inserted after it (migration 0014).
 export const expense = pgTable(
   'expense',
   {

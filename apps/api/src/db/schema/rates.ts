@@ -20,9 +20,7 @@ import { unit } from './registry.js';
 const userAccountId = (): AnyPgColumn => userAccount.id;
 
 // Monthly fee in force from effective_period (always day 1). Its status is derived from the
-// approval. TODO(block 7): a trigger on approval resolution must reject a second approved
-// rate for the same effective_period; it is not enforced yet (see COMMENT ON TABLE rate in
-// migration 0006).
+// approval. A trigger allows a single approved rate per effective_period (migration 0014).
 export const rate = pgTable(
   'rate',
   {
