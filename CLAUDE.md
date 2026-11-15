@@ -21,7 +21,7 @@ Read `docs/README.md` first. The business rules in `docs/decisiones.md` override
 
 ## Environment and commands
 
-You normally work **inside the Dev Container** (`api` service of docker-compose): Node, pnpm and Git are there, the database answers on `db:5432` and `DATABASE_URL` is already set. There is no Docker inside the container: do not run `pnpm docker:*`.
+You normally work **inside the Dev Container** (`api` service of docker-compose): Node, pnpm and Git are there, the database answers on `db:5432` and the connections are already set: `DATABASE_URL` (the API, user `agua_api`) and `DATABASE_URL_MIGRATIONS` (`pnpm db:migrate`, the owner). There is no Docker inside the container: do not run `pnpm docker:*`.
 
 | Command | What it does |
 |---|---|

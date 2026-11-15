@@ -17,7 +17,7 @@ import { role } from './enums.js';
 // Audit log (CU-25): who did what on which row, with the row before and after. The author is
 // user_account_id and role is the account's role at that moment (it never changes, D-22, but
 // is kept so the log reads on its own). is_technical marks superadmin and bootstrap entries.
-// TODO(block 7): insert-only is enforced with the grants of the API database user.
+// Insert-only: the API database user has no UPDATE or DELETE on it (migration 0015).
 export const auditLog = pgTable(
   'audit_log',
   {

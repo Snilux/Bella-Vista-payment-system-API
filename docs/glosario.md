@@ -201,6 +201,12 @@ No se guardan: las vistas los derivan de las fechas de cada hecho (columna `stat
 | corte (`v_closing`): borrador, contado, revisado, cerrado | `draft`, `counted`, `reviewed`, `closed` |
 | tipo de movimiento de caja (`v_cashbox_movement.kind`): saldo inicial, pago, cancelación de pago, entrega (salida), entrega (entrada), ingreso, gasto, reintegro, aclaración | `opening_balance`, `payment`, `payment_cancellation`, `handover_out`, `handover_in`, `income`, `expense`, `expense_refund`, `adjustment` |
 
+## Variables de entorno
+
+| Español | Inglés |
+| --- | --- |
+| `DATABASE_URL_MIGRACIONES` | `DATABASE_URL_MIGRATIONS` |
+
 ## Conceptos de dominio
 
 | Español                     | Inglés               |
