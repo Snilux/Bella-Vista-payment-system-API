@@ -96,6 +96,9 @@ Lo que ve el usuario final (mensajes de error, recibos, fechas y montos con form
 | `fecha_inicio` / `fecha_fin`     | `start_date` / `end_date`            |
 | `desde` / `hasta`                | `valid_from` / `valid_to`            |
 | `vigente_desde`                  | `effective_from`                     |
+| `periodo_vigencia`               | `effective_period`                   |
+| `fecha_aprobacion`               | `approved_on`                        |
+| `fecha_cargo`                    | `charged_on`                         |
 | `motivo`                         | `reason`                             |
 | `observaciones`                  | `notes`                              |
 | `referencia_comprobante`         | `voucher_reference`                  |
@@ -133,7 +136,7 @@ Lo que ve el usuario final (mensajes de error, recibos, fechas y montos con form
 | `motivo_resolucion`              | `resolution_reason`                  |
 | `solicitante_id`                 | `applicant_id`                       |
 | `fecha_solicitud`                | `requested_on`                       |
-| `cancelada_en` (date)            | `cancelled_on`                       |
+| `cancelada_en`, `cancelado_en` (date) | `cancelled_on`                  |
 | `motivo_cancelacion`             | `cancellation_reason`                |
 | `motivo_baja`                    | `deactivation_reason`                |
 | `solicitud_toma_id`, `toma_id`, `unidad_id`, `acuerdo_id` | `connection_request_id`, `connection_id`, `unit_id`, `agreement_id` |
@@ -157,7 +160,7 @@ Las columnas `*_en` de tipo `date` (no `timestamptz`) terminan en `_on`, igual q
 | cargo: superadmin, presidente, tesorero, secretario, vocal, jefe_manzana                 | `superadmin`, `president`, `treasurer`, `secretary`, `member`, `block_leader`          |
 | tipo de caja: manzana, comite, apoyo                                                     | `block`, `committee`, `support`                                                        |
 | tipo de corte: mensual, extraordinario                                                   | `monthly`, `extraordinary`                                                             |
-| tipo de concepto: apertura, reinstalacion, reparacion, otro                              | `opening`, `reconnection`, `repair`, `other`                                           |
+| tipo de concepto (`fee_type`): apertura, reinstalacion, reparacion, otro                 | `opening`, `reconnection`, `repair`, `other`                                           |
 | tipo de recibo: original, reposicion                                                     | `original`, `replacement`                                                              |
 | periodicidad: semanal, quincenal, mensual                                                | `weekly`, `biweekly`, `monthly`                                                        |
 | resultado de acuerdo: aprobado_mayoria, rechazado                                        | `approved_by_majority`, `rejected`                                                     |

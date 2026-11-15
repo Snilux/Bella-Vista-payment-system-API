@@ -36,6 +36,20 @@
       "when": 1794548800484,
       "tag": "0004_registry_history_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794714807863,
+      "tag": "0005_rates_fees",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794714815274,
+      "tag": "0006_rates_fees_rules",
+      "breakpoints": true
     }
   ]
 }

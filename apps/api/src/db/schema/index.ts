@@ -5,4 +5,5 @@ export * from './approval.js';
 export * from './connections.js';
 export * from './enums.js';
 export * from './organization.js';
+export * from './rates.js';
 export * from './registry.js';
