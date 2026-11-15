@@ -140,6 +140,9 @@ Lo que ve el usuario final (mensajes de error, recibos, fechas y montos con form
 | `motivo_cancelacion`             | `cancellation_reason`                |
 | `motivo_baja`                    | `deactivation_reason`                |
 | `solicitud_toma_id`, `toma_id`, `unidad_id`, `acuerdo_id` | `connection_request_id`, `connection_id`, `unit_id`, `agreement_id` |
+| `pago_id`, `caja_id`, `tarifa_id`, `concepto_id`, `cargo_extraordinario_id` | `payment_id`, `cashbox_id`, `rate_id`, `fee_id`, `extra_charge_id` |
+| `folio_papel`                    | `paper_folio`                        |
+| `fecha` (recibo_papel, timestamptz) | `issued_at`                       |
 | `referencia`                     | `reference`                          |
 | `periodo_inicio_cobro`           | `billing_start_period`               |
 | `periodo_desde` / `periodo_hasta`| `period_from` / `period_to`          |
@@ -158,10 +161,10 @@ Las columnas `*_en` de tipo `date` (no `timestamptz`) terminan en `_on`, igual q
 | Español                                                                                  | Inglés                                                                                 |
 | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | cargo: superadmin, presidente, tesorero, secretario, vocal, jefe_manzana                 | `superadmin`, `president`, `treasurer`, `secretary`, `member`, `block_leader`          |
-| tipo de caja: manzana, comite, apoyo                                                     | `block`, `committee`, `support`                                                        |
+| tipo de caja (`cashbox_type`): manzana, comite, apoyo                                    | `block`, `committee`, `support`                                                        |
 | tipo de corte: mensual, extraordinario                                                   | `monthly`, `extraordinary`                                                             |
 | tipo de concepto (`fee_type`): apertura, reinstalacion, reparacion, otro                 | `opening`, `reconnection`, `repair`, `other`                                           |
-| tipo de recibo: original, reposicion                                                     | `original`, `replacement`                                                              |
+| tipo de recibo (`receipt_type`): original, reposicion                                    | `original`, `replacement`                                                              |
 | periodicidad: semanal, quincenal, mensual                                                | `weekly`, `biweekly`, `monthly`                                                        |
 | resultado de acuerdo: aprobado_mayoria, rechazado                                        | `approved_by_majority`, `rejected`                                                     |
 | resultado de autorización: autorizada, rechazada                                         | `approved`, `rejected`                                                                 |

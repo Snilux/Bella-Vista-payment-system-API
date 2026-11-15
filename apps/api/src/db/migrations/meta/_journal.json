@@ -50,6 +50,20 @@
       "when": 1794714815274,
       "tag": "0006_rates_fees_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794717064080,
+      "tag": "0007_cashboxes_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794717064630,
+      "tag": "0008_cashboxes_billing_rules",
+      "breakpoints": true
     }
   ]
 }
