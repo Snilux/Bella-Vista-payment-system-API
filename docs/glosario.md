@@ -155,6 +155,14 @@ Lo que ve el usuario final (mensajes de error, recibos, fechas y montos con form
 | `periodicidad`                   | `frequency`                          |
 | `periodo_inicio`                 | `period_start`                       |
 | `categoria_id`, `gasto_id`, `fontanero_id`, `fontanero_salario_id` | `category_id`, `expense_id`, `plumber_id`, `plumber_salary_id` |
+| `fecha_desde` / `fecha_hasta`    | `date_from` / `date_to`              |
+| `entrega_id`, `corte_id`         | `handover_id`, `closing_id`          |
+| `accion`                         | `action`                             |
+| `tabla` (columna de bitácora)    | `table_name`                         |
+| `registro_id`                    | `record_id`                          |
+| `clave` (columna de idempotencia)| `key`                                |
+| `ruta`                           | `route`                              |
+| `respuesta`                      | `response`                           |
 
 Las columnas `*_en` de tipo `date` (no `timestamptz`) terminan en `_on`, igual que las `fecha_*`: `cancelada_en` → `cancelled_on`. La regla `_en` → `_at` es para timestamps.
 
@@ -170,7 +178,7 @@ Las columnas `*_en` de tipo `date` (no `timestamptz`) terminan en `_on`, igual q
 | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | cargo: superadmin, presidente, tesorero, secretario, vocal, jefe_manzana                 | `superadmin`, `president`, `treasurer`, `secretary`, `member`, `block_leader`          |
 | tipo de caja (`cashbox_type`): manzana, comite, apoyo                                    | `block`, `committee`, `support`                                                        |
-| tipo de corte: mensual, extraordinario                                                   | `monthly`, `extraordinary`                                                             |
+| tipo de corte (`closing_type`): mensual, extraordinario                                  | `monthly`, `extraordinary`                                                             |
 | tipo de concepto (`fee_type`): apertura, reinstalacion, reparacion, otro                 | `opening`, `reconnection`, `repair`, `other`                                           |
 | tipo de recibo (`receipt_type`): original, reposicion                                    | `original`, `replacement`                                                              |
 | periodicidad (`salary_frequency`): semanal, quincenal, mensual                           | `weekly`, `biweekly`, `monthly`                                                        |
