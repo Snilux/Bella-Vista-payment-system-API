@@ -54,6 +54,11 @@ const expectedTables = [
   'plumber',
   'plumber_salary',
   'plumber_payment',
+  // Block 6: closings and control
+  'closing',
+  'adjustment',
+  'audit_log',
+  'idempotency_key',
 ];
 
 describe.skipIf(!testDatabaseUrl)('migrations from scratch', () => {

@@ -36,3 +36,5 @@ export const cashboxType = pgEnum('cashbox_type', ['block', 'committee', 'suppor
 export const receiptType = pgEnum('receipt_type', ['original', 'replacement']);
 
 export const salaryFrequency = pgEnum('salary_frequency', ['weekly', 'biweekly', 'monthly']);
+
+export const closingType = pgEnum('closing_type', ['monthly', 'extraordinary']);

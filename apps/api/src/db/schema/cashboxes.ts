@@ -7,6 +7,7 @@ import {
   pgSequence,
   pgTable,
   text,
+  unique,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { userAccount } from './access.js';
@@ -94,6 +95,8 @@ export const handover = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
+    // Target of the composite FK from adjustment.
+    unique('handover_id_source_cashbox_id_unique').on(t.id, t.sourceCashboxId),
     index('handover_source_cashbox_id_idx').on(t.sourceCashboxId),
     check('handover_declared_amount_positive', sql`${t.declaredAmount} > 0`),
     // Zero is allowed: the treasurer may receive none of the declared cash (D-16).
