@@ -1,23 +1,43 @@
-import Fastify from 'fastify';
+import { buildApp } from './app.js';
+import { loadEnv } from './config/env.js';
+import { createDb } from './db/client.js';
 
-// Minimal bootstrap, only to verify the environment (Docker, ports, hot reload).
-// The real application will be built in src/app.ts following docs/estructura.md.
-const port = Number(process.env.API_PORT ?? 3000);
+// Process entry point: validates the environment, opens the database pool, builds the app
+// and listens. Shuts down cleanly on SIGINT/SIGTERM (Fastify first, then the pool).
 
-const app = Fastify({
+const env = loadEnv();
+const { db, sql } = createDb(env.DATABASE_URL);
+
+const app = await buildApp({
+  env,
+  db,
   logger: {
-    level: process.env.LOG_LEVEL ?? 'info',
-    ...(process.env.NODE_ENV === 'development' && { transport: { target: 'pino-pretty' } }),
+    level: env.LOG_LEVEL,
+    ...(env.NODE_ENV === 'development' && { transport: { target: 'pino-pretty' } }),
   },
 });
 
-app.get('/health', async () => ({ status: 'ok' }));
-
-const shutdown = async () => {
-  await app.close();
-  process.exit(0);
+let closing = false;
+const shutdown = async (signal: string) => {
+  if (closing) return;
+  closing = true;
+  app.log.info({ signal }, 'shutting down');
+  try {
+    await app.close();
+    await sql.end({ timeout: 5 });
+    process.exit(0);
+  } catch (error) {
+    app.log.error({ err: error }, 'shutdown failed');
+    process.exit(1);
+  }
 };
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.on('SIGINT', () => void shutdown('SIGINT'));
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
 
-await app.listen({ port, host: '0.0.0.0' });
+try {
+  await app.listen({ port: env.API_PORT, host: '0.0.0.0' });
+} catch (error) {
+  app.log.error({ err: error }, 'failed to start');
+  await sql.end({ timeout: 5 });
+  process.exit(1);
+}
