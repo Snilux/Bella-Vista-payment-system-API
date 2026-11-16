@@ -92,6 +92,49 @@ Desde su equipo (DBeaver, TablePlus): `localhost:5432`, usuario `agua`, contrase
 
 La API se conecta como `agua_api`, con permisos limitados. Su contraseña sale **solo** de `DATABASE_URL` en `.env`: cada `pnpm db:migrate` se conecta como el dueño (`DATABASE_URL_MIGRATIONS`), aplica las migraciones y le asigna al rol esa contraseña, también en una base que ya existía (el rol es del servidor, así que sirve igual para `agua` y `agua_test`). Si cambia `DATABASE_URL`, reconstruya el contenedor (*Dev Containers: Rebuild Container*, o `pnpm docker:up` sin Dev Container) para que tome el valor nuevo y ejecute `pnpm db:migrate`. Si `pnpm dev` o `pnpm db:seed:dev` fallan con `password authentication failed for user "agua_api"`, ejecute `pnpm db:migrate`.
 
+## Datos de desarrollo
+
+Con la base migrada, cargue el arranque y los datos de prueba (solo en desarrollo: `pnpm db:seed:dev` se niega con `NODE_ENV=production`):
+
+```bash
+cp arranque.example.json arranque.json   # la primera vez
+pnpm db:seed                             # arranque (D-27): superadministrador y comité
+pnpm db:seed:dev                         # secciones, manzanas, personas, tomas, tarifas, pagos y cuentas
+```
+
+### Cuentas de desarrollo
+
+Todas usan la contraseña `desarrollo-bella-vista` y no piden cambiarla. `pnpm db:seed:dev` también se la asigna al superadministrador del arranque (cada vez que se ejecuta, aunque los datos ya existan).
+
+| Usuario | Cargo | Manzana |
+|---|---|---|
+| `admin` | Superadministrador (el `usuario` de `arranque.json`) | — |
+| `presidente` | Presidente | — |
+| `tesorero` | Tesorero | — |
+| `secretario` | Secretario | — |
+| `vocal` | Vocal | — |
+| `jm.s1m01` | Jefe de manzana | S1-M01 (Sección Centro) |
+| `jm.s1m02` | Jefe de manzana | S1-M02 (Sección Centro) |
+| `jm.s2m01` | Jefe de manzana | S2-M01 (Sección Lomas) |
+
+S2-M02 queda sin jefe a propósito. Si las cuentas de presidente, tesorero o secretario ya las había creado el superadministrador desde la app, `pnpm db:seed:dev` las respeta y conservan su contraseña.
+
+### Probar la API a mano (REST Client)
+
+La carpeta `http/` tiene un archivo por escenario para la extensión **REST Client** (`humao.rest-client`, ya incluida en el Dev Container). Con `pnpm dev` corriendo, abra un archivo y use *Send Request* sobre cada petición, **en orden**: los login guardan su token en una variable que usan las peticiones siguientes. Cada petición indica en un comentario lo que debe responder.
+
+| Archivo | Escenario |
+|---|---|
+| `00-sesion.http` | Salud, login de cada cargo, refresco, cambio de contraseña (y regreso a la de desarrollo), salir |
+| `01-cobro.http` | El jefe busca una familia con adeudo, estado de cuenta, previsualizar, registrar pago, repetirlo con la misma `Idempotency-Key`, meses salteados (`MONTH_ORDER`) y Mi caja |
+| `02-entregas.http` | Entrega del jefe, el tesorero la confirma con faltante, saldo de ambas cajas |
+| `03-autorizaciones.http` | El jefe solicita cancelar el pago de `01`, el presidente lo autoriza y los meses vuelven a vencidos |
+| `04-padron.http` | Persona con homónimo, familia nueva en una toma, solicitud de toma y su cancelación |
+| `05-comite.http` | Acuerdo, tarifa, ingreso, gasto, fontanero, corte mensual y reportes |
+| `06-permisos.http` | Casos que deben fallar: jefe en otra manzana, vocal registrando un gasto, presidente registrando una persona |
+
+Los importes de los comentarios son los de una base recién cargada con `pnpm db:seed:dev` en noviembre de 2026; cambian con la fecha y con lo que ya se haya ejecutado. `01` y `03` se pueden repetir en ese orden (`03` cancela el pago de `01`). El login y el refresco aceptan 10 solicitudes por minuto por IP: si alguna responde 429, espere un minuto.
+
 ## Documentación
 
 - `CLAUDE.md`: contexto y reglas para Claude Code.

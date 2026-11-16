@@ -1,0 +1,118 @@
+# Approvals: the block leader asks to cancel a payment, the president sees the inbox and
+# approves it, and the paid months go back to unpaid (overdue).
+#
+# Run after 01-cobro.http: it cancels the newest payment of "Planta alta" (2025-07 to 2025-09).
+
+@baseUrl = http://localhost:3000/v1
+@password = desarrollo-bella-vista
+
+### Login: block leader of S1-M01
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginLeader
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "jm.s1m01", "password": "{{password}}" }
+
+### Login: president
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginPresident
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "presidente", "password": "{{password}}" }
+
+### Find the family
+# Expected: 200, units[0].reference "Planta alta"
+# @name search
+GET {{baseUrl}}/search?q=planta
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+@unitId = {{search.response.body.$.units[0].id}}
+
+### Its newest payment (the one recorded in 01-cobro.http)
+# Expected: 200 { data: [ { id, folio: "PG-…", total: 24000, cancelled: false, … } ], next }
+# @name payments
+GET {{baseUrl}}/payments?unitId={{unitId}}&limit=1
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+@paymentId = {{payments.response.body.$.data[0].id}}
+
+### The leader asks to cancel it
+# Expected: 201 { payment: { id, cancelled: false, cancellations: [ { status: "pending",
+#   approvalId, reason: "Se capturó en la familia equivocada", resolvedAt: null } ] } }
+# A second request while one is pending → 409 INVALID_STATE.
+# @name requestCancellation
+POST {{baseUrl}}/payments/{{paymentId}}/request-cancellation
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "reason": "Se capturó en la familia equivocada" }
+
+@approvalId = {{requestCancellation.response.body.$.payment.cancellations[0].approvalId}}
+
+### The leader follows their own requests
+# Expected: 200 { approvals: [ { id, type: "payment_cancellation", status: "pending", … } ] }
+# (only the ones this account requested)
+GET {{baseUrl}}/approvals
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### The president's inbox (pending by default)
+# Expected: 200 { approvals: [ { id, type: "payment_cancellation", status: "pending",
+#   reason: "Se capturó en la familia equivocada",
+#   description: "Cancelar el pago PG-… ($240.00)",
+#   requestedBy: { username: "jm.s1m01", role: "block_leader", fullName: "Laura Méndez Ruiz" },
+#   resolvedBy: null } ] }
+GET {{baseUrl}}/approvals?status=pending
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+
+### The leader cannot resolve it
+# Expected: 403 FORBIDDEN "Tu cargo no tiene permiso para esta operación."
+POST {{baseUrl}}/approvals/{{approvalId}}/resolve
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "result": "approved" }
+
+### Reject without a reason
+# Expected: 400 VALIDATION_ERROR, details.issues[0]: { path: "body.reason", message: "Escribe el motivo del rechazo." }
+POST {{baseUrl}}/approvals/{{approvalId}}/resolve
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "result": "rejected" }
+
+### The president approves it
+# Expected: 200 { approval: { id, type: "payment_cancellation", status: "approved",
+#   resolvedBy: { username: "presidente" }, resolutionReason: "Confirmado con el recibo de papel" } }
+POST {{baseUrl}}/approvals/{{approvalId}}/resolve
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "result": "approved", "reason": "Confirmado con el recibo de papel" }
+
+### Resolve it again
+# Expected: 409 APPROVAL_ALREADY_RESOLVED "Esta solicitud ya fue resuelta." details.result: "approved"
+POST {{baseUrl}}/approvals/{{approvalId}}/resolve
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "result": "approved" }
+
+### The payment is cancelled
+# Expected: 200 { payment: { cancelled: true, cancellations: [ { status: "approved", resolvedAt } ] } }
+GET {{baseUrl}}/payments/{{paymentId}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### The months are unpaid again
+# Expected: 200, months 2025-07 to 2025-09 back to
+#   { status: "overdue", baseAmount: 4000, surcharge: 4000, total: 8000, paymentId: null }
+#   and summary.totalDue back to 153000 (fresh seed, November 2026)
+GET {{baseUrl}}/units/{{unitId}}/account-statement
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### The cancellation takes the cash out of the block cashbox
+# Expected: 200 { cashbox: { collected: 230000, … } } (after 02-entregas.http: balance 207000)
+GET {{baseUrl}}/cashboxes/mine
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}

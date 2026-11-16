@@ -1,0 +1,293 @@
+# Committee: rates, an expense, the plumber's pay, the monthly closing and the reports.
+#
+# Run in order. The committee cashbox pays the expense and the plumber: the file first records
+# an income of $500.00 so it has cash even without 02-entregas.http.
+# Run again, three requests fail on purpose: the 2027-01 rate (409 INVALID_STATE "Enero 2027 ya
+# tiene una tarifa autorizada o pendiente de autorizar."), the plumber's pay for this week
+# (409 PERIOD_ALREADY_PAID) and the closing of the previous month (409 INVALID_STATE "Ya existe el
+# corte de Octubre 2026 de esa caja."); change @closingPeriod or the dates to go on.
+
+@baseUrl = http://localhost:3000/v1
+@password = desarrollo-bella-vista
+# Month already finished for the monthly closing (the previous month).
+@closingPeriod = 2026-10
+
+### Login: treasurer
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginTreasurer
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "tesorero", "password": "{{password}}" }
+
+### Login: secretary
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginSecretary
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "secretario", "password": "{{password}}" }
+
+### Login: president
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginPresident
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "presidente", "password": "{{password}}" }
+
+### Login: committee member (vocal)
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginMember
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "vocal", "password": "{{password}}" }
+
+# --- Meeting agreement ----------------------------------------------------------------------
+
+### The secretary records the meeting agreement (rates, expenses and salaries need one)
+# Expected: 201 { agreement: { id, folio: "AC-…", meetingDate: "2026-11-07",
+#   result: "approved_by_majority", votesFor: 58, votesAgainst: 6, abstentions: 2, correctsId: null } }
+# @name agreement
+POST {{baseUrl}}/agreements
+Authorization: Bearer {{loginSecretary.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "meetingDate": "2026-11-07",
+  "topic": "Tarifa 2027, compra de material y salario del fontanero",
+  "result": "approved_by_majority",
+  "votesFor": 58,
+  "votesAgainst": 6,
+  "abstentions": 2,
+  "minutesReference": "Acta del 7 de noviembre de 2026"
+}
+
+@agreementId = {{agreement.response.body.$.agreement.id}}
+
+# --- Rates ----------------------------------------------------------------------------------
+
+### Rate history (every role)
+# Expected: 200 { rates: [ { effectivePeriod: "2026-01", amount: 5000, status: "approved" },
+#   { effectivePeriod: "2025-01", amount: 4000, status: "approved" } ] }
+GET {{baseUrl}}/rates
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+
+### The treasurer registers the 2027 rate
+# Expected: 201 { rate: { id, effectivePeriod: "2027-01", amount: 6000, approvedOn: "2026-11-07",
+#   agreement: { id, folio }, status: "pending", approvalId } }
+# It prices no month until the president approves it (D-20).
+# @name createRate
+POST {{baseUrl}}/rates
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "effectivePeriod": "2027-01",
+  "amount": 6000,
+  "approvedOn": "2026-11-07",
+  "agreementId": {{agreementId}},
+  "reason": "Aumento aprobado en asamblea"
+}
+
+### The president approves the rate
+# Expected: 200 { approval: { type: "rate", status: "approved", resolvedBy: { username: "presidente" } } }
+POST {{baseUrl}}/approvals/{{createRate.response.body.$.rate.approvalId}}/resolve
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "result": "approved" }
+
+### Fees and their amounts
+# Expected: 200 { fees: [ { type: "opening", name: "Apertura de toma", currentAmount: null, amounts: [] }, … ] }
+GET {{baseUrl}}/fees
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+
+# --- Committee cashbox: income and expense --------------------------------------------------
+
+### Income: a donation
+# Expected: 201 { income: { id, folio: "IN-…", concept: "Donativo de la cooperativa", amount: 50000,
+#   date: today, voucherReference: null } }
+POST {{baseUrl}}/incomes
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "concept": "Donativo de la cooperativa", "amount": 50000 }
+
+### Expense categories
+# Expected: 200 { categories: [ { id, name: "Electricidad", isPlumberSalary: false }, …,
+#   { name: "Materiales" }, …, { name: "Salario del fontanero", isPlumberSalary: true }, { name: "Otros" } ] }
+# @name categories
+GET {{baseUrl}}/expense-categories
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+
+### Record an expense (category "Materiales")
+# Expected: 201 { expense: { id, folio: "GA-…", category: { name: "Materiales" }, amount: 15000,
+#   agreement: { id, folio }, status: "pending_payment", paidOn: null, refunds: [] } }
+# @name createExpense
+POST {{baseUrl}}/expenses
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{
+  "categoryId": {{categories.response.body.$.categories[2].id}},
+  "description": "Tubo PVC de 2 pulgadas",
+  "amount": 15000,
+  "agreementId": {{agreementId}},
+  "voucherReference": "Factura 4521"
+}
+
+### Pay the expense (takes the cash out of the committee cashbox)
+# Expected: 200 { expense: { status: "paid", paidOn: today, … } }
+# Without enough cash → 422 INSUFFICIENT_BALANCE.
+POST {{baseUrl}}/expenses/{{createExpense.response.body.$.expense.id}}/pay
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Idempotency-Key: {{$guid}}
+
+### Expenses already paid
+# Expected: 200 { data: [ { folio: "GA-…", status: "paid", … } ], next }
+GET {{baseUrl}}/expenses?status=paid
+Authorization: Bearer {{loginMember.response.body.$.accessToken}}
+
+# --- Plumber --------------------------------------------------------------------------------
+
+### Register the plumber
+# Expected: 201 { plumber: { id, name: "Martín Salgado", phone: "5551004001", active: true,
+#   currentSalary: null, salaries: [], payments: [] } }
+# @name createPlumber
+POST {{baseUrl}}/plumbers
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Martín Salgado", "phone": "5551004001" }
+
+@plumberId = {{createPlumber.response.body.$.plumber.id}}
+
+### His weekly salary (needs the president's approval)
+# Expected: 201 { salary: { id, amount: 5000, frequency: "weekly", effectiveFrom: "2026-11-09",
+#   agreement: { id, folio }, status: "pending", approvalId } }
+# @name createSalary
+POST {{baseUrl}}/plumbers/{{plumberId}}/salaries
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "amount": 5000,
+  "frequency": "weekly",
+  "effectiveFrom": "2026-11-09",
+  "agreementId": {{agreementId}},
+  "reason": "Salario acordado en asamblea"
+}
+
+### The president approves the salary
+# Expected: 200 { approval: { type: "plumber_salary", status: "approved" } }
+POST {{baseUrl}}/approvals/{{createSalary.response.body.$.salary.approvalId}}/resolve
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "result": "approved" }
+
+### Pay the plumber for this week (date omitted = today)
+# Expected: 201 { expense: { folio: "GA-…", category: { name: "Salario del fontanero" }, amount: 5000,
+#   description: "Salario de Martín Salgado, del <Monday> al <Sunday>", status: "paid",
+#   plumberPayment: { plumberId, periodStart, periodEnd } } }
+POST {{baseUrl}}/plumbers/{{plumberId}}/payments
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{}
+
+### Pay the same week again
+# Expected: 409 PERIOD_ALREADY_PAID "El periodo del <Monday> al <Sunday> ya está pagado al fontanero."
+POST {{baseUrl}}/plumbers/{{plumberId}}/payments
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{}
+
+### Plumber's file
+# Expected: 200 { plumber: { currentSalary: { amount: 5000, status: "approved" },
+#   salaries: [ … ], payments: [ { amount: 5000, status: "paid" } ] } }
+GET {{baseUrl}}/plumbers/{{plumberId}}
+Authorization: Bearer {{loginMember.response.body.$.accessToken}}
+
+# --- Monthly closing of the committee cashbox -----------------------------------------------
+
+### The treasurer opens the closing of the previous month (computes the figures)
+# Expected: 201 { closing: { id, folio: "CO-…", cashbox: { type: "committee", label: "Comité" },
+#   type: "monthly", dateFrom: "2026-10-01", dateTo: "2026-10-31", status: "draft",
+#   figures: { startingBalance, payments, handoversIn, incomes, expenses, …, expectedBalance },
+#   countedCash: null, difference: null } }
+# The current month → 400 VALIDATION_ERROR "Solo se hace el corte mensual de un mes que ya terminó."
+# @name openClosing
+POST {{baseUrl}}/closings
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "type": "monthly", "period": "{{closingPeriod}}" }
+
+@closingId = {{openClosing.response.body.$.closing.id}}
+
+### Count the cash (the expected balance: no difference)
+# Expected: 200 { closing: { status: "counted", countedCash, difference: 0 } }
+# A difference without notes → 400 VALIDATION_ERROR
+#   "Hay una diferencia de -$…; escribe las observaciones."
+POST {{baseUrl}}/closings/{{closingId}}/count
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "countedCash": {{openClosing.response.body.$.closing.figures.expectedBalance}} }
+
+### Close before the review
+# Expected: 409 INVALID_STATE "El corte está contado."
+POST {{baseUrl}}/closings/{{closingId}}/close
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+
+### The vocal reviews it
+# Expected: 200 { closing: { status: "reviewed", reviewedBy: { username: "vocal" } } }
+POST {{baseUrl}}/closings/{{closingId}}/review
+Authorization: Bearer {{loginMember.response.body.$.accessToken}}
+
+### The president closes it (locks the month for this cashbox)
+# Expected: 200 { closing: { status: "closed", closedBy: { username: "presidente" }, closedAt } }
+# If the previous month of the cashbox has movements and is not closed → 409 INVALID_STATE
+#   "Primero hay que cerrar el corte de <mes> de esta caja."
+POST {{baseUrl}}/closings/{{closingId}}/close
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+
+### Closed closings
+# Expected: 200 { data: [ { folio: "CO-…", status: "closed", … } ], next }
+GET {{baseUrl}}/closings?status=closed
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+
+### Extraordinary closing of today (from the first of the month to today)
+# Expected: 201 { closing: { type: "extraordinary", dateFrom: "2026-11-01", dateTo: today,
+#   status: "draft", figures: { handoversIn, incomes: 50000, expenses: -20000, …, expectedBalance } } }
+POST {{baseUrl}}/closings
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "type": "extraordinary" }
+
+# --- Reports --------------------------------------------------------------------------------
+
+### Block registry report (S1-M01, January to November 2026)
+# Expected: 200 { report: { range: { from: "2026-01", to: "2026-11", dateFrom, dateTo, debtAsOf },
+#   block: { code: "S1-M01", section: { code: "S1" }, leader: { fullName: "Laura Méndez Ruiz" } },
+#   connections: [ { address: "Av. Hidalgo 12", units: [ { holder, payments, debtMonths, debt, advances } ] } ] } }
+GET {{baseUrl}}/reports/block?blockId=1&from=2026-01&to=2026-11
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+
+### Community report (current month)
+# Expected: 200 { report: { range, sections: [ { code: "S1", blocks: [ { code: "S1-M01", activeUnits,
+#   collected, totalDue, handedOver, cashWithLeader, leaderName } ], totals } ],
+#   supportCashboxes: [], committee: { handoversReceived, incomes: 50000,
+#   expensesByCategory: [ { name: "Materiales", amount: 15000 }, { name: "Salario del fontanero", amount: 5000 } ],
+#   expenses: 20000, balance }, totals } }
+GET {{baseUrl}}/reports/community
+Authorization: Bearer {{loginMember.response.body.$.accessToken}}

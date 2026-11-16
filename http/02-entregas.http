@@ -1,0 +1,96 @@
+# Handovers: the block leader prepares a handover of $240.00 and the treasurer confirms it
+# receiving $230.00: the $10.00 shortfall stays in the block cashbox (D-16).
+#
+# Run in order. Expected balances follow 01-cobro.http on a fresh `pnpm db:seed:dev`.
+
+@baseUrl = http://localhost:3000/v1
+@password = desarrollo-bella-vista
+
+### Login: block leader of S1-M01
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginLeader
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "jm.s1m01", "password": "{{password}}" }
+
+### Login: treasurer
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginTreasurer
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "tesorero", "password": "{{password}}" }
+
+### Block cashbox before the handover
+# Expected: 200 { cashbox: { cashbox: { label: "S1-M01" }, balance: 254000, pendingHandover: 0,
+#   available: 254000, … } }
+GET {{baseUrl}}/cashboxes/mine
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### The leader prepares the handover
+# Expected: 201 { handover: { id, folio: "EN-…", cashbox: { type: "block", label: "S1-M01" },
+#   declaredAmount: 24000, receivedAmount: null, difference: null, status: "pending",
+#   preparedBy: { username: "jm.s1m01" }, confirmedBy: null } }
+# More than the available cash → 422 INSUFFICIENT_BALANCE.
+# @name prepareHandover
+POST {{baseUrl}}/handovers
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "declaredAmount": 24000, "notes": "Cobros de la semana" }
+
+### Block cashbox with the handover pending
+# Expected: 200 { cashbox: { balance: 254000, pendingHandover: 24000, available: 230000, … } }
+GET {{baseUrl}}/cashboxes/mine
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### The treasurer sees the pending handovers
+# Expected: 200 { data: [ { id, folio: "EN-…", declaredAmount: 24000, status: "pending", … } ], next: null }
+GET {{baseUrl}}/handovers?status=pending
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+
+### The treasurer confirms receiving $230.00
+# Expected: 200 { handover: { declaredAmount: 24000, receivedAmount: 23000, difference: 1000,
+#   status: "with_difference", confirmedBy: { username: "tesorero" }, confirmedAt } }
+POST {{baseUrl}}/handovers/{{prepareHandover.response.body.$.handover.id}}/confirm
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "receivedAmount": 23000 }
+
+### Confirm it again
+# Expected: 409 INVALID_STATE (the handover is no longer pending)
+POST {{baseUrl}}/handovers/{{prepareHandover.response.body.$.handover.id}}/confirm
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "receivedAmount": 23000 }
+
+### Block cashbox after the handover: the shortfall stays here
+# Expected: 200 { cashbox: { balance: 231000, collected: 254000, handedOver: 23000,
+#   pendingHandover: 0, available: 231000, … } }
+GET {{baseUrl}}/cashboxes/mine
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Committee cashbox (the treasurer's)
+# Expected: 200 { cashbox: { cashbox: { type: "committee", label: "Comité" }, balance: 23000,
+#   collected: 0, … } }
+GET {{baseUrl}}/cashboxes/mine
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+
+### Every cashbox with its balance (committee only)
+# Expected: 200 { cashboxes: [ { label: "Comité", balance: 23000 }, { label: "S1-M01", balance: 231000 },
+#   { label: "S1-M02", balance: 15000 }, { label: "S2-M01", balance: 56000 }, { label: "S2-M02", balance: 0 } ] }
+GET {{baseUrl}}/cashboxes
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+
+### Movements of the block cashbox, newest first
+# Expected: 200 { data: [ …, { occurredOn: today, kind: "payment", amount: 24000, tableName: "payment", recordId },
+#   { occurredOn: today, kind: "handover_out", amount: -23000, tableName: "handover", recordId }, … ], next }
+# (signed amounts: positive in, negative out; the confirmed amount leaves, not the declared one)
+GET {{baseUrl}}/cashboxes/{{prepareHandover.response.body.$.handover.cashbox.id}}/movements?limit=5
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
