@@ -17,6 +17,7 @@ import {
 } from './modules/approvals/approval-registry.js';
 import { registerApprovalsModule } from './modules/approvals/index.js';
 import { registerAuthModule } from './modules/auth/index.js';
+import { registerBillingModule } from './modules/billing/index.js';
 import { registerConnectionsModule } from './modules/connections/index.js';
 import { registerOrganizationModule } from './modules/organization/index.js';
 import { registerRegistryModule } from './modules/registry/index.js';
@@ -100,6 +101,7 @@ export async function buildApp(options: BuildAppOptions) {
   await registerOrganizationModule(app, approvalRegistry);
   await registerRegistryModule(app, approvalRegistry);
   await registerConnectionsModule(app);
+  await registerBillingModule(app);
 
   return app;
 }

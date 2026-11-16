@@ -16,6 +16,7 @@ import { AppError, errors } from '../../lib/errors.js';
 import { dateToPeriod, periodOf, periodToDate } from '../../lib/periods.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
 import { assertInScope, blockScope } from '../../plugins/permissions.js';
+import { loadDebts, NO_DEBT } from '../billing/account-statements.js';
 import { lockBlock } from '../organization/organization.repository.js';
 import {
   findPerson,
@@ -134,8 +135,15 @@ export function createConnectionsService(deps: ConnectionsServiceDeps) {
     if (!row) throw notFound('esa toma');
     assertInScope(viewer, row.blockId);
     const units = await unitsOfConnection(executor, id);
+    const debts = await loadDebts(
+      executor,
+      units.map((u) => u.id),
+      deps.now(),
+      deps.timeZone,
+    );
     return {
       ...row,
+      totalDue: units.reduce((sum, u) => sum + (debts.get(u.id)?.totalDue ?? 0), 0),
       units: units.map((u) => ({
         id: u.id,
         folio: u.folio,
@@ -153,6 +161,7 @@ export function createConnectionsService(deps: ConnectionsServiceDeps) {
                 distinguishingNote: u.holder.distinguishingNote,
               })
             : null,
+        debt: debts.get(u.id) ?? NO_DEBT,
       })),
     };
   }

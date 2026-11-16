@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { debtSummarySchema } from './billing.js';
 import {
   optionalText,
   page,
@@ -56,8 +57,11 @@ export const connectionDetailSchema = z.object({
       status: z.enum(UNIT_STATUSES),
       billingStartPeriod: periodSchema.nullable(),
       holder: personBasicSchema.nullable(),
+      debt: debtSummarySchema,
     }),
   ),
+  /** Sum of what its units owe today. */
+  totalDue: z.int(),
 });
 
 export const connectionResponseSchema = z.object({ connection: connectionDetailSchema });
