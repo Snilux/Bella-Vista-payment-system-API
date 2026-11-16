@@ -24,6 +24,7 @@ import { AppError, errors } from '../../lib/errors.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
 import { blockScope } from '../../plugins/permissions.js';
 import type { ApprovalHandler } from '../approvals/approval-registry.js';
+import { assertDateOpen } from '../closings/period-lock.js';
 import * as repo from './cashboxes.repository.js';
 
 // Cashboxes (CU-17, CU-18; RF-CAJ; D-07, D-16, D-18): the custodian's cashbox and its
@@ -151,6 +152,7 @@ const toAdjustment = (
   id: row.id,
   cashboxId: row.cashboxId,
   handoverId: row.handoverId,
+  closingId: row.closingId,
   amount: row.amount,
   date: row.date,
   status: row.result ?? 'pending',
@@ -220,6 +222,61 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
     const scope = blockScope(viewer);
     if (scope !== null && box.blockId !== scope) throw errors.outOfScope();
     return box;
+  }
+
+  /** A handover with a difference and no pending adjustment (RF-CAJ-06). */
+  async function handoverOrigin(tx: Transaction, handoverId: number) {
+    if (!(await repo.lockHandover(tx, handoverId))) throw cashboxErrors.handoverNotFound();
+    const row = await repo.findHandover(tx, handoverId);
+    if (!row) throw cashboxErrors.handoverNotFound();
+    if (row.status !== 'with_difference') {
+      throw errors.invalidState(
+        row.status === 'confirmed'
+          ? 'La entrega se confirmó sin diferencia; no hay nada que aclarar.'
+          : `La entrega está ${HANDOVER_LABELS[row.status] ?? row.status}.`,
+        row.status,
+        'propose_adjustment',
+      );
+    }
+    if (await repo.hasPendingAdjustment(tx, { handoverId })) {
+      throw errors.invalidState(
+        'La entrega ya tiene una aclaración pendiente de autorizar.',
+        'adjustment_pending',
+        'propose_adjustment',
+      );
+    }
+    return { cashboxId: row.cashboxId };
+  }
+
+  /**
+   * A reviewed or closed closing with a difference and no pending adjustment. The adjustment
+   * goes to the open period with a reference to the closing (D-14).
+   */
+  async function closingOrigin(tx: Transaction, closingId: number) {
+    const row = await repo.lockClosingForAdjustment(tx, closingId);
+    if (!row) throw new AppError('NOT_FOUND', 404, 'No existe ese corte.');
+    if (row.status !== 'reviewed' && row.status !== 'closed') {
+      throw errors.invalidState(
+        'Solo se aclara la diferencia de un corte revisado o cerrado.',
+        row.status,
+        'propose_adjustment',
+      );
+    }
+    if (!row.difference) {
+      throw errors.invalidState(
+        'El corte no tiene diferencia; no hay nada que aclarar.',
+        row.status,
+        'propose_adjustment',
+      );
+    }
+    if (await repo.hasPendingAdjustment(tx, { closingId })) {
+      throw errors.invalidState(
+        'El corte ya tiene una aclaración pendiente de autorizar.',
+        'adjustment_pending',
+        'propose_adjustment',
+      );
+    }
+    return { cashboxId: row.cashboxId };
   }
 
   return {
@@ -298,6 +355,7 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
       return idempotentTransaction(db, idempotency, async (tx) => {
         const box = await repo.findCashbox(tx, cashboxId);
         if (!box) throw cashboxErrors.notFound();
+        await assertDateOpen(tx, cashboxId, input.date);
         await lockRecord(tx, 'opening_balance', cashboxId);
         if (await repo.hasOpenOpeningBalance(tx, cashboxId)) {
           throw errors.invalidState(
@@ -492,27 +550,10 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
       const now = deps.now();
       const on = today();
       return idempotentTransaction(db, idempotency, async (tx) => {
-        if (!(await repo.lockHandover(tx, input.handoverId))) {
-          throw cashboxErrors.handoverNotFound();
-        }
-        const row = await repo.findHandover(tx, input.handoverId);
-        if (!row) throw cashboxErrors.handoverNotFound();
-        if (row.status !== 'with_difference') {
-          throw errors.invalidState(
-            row.status === 'confirmed'
-              ? 'La entrega se confirmó sin diferencia; no hay nada que aclarar.'
-              : `La entrega está ${HANDOVER_LABELS[row.status] ?? row.status}.`,
-            row.status,
-            'propose_adjustment',
-          );
-        }
-        if (await repo.hasPendingAdjustment(tx, input.handoverId)) {
-          throw errors.invalidState(
-            'La entrega ya tiene una aclaración pendiente de autorizar.',
-            'adjustment_pending',
-            'propose_adjustment',
-          );
-        }
+        const origin =
+          input.handoverId !== undefined
+            ? await handoverOrigin(tx, input.handoverId)
+            : await closingOrigin(tx, input.closingId ?? 0);
         const approvalId = await repo.insertApproval(tx, {
           type: 'adjustment',
           reason: input.reason,
@@ -520,8 +561,9 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
           requestedAt: now,
         });
         const id = await repo.insertAdjustment(tx, {
-          cashboxId: row.cashboxId,
-          handoverId: input.handoverId,
+          cashboxId: origin.cashboxId,
+          handoverId: input.handoverId ?? null,
+          closingId: input.closingId ?? null,
           amount: input.amount,
           date: on,
           approvalId,
@@ -531,7 +573,13 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
           action: 'propose',
           table: 'adjustment',
           recordId: id,
-          after: { handoverId: input.handoverId, amount: input.amount, date: on, approvalId },
+          after: {
+            handoverId: input.handoverId ?? null,
+            closingId: input.closingId ?? null,
+            amount: input.amount,
+            date: on,
+            approvalId,
+          },
           reason: input.reason,
         });
         const created = await repo.findAdjustment(tx, id);
@@ -572,7 +620,9 @@ export const adjustmentHandler: ApprovalHandler = {
     return new Map(
       rows.map((r) => [
         r.approvalId,
-        `Aclaración de ${formatMoney(r.amount)} en la entrega ${r.handoverFolio ?? ''}`.trim(),
+        r.closingFolio
+          ? `Aclaración de ${formatMoney(r.amount)} en el corte ${r.closingFolio}`
+          : `Aclaración de ${formatMoney(r.amount)} en la entrega ${r.handoverFolio ?? ''}`.trim(),
       ]),
     );
   },
