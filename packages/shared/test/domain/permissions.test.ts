@@ -31,6 +31,7 @@ const expected: Record<Action, string> = {
   'suspensions.manage': 'PRE SEC',
   'rates.view': 'PRE TES SEC VOC JM',
   'rates.register': 'TES',
+  'payments.view': 'PRE TES SEC VOC JM',
   'billing.collect': 'PRE TES JM',
   'receipts.replace': 'TES JM',
   'payments.requestCancellation': 'TES JM',

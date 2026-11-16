@@ -4,7 +4,7 @@ import {
   hasZodFastifySchemaValidationErrors,
   isResponseSerializationError,
 } from 'fastify-type-provider-zod';
-import { isDatabaseUnavailable } from '../db/errors.js';
+import { isCheckViolation, isDatabaseUnavailable } from '../db/errors.js';
 import { AppError, errors } from '../lib/errors.js';
 
 // Single error format { error: { code, message, details } } (docs/api.md). Unexpected errors
@@ -37,6 +37,8 @@ function toAppError(error: FastifyError): AppError {
   }
   if (isResponseSerializationError(error)) return errors.internal();
   if (isDatabaseUnavailable(error)) return errors.databaseUnavailable();
+  // Trigger of migration 0014 on every money table (D-14), wherever the movement comes from.
+  if (isCheckViolation(error, 'period_closed')) return errors.periodClosed();
   const status = error.statusCode;
   if (status === 404) return errors.notFound();
   if (status === 429) return errors.tooManyRequests();
