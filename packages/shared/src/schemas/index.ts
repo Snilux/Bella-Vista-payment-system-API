@@ -2,6 +2,7 @@ export * from './accounts.js';
 export * from './approvals.js';
 export * from './auth.js';
 export * from './billing.js';
+export * from './cashboxes.js';
 export * from './common.js';
 export * from './connections.js';
 export * from './errors.js';

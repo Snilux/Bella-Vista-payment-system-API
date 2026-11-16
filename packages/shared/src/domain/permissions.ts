@@ -38,7 +38,9 @@ export const PERMISSIONS = {
   'billing.collect': ['treasurer', 'block_leader', 'president'],
   'receipts.replace': ['treasurer', 'block_leader'],
   'payments.requestCancellation': ['treasurer', 'block_leader'],
-  // Cashboxes and handovers (CU-17, CU-18)
+  // Cashboxes and handovers (CU-17, CU-18): a block leader only sees their own cashbox
+  'cashboxes.view': COMMITTEE_AND_LEADERS,
+  'openingBalances.register': ['treasurer'],
   'handovers.view': ['president', 'treasurer', 'member', 'block_leader'],
   'handovers.prepare': ['block_leader', 'president'],
   'handovers.confirm': ['treasurer'],

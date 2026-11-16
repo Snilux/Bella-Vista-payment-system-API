@@ -8,9 +8,9 @@ import { testDatabaseUrl } from '../db/helpers.js';
 import { useApiTestApp } from './fixture.js';
 
 // API step 3, approvals module: inbox and resolution by the president, with the outcome
-// delegated to the handler each module registers for its type. These tests register a
-// handler for `opening_balance` (a type whose module arrives in API step 7); `plumber_salary` stays
-// without handler on purpose.
+// delegated to the handler each module registers for its type. These tests replace the
+// handler of `opening_balance` with their own and remove the one of `plumber_salary`, to
+// prove what happens with a type without handler.
 
 const calls: { kind: 'approved' | 'rejected'; approvalId: number; reason: string | null }[] = [];
 /** Approvals whose handler fails, to prove the resolution is rolled back with it. */
@@ -35,7 +35,10 @@ const testHandler: ApprovalHandler = {
 };
 
 describe.skipIf(!testDatabaseUrl)('/v1/approvals', () => {
-  const ctx = useApiTestApp((app) => app.approvalRegistry.register('opening_balance', testHandler));
+  const ctx = useApiTestApp((app) => {
+    app.approvalRegistry.replace('opening_balance', testHandler);
+    app.approvalRegistry.replace('plumber_salary', null);
+  });
 
   beforeAll(async () => {
     await ctx.owner

@@ -2,7 +2,6 @@ import { and, asc, desc, eq, gte, inArray, isNotNull, lt, lte, or, sql } from 'd
 import type { Database, Transaction } from '../../db/client.js';
 import {
   approval,
-  cashbox,
   connectionRequest,
   coveredPeriod,
   extraCharge,
@@ -17,7 +16,6 @@ import {
   suspension,
   unit,
   userAccount,
-  vBlock,
   vConnection,
   vConnectionRequest,
   vPaymentAmount,
@@ -175,72 +173,6 @@ export function chargesByIds(db: Executor, ids: number[]) {
 }
 
 export type ChargeRow = Awaited<ReturnType<typeof chargesByIds>>[number];
-
-// --- Cashboxes ------------------------------------------------------------------------------
-
-export async function blockCashbox(db: Executor, blockId: number) {
-  const [row] = await db
-    .select({ id: cashbox.id })
-    .from(cashbox)
-    .where(eq(cashbox.blockId, blockId))
-    .limit(1);
-  return row?.id ?? null;
-}
-
-export async function committeeCashbox(db: Executor) {
-  const [row] = await db
-    .select({ id: cashbox.id })
-    .from(cashbox)
-    .where(eq(cashbox.type, 'committee'))
-    .limit(1);
-  return row?.id ?? null;
-}
-
-export async function supportCashbox(db: Executor, personId: number) {
-  const [row] = await db
-    .select({ id: cashbox.id })
-    .from(cashbox)
-    .where(eq(cashbox.custodianPersonId, personId))
-    .limit(1);
-  return row?.id ?? null;
-}
-
-export async function insertCashbox(tx: Transaction, values: typeof cashbox.$inferInsert) {
-  const [row] = await tx.insert(cashbox).values(values).returning();
-  if (!row) throw new Error('cashbox not inserted');
-  return row;
-}
-
-/** Labels of cashboxes: block code, "Comité" or "Apoyo · <custodian>". */
-export function cashboxLabels(db: Executor, ids: number[]) {
-  if (ids.length === 0) return Promise.resolve([]);
-  return db
-    .select({
-      id: cashbox.id,
-      type: cashbox.type,
-      label: sql<string>`CASE ${cashbox.type}
-        WHEN 'block' THEN ${vBlock.code}
-        WHEN 'committee' THEN 'Comité'
-        ELSE 'Apoyo · ' || ${personName(person)} END`,
-    })
-    .from(cashbox)
-    .leftJoin(vBlock, eq(vBlock.id, cashbox.blockId))
-    .leftJoin(person, eq(person.id, cashbox.custodianPersonId))
-    .where(inArray(cashbox.id, ids));
-}
-
-export async function blockCode(db: Executor, blockId: number) {
-  const [row] = await db.select({ code: vBlock.code }).from(vBlock).where(eq(vBlock.id, blockId));
-  return row?.code ?? null;
-}
-
-export async function personFullName(db: Executor, personId: number) {
-  const [row] = await db
-    .select({ name: personName(person) })
-    .from(person)
-    .where(eq(person.id, personId));
-  return row?.name ?? null;
-}
 
 // --- Writing a payment ----------------------------------------------------------------------
 
