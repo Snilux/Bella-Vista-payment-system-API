@@ -7,11 +7,14 @@ import {
 } from '@bella-vista/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { errors } from '../../lib/errors.js';
 import { requireAccount } from '../../plugins/auth.js';
 import type { AuthService } from './auth.service.js';
 
-// /v1/auth: login and refresh are public and rate limited (RNF-SEG-07); change-password and
-// logout are the only routes an account with a pending password change can call.
+// /v1/auth: login and refresh are public and rate limited per client IP (RNF-SEG-07); login
+// is also limited per username, so attempts spread over many IPs (or spoofed proxy headers)
+// against one account still stop. change-password and logout are the only routes an account
+// with a pending password change can call.
 
 export interface AuthRoutesOptions {
   service: AuthService;
@@ -21,12 +24,25 @@ export interface AuthRoutesOptions {
 export const authRoutes: FastifyPluginAsyncZod<AuthRoutesOptions> = async (app, options) => {
   const { service } = options;
   const limited = { rateLimit: options.rateLimit };
+  // Not app.rateLimit(): it is skipped on a request the per-IP limit already checked.
+  const attemptsPerUsername = app.createRateLimit({
+    ...options.rateLimit,
+    keyGenerator: (request) => `login-username:${(request.body as { username: string }).username}`,
+  });
 
   app.post(
     '/login',
     {
       config: { public: true, ...limited },
       schema: { body: loginRequestSchema, response: { 200: sessionResponseSchema } },
+      // After validation: the key is the normalized username of the body.
+      preHandler: async (request, reply) => {
+        const limit = await attemptsPerUsername(request);
+        if (!limit.isAllowed && limit.isExceeded) {
+          reply.header('retry-after', limit.ttlInSeconds);
+          throw errors.tooManyRequests();
+        }
+      },
     },
     async (request) => service.login(request.body),
   );

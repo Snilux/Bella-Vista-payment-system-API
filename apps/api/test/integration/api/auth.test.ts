@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { sessionResponseSchema } from '@bella-vista/shared';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_LOGIN_RATE_LIMIT } from '../../../src/app.js';
 import {
   auditLog,
   refreshToken,
@@ -27,6 +28,9 @@ function client(ctx: ApiTestContext) {
   };
   return {
     login: (username: string, password: string) => post('/v1/auth/login', { username, password }),
+    /** Login with an X-Forwarded-For header, as a proxy (or a client faking one) sends it. */
+    loginFrom: (forwardedFor: string, username: string, password: string) =>
+      post('/v1/auth/login', { username, password }, { 'x-forwarded-for': forwardedFor }),
     refresh: (token: string) => post('/v1/auth/refresh', { refreshToken: token }),
     changePassword: (accessToken: string, currentPassword: string, newPassword: string) =>
       post(
@@ -437,5 +441,57 @@ describe.skipIf(!testDatabaseUrl)('login rate limit', () => {
         },
       },
     });
+  });
+});
+
+describe.skipIf(!testDatabaseUrl)('login rate limit without TRUST_PROXY (default)', () => {
+  const ctx = useApiTestApp(undefined, { loginRateLimit: { max: 3, timeWindow: '1 minute' } });
+  const api = client(ctx);
+
+  it('ignores X-Forwarded-For: a client cannot pick a new IP per attempt', async () => {
+    const statuses: number[] = [];
+    for (let i = 1; i <= 4; i++) {
+      statuses.push((await api.loginFrom(`10.0.0.${i}`, `no.existe${i}`, 'x')).status);
+    }
+    expect(statuses).toEqual([401, 401, 401, 429]);
+  });
+});
+
+describe.skipIf(!testDatabaseUrl)('login rate limit per username behind a proxy', () => {
+  // Default limit (10 per minute) and one trusted proxy: each X-Forwarded-For is a distinct
+  // client IP, so only the per-username limit can stop the attempts.
+  const ctx = useApiTestApp(undefined, {
+    loginRateLimit: DEFAULT_LOGIN_RATE_LIMIT,
+    env: { TRUST_PROXY: '1' },
+  });
+  const api = client(ctx);
+
+  it('stops 15 attempts from distinct IPs against one username with 429', async () => {
+    const codes: string[] = [];
+    for (let i = 1; i <= 15; i++) {
+      const res = await api.loginFrom(`203.0.113.${i}`, ' Tesorero ', 'incorrecta');
+      codes.push(res.body.error.code);
+    }
+    expect(codes).toEqual([
+      ...Array(4).fill('INVALID_CREDENTIALS'),
+      // The fifth failure locks the account (RF-AUT-06); the login messages do not change.
+      ...Array(6).fill('ACCOUNT_LOCKED'),
+      ...Array(5).fill('TOO_MANY_REQUESTS'),
+    ]);
+
+    // Every lock leaves a technical audit entry.
+    const locks = await ctx.owner
+      .select()
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.action, 'lock_after_failed_attempts'),
+          eq(auditLog.recordId, (await accountRow(ctx, 'tesorero')).id),
+        ),
+      );
+    expect(locks).toEqual([expect.objectContaining({ isTechnical: true })]);
+
+    // Another username from one of those IPs is not affected.
+    expect((await api.loginFrom('203.0.113.1', 'secretario', DEV_PASSWORD)).status).toBe(200);
   });
 });

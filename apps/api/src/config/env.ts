@@ -1,12 +1,47 @@
+import { isIP } from 'node:net';
 import { z } from 'zod';
 
 const positiveInt = (fallback: number) => z.coerce.number().int().positive().default(fallback);
+
+/** An IPv4/IPv6 address, optionally with a CIDR prefix (10.0.0.0/8, ::1/128). */
+function isAddressOrCidr(value: string): boolean {
+  const [address = '', prefix, ...rest] = value.split('/');
+  const version = isIP(address);
+  if (version === 0 || rest.length > 0) return false;
+  if (prefix === undefined) return true;
+  const bits = Number(prefix);
+  return /^\d+$/.test(prefix) && bits <= (version === 4 ? 32 : 128);
+}
+
+/**
+ * Which proxies may set X-Forwarded-For, so request.ip (and the login rate limit) is the real
+ * client: `false` (default, the socket address), a number of trusted hops in front of the
+ * API, or a comma-separated list of proxy addresses/CIDRs. `true` (trust any sender) is
+ * refused because it lets any client choose its own IP.
+ */
+const trustProxySchema = z
+  .string()
+  .trim()
+  .default('false')
+  .transform((value, ctx): false | number | string[] => {
+    if (value === 'false' || value === '0') return false;
+    if (/^\d+$/.test(value)) return Number(value);
+    const list = value.split(',').map((item) => item.trim());
+    if (value !== 'true' && list.every(isAddressOrCidr)) return list;
+    ctx.addIssue({
+      code: 'custom',
+      message:
+        'use false, the number of proxies in front of the API, or their addresses/CIDRs separated by commas ("true" would trust any client)',
+    });
+    return z.NEVER;
+  });
 
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   BUSINESS_TIMEZONE: z.string().min(1).default('America/Mexico_City'),
+  TRUST_PROXY: trustProxySchema,
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   DATABASE_URL_TEST: z.url({ protocol: /^postgres(ql)?$/ }).optional(),
   JWT_ACCESS_SECRET: z.string().min(32),

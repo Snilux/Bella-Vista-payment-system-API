@@ -53,7 +53,10 @@ export interface BuildAppOptions {
   logger?: FastifyServerOptions['logger'];
   now?: () => Date;
   healthTimeoutMs?: number;
-  /** Login and refresh limit per IP (RNF-SEG-07); tests raise it. */
+  /**
+   * Login and refresh limit per client IP, also applied to login attempts per username
+   * (RNF-SEG-07); tests raise it.
+   */
   loginRateLimit?: { max: number; timeWindow: number | string };
 }
 
@@ -66,10 +69,13 @@ export const DEFAULT_LOGIN_RATE_LIMIT = { max: 10, timeWindow: '1 minute' };
 export async function buildApp(options: BuildAppOptions) {
   const { env, db } = options;
   const now = options.now ?? (() => new Date());
+  const hops = env.TRUST_PROXY;
   const app = Fastify({
     logger: options.logger ?? false,
-    // Behind the platform's HTTPS proxy in production.
-    trustProxy: env.NODE_ENV === 'production',
+    // Only the proxies named by TRUST_PROXY may set X-Forwarded-For (request.ip); with
+    // `true` any client could pick its own IP and escape the login rate limit.
+    // A hop count trusts that many proxies nearest to the API (as proxy-addr does).
+    trustProxy: typeof hops === 'number' ? (_address: string, hop: number) => hop < hops : hops,
   }).withTypeProvider<ZodTypeProvider>();
 
   app.setValidatorCompiler(validatorCompiler);
