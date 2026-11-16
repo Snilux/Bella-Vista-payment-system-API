@@ -41,6 +41,7 @@ const expected: Record<Action, string> = {
   'closings.view': 'PRE TES SEC VOC JM',
   'closings.prepare': 'TES JM',
   'closings.review': 'PRE VOC',
+  'approvals.view': 'PRE TES SEC VOC JM',
   'approvals.resolve': 'PRE',
   'reports.block': 'PRE TES SEC VOC JM',
   'reports.community': 'PRE TES SEC VOC',

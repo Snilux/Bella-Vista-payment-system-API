@@ -11,6 +11,11 @@ import type { Env } from './config/env.js';
 import type { Database } from './db/client.js';
 import { errors } from './lib/errors.js';
 import { registerAccountsModule } from './modules/accounts/index.js';
+import {
+  type ApprovalRegistry,
+  createApprovalRegistry,
+} from './modules/approvals/approval-registry.js';
+import { registerApprovalsModule } from './modules/approvals/index.js';
 import { registerAuthModule } from './modules/auth/index.js';
 import { registerAuth } from './plugins/auth.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
@@ -27,6 +32,8 @@ declare module 'fastify' {
     env: Env;
     /** Current time; injectable so tests control dates (validity, lock expiry). */
     now: () => Date;
+    /** Approval handlers registered by the modules (approvals/approval-registry.ts). */
+    approvalRegistry: ApprovalRegistry;
   }
 }
 
@@ -60,6 +67,8 @@ export async function buildApp(options: BuildAppOptions) {
   app.decorate('db', db);
   app.decorate('env', env);
   app.decorate('now', now);
+  const approvalRegistry = createApprovalRegistry();
+  app.decorate('approvalRegistry', approvalRegistry);
 
   registerErrorHandler(app);
   await app.register(helmet);
@@ -84,6 +93,7 @@ export async function buildApp(options: BuildAppOptions) {
   await app.register(healthRoutes, { db, timeoutMs: options.healthTimeoutMs ?? 2_000 });
   await registerAuthModule(app, { rateLimit: options.loginRateLimit ?? DEFAULT_LOGIN_RATE_LIMIT });
   await registerAccountsModule(app);
+  await registerApprovalsModule(app, approvalRegistry);
 
   return app;
 }
