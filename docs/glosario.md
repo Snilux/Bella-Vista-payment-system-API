@@ -284,6 +284,22 @@ Campos de `detalles` (`details`): `problemas` → `issues`, cada uno con `ruta` 
 
 Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 
+## Parámetros de consulta
+
+Los filtros de las listas (`?nombre=valor`) van en `camelCase` inglés, como los campos JSON.
+
+| Español | Inglés |
+| --- | --- |
+| `?limite=&cursor=` | `?limit=&cursor=` |
+| `?q=` (búsqueda) | `?q=` |
+| `?nombres=&ap=&am=` (coincidencias de personas) | `?givenNames=&paternalSurname=&maternalSurname=` |
+| `?unidad=`, `?manzana=`, `?seccion=`, `?caja=` | `?unitId=`, `?blockId=`, `?sectionId=`, `?cashboxId=` |
+| `?periodo=` (cortes) | `?period=` |
+| `?cargo=` (asignaciones) | `?role=` |
+| `?estado=` (autorizaciones, asignaciones, solicitudes de toma, entregas, gastos, cortes) | `?status=`, con los valores de "Estados calculados en vistas", del estado de asignación o del filtro de bandeja |
+| `?desde=&hasta=` | `?from=&to=` (fechas en pagos, movimientos y bitácora; meses en reportes) |
+| `?usuario=&tabla=&registro=&accion=` (bitácora) | `?userAccountId=&tableName=&recordId=&action=` |
+
 ## Rutas y campos de sesión y cuentas
 
 | Español | Inglés |
@@ -308,7 +324,7 @@ Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 
 | Español | Inglés |
 | --- | --- |
-| `/secciones`, `/manzanas` | `/v1/sections`, `/v1/blocks` |
+| `/secciones`, `/secciones/{id}`, `/manzanas`, `/manzanas/{id}` | `/v1/sections`, `/v1/sections/{id}`, `/v1/blocks`, `/v1/blocks/{id}` |
 | `/asignaciones`, `/asignaciones/{id}/cerrar` | `/v1/role-assignments`, `/v1/role-assignments/{id}/close` |
 | `/autorizaciones`, `/autorizaciones/{id}/resolver` | `/v1/approvals`, `/v1/approvals/{id}/resolve` |
 | `codigo` de manzana (S1-M03) | `fullCode` (la clave sola es `code`) |
@@ -331,7 +347,7 @@ Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 | `/suspensiones`, `/suspensiones/{id}/terminar` | `/v1/suspensions`, `/v1/suspensions/{id}/end` |
 | `/tomas/preexistentes`, `/tomas/{id}` | `/v1/connections/pre-existing`, `/v1/connections/{id}` |
 | `/acuerdos` | `/v1/agreements` |
-| `/solicitudes-toma`, `/{id}/resolver`, `/{id}/activar`, `/{id}/cancelar` | `/v1/connection-requests`, `/{id}/resolve`, `/{id}/activate`, `/{id}/cancel` |
+| `/solicitudes-toma`, `/{id}`, `/{id}/resolver`, `/{id}/activar`, `/{id}/cancelar` | `/v1/connection-requests`, `/{id}`, `/{id}/resolve`, `/{id}/activate`, `/{id}/cancel` |
 | `acceso` de la ficha de persona: completo, básico | `access`: `full`, `basic` |
 | unidad de otra manzana | `{ scope: "other_block" }` |
 | `coincidencias`: exactas, parecidas | `exact`, `similar` |
@@ -388,8 +404,8 @@ Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 | `/entregas`, `/{id}/retirar`, `/{id}/confirmar` | `/v1/handovers`, `/{id}/withdraw`, `/{id}/confirm` |
 | `/aclaraciones` | `/v1/adjustments` |
 | `/ingresos`, `/gastos`, `/categorias-gasto` | `/v1/incomes`, `/v1/expenses`, `/v1/expense-categories` |
-| `/gastos/{id}/pagar`, `/rechazar`, `/solicitar-reintegro` | `/v1/expenses/{id}/pay`, `/reject`, `/request-refund` |
-| `/fontaneros`, `/{id}/salarios`, `/{id}/pagos` | `/v1/plumbers`, `/{id}/salaries`, `/{id}/payments` |
+| `/gastos/{id}`, `/gastos/{id}/pagar`, `/rechazar`, `/solicitar-reintegro` | `/v1/expenses/{id}`, `/v1/expenses/{id}/pay`, `/reject`, `/request-refund` |
+| `/fontaneros`, `/{id}`, `/{id}/salarios`, `/{id}/pagos` | `/v1/plumbers`, `/{id}`, `/{id}/salaries`, `/{id}/payments` |
 | `saldo`, `recaudado`, `entregado`, `pendienteDeEntregar`, `disponible` | `balance`, `collected`, `handedOver`, `pendingHandover`, `available` |
 | `importeDeclarado`, `importeRecibido`, `diferencia`, `importeAclarado` | `declaredAmount`, `receivedAmount`, `difference`, `adjustedAmount` |
 | `observaciones`, `preparo`, `confirmo` | `notes`, `preparedBy`, `confirmedBy` |
