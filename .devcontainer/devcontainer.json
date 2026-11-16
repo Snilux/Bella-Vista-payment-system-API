@@ -33,7 +33,8 @@
         "biomejs.biome",
         "vitest.explorer",
         "anthropic.claude-code",
-        "ckolkman.vscode-postgres"
+        "ckolkman.vscode-postgres",
+        "humao.rest-client"
       ],
       "settings": {
         "editor.defaultFormatter": "biomejs.biome",
