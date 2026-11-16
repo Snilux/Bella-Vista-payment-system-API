@@ -258,6 +258,9 @@ Lo llena quien ejecuta `pnpm db:seed`, así que sus claves quedan en español (v
 | `PERIODO_CERRADO` | `PERIOD_CLOSED` |
 | `SALDO_INSUFICIENTE` | `INSUFFICIENT_BALANCE` |
 | `TOMA_NO_ACTIVA` | `CONNECTION_NOT_ACTIVE` |
+| `CONCEPTO_SIN_IMPORTE` | `FEE_WITHOUT_AMOUNT` |
+| `APERTURA_NO_PAGADA` | `OPENING_NOT_PAID` |
+| `ESTADO_INVALIDO` | `INVALID_STATE` |
 | `JEFE_YA_ASIGNADO` | `LEADER_ALREADY_ASSIGNED` |
 | `CARGO_YA_ASIGNADO` | `ROLE_ALREADY_ASSIGNED` |
 | `CLAVE_REPETIDA` | `DUPLICATE_CODE` |
@@ -317,3 +320,21 @@ Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 | estado de asignación: pendiente, rechazada, programada, vigente, cerrada | `pending`, `rejected`, `scheduled`, `active`, `closed` |
 | filtro de bandeja: pendiente, resueltas, todas | `pending`, `resolved`, `all` |
 | manejador de autorización (por tipo) | approval handler (`approvalRegistry`) |
+
+## Rutas y campos de padrón y tomas
+
+| Español | Inglés |
+| --- | --- |
+| `/buscar` | `/v1/search` |
+| `/personas`, `/personas/coincidencias` | `/v1/people`, `/v1/people/matches` |
+| `/unidades`, `/unidades/{id}/solicitar-baja`, `/solicitar-cambio-titular` | `/v1/units`, `/v1/units/{id}/request-deactivation`, `/request-holder-change` |
+| `/suspensiones`, `/suspensiones/{id}/terminar` | `/v1/suspensions`, `/v1/suspensions/{id}/end` |
+| `/tomas/preexistentes`, `/tomas/{id}` | `/v1/connections/pre-existing`, `/v1/connections/{id}` |
+| `/acuerdos` | `/v1/agreements` |
+| `/solicitudes-toma`, `/{id}/resolver`, `/{id}/activar`, `/{id}/cancelar` | `/v1/connection-requests`, `/{id}/resolve`, `/{id}/activate`, `/{id}/cancel` |
+| `acceso` de la ficha de persona: completo, básico | `access`: `full`, `basic` |
+| unidad de otra manzana | `{ scope: "other_block" }` |
+| `coincidencias`: exactas, parecidas | `exact`, `similar` |
+| `titularId`, `nuevoTitularId`, `solicitanteId` | `holderPersonId`, `newHolderId`, `applicantId` |
+| `cambioPendiente`, `cargoApertura` | `pendingChange`, `openingCharge` |
+| `estado`, `accion` (detalles de `ESTADO_INVALIDO`) | `status`, `action` |

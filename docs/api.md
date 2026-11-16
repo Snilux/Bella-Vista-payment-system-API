@@ -68,7 +68,7 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | GET       | /tomas/{id}                              | Ficha con sus unidades                                                 | Según alcance         |
 | POST      | /unidades                                | Crea unidad (en toma existente o al arranque con periodo_inicio_cobro) | JM, SEC               |
 | GET       | /unidades/{id}                           | Ficha                                                                  | Según alcance         |
-| GET       | /unidades/{id}/estado-cuenta             | Meses con base, recargo, total y estado                                | Según alcance         |
+| GET       | /unidades/{id}/estado-cuenta             | Meses con base, recargo, total y estado (paso 5 de la API)                                | Según alcance         |
 | POST      | /unidades/{id}/solicitar-baja            | Crea autorización                                                      | JM, SEC               |
 | POST      | /unidades/{id}/solicitar-cambio-titular  | Crea autorización                                                      | JM, SEC               |
 | POST      | /suspensiones                            | Suspende toma o unidad                                                 | SEC, PRE              |
@@ -76,6 +76,7 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | GET, POST | /solicitudes-toma                        | Lista y registro                                                       | JM (su manzana), SEC  |
 | POST      | /solicitudes-toma/{id}/resolver          | Aprobar o rechazar con acuerdo                                         | SEC                   |
 | POST      | /solicitudes-toma/{id}/activar           | Instalación y primera unidad                                           | JM, SEC               |
+| POST      | /solicitudes-toma/{id}/cancelar          | Cancela antes del pago (D-12); anula el cargo de apertura              | SEC, JM (su manzana)  |
 | GET, POST | /acuerdos                                | Acuerdos de junta                                                      | SEC (consulta comité) |
 
 ### Tarifas y conceptos
@@ -165,6 +166,17 @@ Los reportes devuelven JSON; la app genera el PDF.
 
 **Cuentas (solo SA).** `GET /cuentas` devuelve las cuentas (usuario, cargo, persona, manzana y estado: activa, bloqueada, desactivada, debe cambiar contraseña, cargo no vigente) y las asignaciones vigentes sin cuenta. `POST /cuentas` con `{ asignacionId, usuario }` devuelve la contraseña temporal **una sola vez**. Restablecer genera otra contraseña temporal y cierra las sesiones; bloquear (indefinido hasta desbloquear), desbloquear y desactivar piden `motivo`. Todo queda en la bitácora técnica. El SA no puede bloquear ni desactivar su propia cuenta.
 
+## Detalle: padrón y tomas
+
+- **Búsqueda** (`/buscar?q=`, mínimo 2 caracteres): personas por nombre sin acentos y tolerante a errores (`f_normalizar` + pg_trgm), por distintivo o folio; tomas por folio o dirección; unidades por folio o referencia. Hasta 20 por grupo. En el paso 4 no lleva adeudos; se agregan en el paso 5.
+- **Lo que ve un JM** (RF-PAD-04, HU-13): tomas, unidades, solicitudes y pagos solo de su manzana (fuera de ella, `FUERA_DE_ALCANCE`; en la búsqueda no aparecen). De una persona ve solo nombre, distintivo y folio, salvo que (a) sea titular vigente de una unidad de su manzana, (b) tenga una solicitud no rechazada ni cancelada en su manzana, o (c) él mismo la haya registrado y aún no tenga unidad ni solicitud. Aun así, sus unidades de otras manzanas aparecen solo como "otra manzana", sin folio, importes ni dirección.
+- **Personas**: `/personas/coincidencias` devuelve los homónimos exactos y los nombres parecidos. Con homónimo y sin distintivo → `HOMONIMO_SIN_DISTINTIVO` (con los homónimos en `detalles`); nombre + distintivo repetido → `DISTINTIVO_REPETIDO` (D-10).
+- **Tomas preexistentes** (`/tomas/preexistentes`): la toma con su manzana y su primera unidad, con titular y `periodoInicioCobro` = primer mes pendiente de la libreta (D-18).
+- **Unidades** (`POST /unidades`): familia en una toma **activa**, sin cargo de apertura (`TOMA_NO_ACTIVA` si está suspendida o dada de baja). Se cobra desde el mes de registro o desde el periodo indicado. La ficha incluye titular e historial, suspensiones, pagos registrados y la solicitud de cambio pendiente.
+- **Baja y cambio de titular**: crean una autorización; una unidad solo tiene una solicitud pendiente. Al autorizarse, la baja fija `fecha_baja` = hoy; el cambio de titular cierra el titular actual y abre el nuevo desde hoy. El adeudo se queda en la unidad (D-11).
+- **Suspensiones**: de una toma o de una unidad (exactamente una), desde un mes, con motivo y acuerdo aprobado; sin traslapes; se terminan con el mes final (D-06).
+- **Solicitudes de toma**: resolver con acuerdo aprobado genera el cargo de apertura con el importe vigente ese día, que queda fijo (D-13; `CONCEPTO_SIN_IMPORTE` si no hay importe); con acuerdo de rechazo el motivo es obligatorio. Activar exige la apertura pagada (`APERTURA_NO_PAGADA`) y crea la toma y su primera unidad con el solicitante como titular, cobrando desde el mes de activación. **Cancelar** (D-12): motivo obligatorio; SEC o el JM de la manzana; solo en Solicitada o Aprobada pendiente de pago; si estaba aprobada, cancela también el cargo de apertura; con la apertura pagada → `ESTADO_INVALIDO`.
+
 ## Detalle: organización y autorizaciones
 
 - **Secciones y manzanas.** SEC las crea y edita; el resto del comité y los jefes las consultan. La clave no cambia después de creada (forma el código visible S1-M03); el nombre y `activa` sí. No se crean manzanas en una sección inactiva ni se asignan jefes a una manzana inactiva. La manzana incluye a su **jefe vigente**; su teléfono solo lo ven el comité y el propio jefe (RF-ORG-06).
@@ -226,6 +238,9 @@ Si el total recalculado no coincide con `totalEsperado` → 409 `TOTAL_CAMBIO` c
 | PERIODO_CERRADO          | 409  | Fecha dentro de un mes con corte cerrado                 |
 | SALDO_INSUFICIENTE       | 422  | Entrega o gasto mayor al saldo esperado                  |
 | TOMA_NO_ACTIVA           | 422  | Agregar familia a toma no activa                         |
+| CONCEPTO_SIN_IMPORTE     | 422  | El concepto (p. ej. apertura) no tiene importe vigente en la fecha del cargo |
+| APERTURA_NO_PAGADA       | 422  | Activar una toma con la cuota de apertura sin pagar      |
+| ESTADO_INVALIDO          | 409  | La operación no corresponde al estado actual del registro; solo si no hay un código más específico (`AUTORIZACION_RESUELTA`, `TOMA_NO_ACTIVA`…). `detalles`: `estado` actual y `accion` intentada |
 | JEFE_YA_ASIGNADO         | 409  | La manzana ya tiene jefe o la persona ya es jefe de otra |
 | CARGO_YA_ASIGNADO        | 409  | Ya hay presidente, tesorero o secretario abierto (vigente o pendiente) |
 | CLAVE_REPETIDA           | 409  | Clave o nombre de sección, o clave de manzana, ya registrado |
