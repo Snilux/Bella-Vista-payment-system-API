@@ -20,7 +20,8 @@ export const PERMISSIONS = {
   'assignments.close': ['secretary'],
   // Registry and connections (CU-05 to CU-11)
   'registry.view': COMMITTEE_AND_LEADERS,
-  'registry.manage': ['secretary', 'block_leader', 'president'],
+  // The president only consults people, connections and units, to collect in support (D-07)
+  'registry.manage': ['secretary', 'block_leader'],
   'connectionRequests.view': COMMITTEE_AND_LEADERS,
   'connectionRequests.manage': ['secretary', 'block_leader'],
   // Resolving a request with its meeting agreement (2.3: SEC)
