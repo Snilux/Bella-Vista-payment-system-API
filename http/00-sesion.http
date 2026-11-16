@@ -1,0 +1,144 @@
+# Session: health, login of every role, refresh, password change and logout.
+#
+# Run the requests in order ("Send Request" above each one): later requests read the tokens
+# saved by the named requests (# @name). Accounts come from `pnpm db:seed:dev` (README,
+# "Cuentas de desarrollo").
+#
+# Login and refresh share a limit of 10 requests per minute per IP, and this file sends exactly
+# 10: if one answers 429 TOO_MANY_REQUESTS (with Retry-After), wait a minute and send it again.
+# The other block leaders (jm.s1m02, jm.s2m01) log in the same way.
+
+@host = http://localhost:3000
+@baseUrl = {{host}}/v1
+@password = desarrollo-bella-vista
+
+### Health (no token)
+# Expected: 200 {"status":"ok","database":"ok"}
+GET {{host}}/health
+
+### Login: superadmin
+# Expected: 200 { accessToken, accessTokenExpiresIn: 900, refreshToken,
+#   account: { username: "admin", role: "superadmin", blockId: null, mustChangePassword: false } }
+# (the superadmin username is the "usuario" of arranque.json; "admin" in arranque.example.json)
+# @name loginSuperadmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "{{password}}" }
+
+### Login: president
+# Expected: 200, account.role "president", blockId null
+# @name loginPresident
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "presidente", "password": "{{password}}" }
+
+### Login: treasurer
+# Expected: 200, account.role "treasurer", blockId null
+# @name loginTreasurer
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "tesorero", "password": "{{password}}" }
+
+### Login: secretary
+# Expected: 200, account.role "secretary", blockId null
+# @name loginSecretary
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "secretario", "password": "{{password}}" }
+
+### Login: committee member (vocal)
+# Expected: 200, account.role "member", blockId null
+# @name loginMember
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "vocal", "password": "{{password}}" }
+
+### Login: block leader of S1-M01
+# Expected: 200, account.role "block_leader", blockId 1
+# @name loginLeader1
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "jm.s1m01", "password": "{{password}}" }
+
+### Login with a wrong password
+# Expected: 401 { error: { code: "INVALID_CREDENTIALS", message: "Usuario o contraseña incorrectos." } }
+# (the fifth failure in a row locks the account for 15 min: ACCOUNT_LOCKED)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "vocal", "password": "incorrecta" }
+
+### Use the access token: the treasurer's cashbox
+# Expected: 200 { cashbox: { cashbox: { id, type: "committee", label: "Comité" }, balance, ... } }
+GET {{baseUrl}}/cashboxes/mine
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+
+### Refresh (vocal): rotates the refresh token
+# Expected: 200 with a new accessToken and refreshToken; the one sent is revoked
+# @name refreshMember
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginMember.response.body.$.refreshToken}}" }
+
+### Refresh again with the token already rotated (theft detection)
+# Expected: 401 UNAUTHENTICATED "Tu sesión ya no es válida. Inicia sesión de nuevo."
+# The whole chain is revoked: the token returned by refreshMember stops working too.
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginMember.response.body.$.refreshToken}}" }
+
+### Change password (treasurer): same password as now
+# Expected: 400 VALIDATION_ERROR, details.issues[0]:
+#   { path: "body.newPassword", message: "La contraseña nueva debe ser distinta de la actual." }
+POST {{baseUrl}}/auth/change-password
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "currentPassword": "{{password}}", "newPassword": "{{password}}" }
+
+### Change password (treasurer)
+# Expected: 200 with a new token pair; account.mustChangePassword false. The other sessions of
+# the account are closed (their refresh tokens stop working).
+# @name changePassword
+POST {{baseUrl}}/auth/change-password
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "currentPassword": "{{password}}", "newPassword": "tesorero-temporal-2026" }
+
+### Change it back, so the development password keeps working
+# Expected: 200 with a new token pair
+# @name changePasswordBack
+POST {{baseUrl}}/auth/change-password
+Authorization: Bearer {{changePassword.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "currentPassword": "tesorero-temporal-2026", "newPassword": "{{password}}" }
+
+### Logout: revokes the refresh token
+# Expected: 204 without body
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{changePasswordBack.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "refreshToken": "{{changePasswordBack.response.body.$.refreshToken}}" }
+
+### Refresh with the token revoked by the logout
+# Expected: 401 UNAUTHENTICATED "Tu sesión ya no es válida. Inicia sesión de nuevo."
+# (the access token keeps working until it expires: 15 min)
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{changePasswordBack.response.body.$.refreshToken}}" }
+
+### Without a token
+# Expected: 401 UNAUTHENTICATED "Inicia sesión para continuar."
+GET {{baseUrl}}/cashboxes/mine

@@ -1,0 +1,147 @@
+# Permissions: requests that must fail. Each one says the expected answer.
+#
+#   403 FORBIDDEN     the role cannot do it at all: "Tu cargo no tiene permiso para esta operación."
+#   403 OUT_OF_SCOPE  a block leader outside their block: "Este registro pertenece a otra manzana."
+#   401 UNAUTHENTICATED without a session: "Inicia sesión para continuar."
+#
+# The role is checked before the body and the Idempotency-Key, so FORBIDDEN arrives even with
+# a body that would be invalid.
+
+@baseUrl = http://localhost:3000/v1
+@password = desarrollo-bella-vista
+
+### Login: block leader of S1-M01
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginLeader
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "jm.s1m01", "password": "{{password}}" }
+
+### Login: president
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginPresident
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "presidente", "password": "{{password}}" }
+
+### Login: committee member (vocal)
+# Expected: 200 { accessToken, refreshToken, account: { … } }
+# @name loginMember
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "vocal", "password": "{{password}}" }
+
+# --- Setup: a family of another block (S1-M02), found by the president -------------------
+
+### Search "Casa A" (Calle Juárez 8, block S1-M02)
+# Expected: 200, units[0]: { reference: "Casa A", blockCode: "S1-M02", … }
+# @name otherBlock
+GET {{baseUrl}}/search?q=casa a
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+
+@otherUnitId = {{otherBlock.response.body.$.units[0].id}}
+@otherConnectionId = {{otherBlock.response.body.$.units[0].connectionId}}
+
+### Its file, for the block id and a payment
+# Expected: 200 { unit: { connection: { blockId: 2, blockCode: "S1-M02" }, payments: [ { id, … } ] } }
+# @name otherUnit
+GET {{baseUrl}}/units/{{otherUnitId}}
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+
+# --- Block leader looking at another block -----------------------------------------------
+
+### Leader: account statement of a family of S1-M02
+# Expected: 403 OUT_OF_SCOPE "Este registro pertenece a otra manzana."
+GET {{baseUrl}}/units/{{otherUnitId}}/account-statement
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Leader: connection of S1-M02
+# Expected: 403 OUT_OF_SCOPE
+GET {{baseUrl}}/connections/{{otherConnectionId}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Leader: payments of S1-M02
+# Expected: 403 OUT_OF_SCOPE
+GET {{baseUrl}}/payments?blockId={{otherUnit.response.body.$.unit.connection.blockId}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Leader: a payment of S1-M02
+# Expected: 403 OUT_OF_SCOPE
+GET {{baseUrl}}/payments/{{otherUnit.response.body.$.unit.payments[0].id}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Leader: registry report of S1-M02
+# Expected: 403 OUT_OF_SCOPE
+GET {{baseUrl}}/reports/block?blockId={{otherUnit.response.body.$.unit.connection.blockId}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Leader: the holder of that family (not a failure: only the basic data)
+# Expected: 200 { person: { id, folio, fullName: "Ernesto Vázquez Soto", distinguishingNote: null,
+#   access: "basic" } }   (no phone, units or debt)
+GET {{baseUrl}}/people/{{otherUnit.response.body.$.unit.holder.id}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Leader: searching it (not a failure: it does not appear)
+# Expected: 200 { people: [], connections: [], units: [] }
+GET {{baseUrl}}/search?q=casa a
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+# --- Roles without permission ------------------------------------------------------------
+
+### Vocal records an expense (treasurer only)
+# Expected: 403 FORBIDDEN "Tu cargo no tiene permiso para esta operación."
+POST {{baseUrl}}/expenses
+Authorization: Bearer {{loginMember.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "categoryId": 3, "description": "Tubo PVC", "amount": 15000, "agreementId": 1 }
+
+### President registers a person (secretary and block leaders only; D-07)
+# Expected: 403 FORBIDDEN
+POST {{baseUrl}}/people
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "givenNames": "Prueba", "paternalSurname": "Permisos" }
+
+### Leader confirms a handover (treasurer only)
+# Expected: 403 FORBIDDEN
+POST {{baseUrl}}/handovers/1/confirm
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "receivedAmount": 100 }
+
+### Leader reads the community report (committee only)
+# Expected: 403 FORBIDDEN
+GET {{baseUrl}}/reports/community
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### President lists the accounts (superadmin only; D-19)
+# Expected: 403 FORBIDDEN
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+
+### Vocal resolves an approval (president only)
+# Expected: 403 FORBIDDEN
+POST {{baseUrl}}/approvals/1/resolve
+Authorization: Bearer {{loginMember.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "result": "approved" }
+
+# --- Without a session -------------------------------------------------------------------
+
+### No token
+# Expected: 401 UNAUTHENTICATED "Inicia sesión para continuar."
+GET {{baseUrl}}/rates
+
+### Invalid token
+# Expected: 401 UNAUTHENTICATED
+GET {{baseUrl}}/rates
+Authorization: Bearer token-invalido

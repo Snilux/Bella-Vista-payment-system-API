@@ -1,0 +1,139 @@
+# Registry: register a person with a homonym, add a family to a connection, and a connection
+# request with its cancellation (D-10, D-12). Done by the block leader of S1-M01.
+#
+# "José Luis Hernández García" already exists twice in the development data ("Papá, Av. Hidalgo"
+# and "Hijo, Calle Morelos"). Each run registers a new homonym with a random distinguishing note.
+
+@baseUrl = http://localhost:3000/v1
+@password = desarrollo-bella-vista
+
+### Login: block leader of S1-M01
+# Expected: 200, account.blockId 1
+# @name loginLeader
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "jm.s1m01", "password": "{{password}}" }
+
+@blockId = {{loginLeader.response.body.$.account.blockId}}
+
+### Homonyms before registering (accents and case do not matter)
+# Expected: 200 { exact: [
+#   { id, folio: "P-…", fullName: "José Luis Hernández García", distinguishingNote: "Papá, Av. Hidalgo" },
+#   { id, folio: "P-…", fullName: "José Luis Hernández García", distinguishingNote: "Hijo, Calle Morelos" } ],
+#   similar: [] }   (plus earlier runs of this file)
+GET {{baseUrl}}/people/matches?givenNames=Jose Luis&paternalSurname=Hernandez&maternalSurname=Garcia
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Register the homonym without a distinguishing note
+# Expected: 422 HOMONYM_WITHOUT_NOTE "Ya existe una persona con ese nombre. Si es otra persona,
+#   agrega un distintivo (por ejemplo, la clave de su manzana)." details.matches: [ …homonyms ]
+POST {{baseUrl}}/people
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "givenNames": "José Luis", "paternalSurname": "Hernández", "maternalSurname": "García", "phone": "5551003001" }
+
+### Register it with a distinguishing note that already exists
+# Expected: 409 DUPLICATE_DISTINGUISHING_NOTE "Ya existe una persona con ese nombre y ese distintivo."
+POST {{baseUrl}}/people
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "givenNames": "José Luis", "paternalSurname": "Hernández", "maternalSurname": "García", "distinguishingNote": "Papá, Av. Hidalgo" }
+
+### Register it with a new distinguishing note
+# Expected: 201 { person: { id, folio: "P-…", fullName: "José Luis Hernández García",
+#   distinguishingNote: "Nieto, casa …", access: "full", phone: "5551003001",
+#   registeredOn: today, units: [], totalDue: 0, connectionRequests: [] } }
+# @name createPerson
+POST {{baseUrl}}/people
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "givenNames": "José Luis",
+  "paternalSurname": "Hernández",
+  "maternalSurname": "García",
+  "distinguishingNote": "Nieto, casa {{$randomInt 100 999}}",
+  "phone": "5551003001"
+}
+
+@personId = {{createPerson.response.body.$.person.id}}
+
+### Find the connection Av. Hidalgo 12
+# Expected: 200 { connections: [ { id, folio: "T-…", address: "Av. Hidalgo 12", blockCode: "S1-M01",
+#   status: "active", unitCount: 3 } ], … }
+# @name searchConnection
+GET {{baseUrl}}/search?q=hidalgo 12
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+@connectionId = {{searchConnection.response.body.$.connections[0].id}}
+
+### Connection detail with its families
+# Expected: 200 { connection: { id, address: "Av. Hidalgo 12", status: "active", blockCode: "S1-M01",
+#   units: [ "Casa del frente", "Planta alta", "Cuarto del fondo", … with holder and debt ], totalDue } }
+GET {{baseUrl}}/connections/{{connectionId}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Add a family to the connection
+# Expected: 201 { unit: { id, folio: "U-…", reference: "Cuarto de la azotea", status: "active",
+#   registeredOn: today, billingStartPeriod: current month,
+#   connection: { address: "Av. Hidalgo 12", blockCode: "S1-M01" },
+#   holder: { fullName: "José Luis Hernández García", distinguishingNote: "Nieto, casa …" },
+#   holders: [ … ], suspensions: [], payments: [], pendingChange: null } }
+# A suspended or deactivated connection → 422 CONNECTION_NOT_ACTIVE.
+POST {{baseUrl}}/units
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "connectionId": {{connectionId}}, "holderPersonId": {{personId}}, "reference": "Cuarto de la azotea" }
+
+### Connection request for the new person, in the leader's block
+# Expected: 201 { request: { id, folio: "ST-…", status: "requested", applicant: { id, fullName },
+#   address: "Av. Hidalgo 14", blockCode: "S1-M01", requestedOn: today, agreement: null,
+#   openingCharge: null, connectionId: null } }
+# @name createRequest
+POST {{baseUrl}}/connection-requests
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "applicantId": {{personId}}, "address": "Av. Hidalgo 14", "blockId": {{blockId}} }
+
+@requestId = {{createRequest.response.body.$.request.id}}
+
+### Requests of the block still waiting for the meeting
+# Expected: 200 { data: [ { id, folio: "ST-…", status: "requested", … } ], next }
+GET {{baseUrl}}/connection-requests?status=requested
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Cancel without a reason
+# Expected: 400 VALIDATION_ERROR, details.issues[0]: { path: "body.reason", message: "Escribe el motivo." }
+POST {{baseUrl}}/connection-requests/{{requestId}}/cancel
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "" }
+
+### Cancel the request
+# Expected: 200 { request: { id, status: "cancelled", cancelledOn: today,
+#   cancellationReason: "El solicitante desistió", openingCharge: null } }
+POST {{baseUrl}}/connection-requests/{{requestId}}/cancel
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "El solicitante desistió" }
+
+### Cancel it again
+# Expected: 409 INVALID_STATE "La solicitud está cancelada." details: { status: "cancelled", action: "cancel" }
+POST {{baseUrl}}/connection-requests/{{requestId}}/cancel
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "Otra vez" }
+
+### The person's file with the new family
+# Expected: 200 { person: { access: "full", units: [ { scope: "own", reference: "Cuarto de la azotea",
+#   debt } ], totalDue, connectionRequests: [] } }   (cancelled requests are not listed)
+GET {{baseUrl}}/people/{{personId}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}

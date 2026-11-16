@@ -1,0 +1,137 @@
+# Collection: a block leader finds a family with debt, checks its account statement, previews,
+# records the payment, repeats it with the same Idempotency-Key, tries to skip months and
+# checks their cashbox.
+#
+# Run in order. Expected amounts are those of a fresh `pnpm db:seed:dev` in November 2026:
+# "Planta alta" (Av. Hidalgo 12, S1-M01) stopped paying in 2025-07 and is in a debt cycle, so
+# every overdue month pays double ($40.00 + $40.00 in 2025, $50.00 + $50.00 in 2026).
+# The payment pays 2025-07 to 2025-09; 03-autorizaciones.http cancels it, after which this file
+# can run again. Run twice in a row, "Record the payment" answers 409 PERIOD_ALREADY_PAID.
+
+@baseUrl = http://localhost:3000/v1
+@password = desarrollo-bella-vista
+
+### Login: block leader of S1-M01
+# Expected: 200, account.role "block_leader", blockId 1
+# @name loginLeader
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "jm.s1m01", "password": "{{password}}" }
+
+### Search the family
+# Expected: 200 { people: [], connections: [], units: [ { id, folio: "U-…", reference: "Planta alta",
+#   address: "Av. Hidalgo 12", blockCode: "S1-M01",
+#   holder: { fullName: "María Guadalupe López Pérez", distinguishingNote: "La de la tienda" },
+#   debt: { totalDue: 153000, overdueCount: 16, inDebtCycle: true } } ] }
+# Units of other blocks never appear for a block leader.
+# @name search
+GET {{baseUrl}}/search?q=planta
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+@unitId = {{search.response.body.$.units[0].id}}
+
+### Account statement
+# Expected: 200 { statement: { unitId, currentPeriod: "2026-11", months: [
+#   { period: "2025-01", status: "paid", baseAmount: 4000, surcharge: 0, total: 4000, paymentId }, …
+#   { period: "2025-07", status: "overdue", baseAmount: 4000, surcharge: 4000, total: 8000 }, …
+#   { period: "2026-11", status: "pending", baseAmount: 5000, surcharge: 0, total: 5000 } ],
+#   summary: { overdueCount: 16, pendingCount: 1, inDebtCycle: true, overdueTotal: 148000,
+#     pendingTotal: 5000, surchargeTotal: 74000, totalDue: 153000, advanceCount: 0 },
+#   missingRatePeriods: [] } }
+GET {{baseUrl}}/units/{{unitId}}/account-statement
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Preview the three oldest overdue months (nothing is saved)
+# Expected: 200 { preview: { unit: { id, folio, holder: "María Guadalupe López Pérez" },
+#   months: [ { period: "2025-07", baseAmount: 4000, surcharge: 4000, total: 8000, kind: "overdue" },
+#             { period: "2025-08", … }, { period: "2025-09", … } ],
+#   charges: [], total: 24000, cashbox: { id, type: "block", label: "S1-M01" } } }
+# @name preview
+POST {{baseUrl}}/payments/preview
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "unitId": {{unitId}}, "periods": ["2025-07", "2025-08", "2025-09"] }
+
+### Record the payment (new Idempotency-Key, random paper folio)
+# Expected: 201 { payment: { id, folio: "PG-…", total: 24000, months: [ … ],
+#   cashbox: { type: "block", label: "S1-M01" }, paperFolio, receipts: [ { type: "original" } ],
+#   capturedBy: { username: "jm.s1m01" }, cancelled: false, cancellations: [] } }
+# expectedTotal is the total seen in the preview: if it changed meanwhile, 409 TOTAL_CHANGED.
+# @name recordPayment
+POST {{baseUrl}}/payments
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{
+  "unitId": {{unitId}},
+  "periods": ["2025-07", "2025-08", "2025-09"],
+  "paperFolio": "{{$randomInt 1000 9999}}",
+  "expectedTotal": {{preview.response.body.$.preview.total}}
+}
+
+### Repeat it with the same Idempotency-Key (a retry after a lost connection)
+# Expected: 201 with exactly the same body (same payment id and folio) and the header
+# Idempotent-Replayed: true. No second payment is created.
+POST {{baseUrl}}/payments
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{recordPayment.request.headers.Idempotency-Key}}
+
+{
+  "unitId": {{unitId}},
+  "periods": ["2025-07", "2025-08", "2025-09"],
+  "paperFolio": "{{recordPayment.request.body.$.paperFolio}}",
+  "expectedTotal": {{preview.response.body.$.preview.total}}
+}
+
+### The same months with a new key
+# Expected: 409 PERIOD_ALREADY_PAID
+#   "Estos meses ya están pagados: Julio 2025, Agosto 2025, Septiembre 2025."
+#   details.periods: ["2025-07", "2025-08", "2025-09"]
+POST {{baseUrl}}/payments
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "unitId": {{unitId}}, "periods": ["2025-07", "2025-08", "2025-09"], "paperFolio": "{{$randomInt 1000 9999}}", "expectedTotal": 24000 }
+
+### Skip a month: pay 2025-11 while 2025-10 is still overdue (preview)
+# Expected: 422 MONTH_ORDER "Los meses se pagan en orden, desde el más antiguo y sin saltar
+#   ninguno; los adelantados solo cuando no queda nada pendiente." details.periods: ["2025-11"]
+POST {{baseUrl}}/payments/preview
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "unitId": {{unitId}}, "periods": ["2025-11"] }
+
+### Skip a month: record it
+# Expected: 422 MONTH_ORDER (same message); nothing is saved
+POST {{baseUrl}}/payments
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "unitId": {{unitId}}, "periods": ["2025-11"], "paperFolio": "{{$randomInt 1000 9999}}", "expectedTotal": 8000 }
+
+### Without Idempotency-Key
+# Expected: 400 IDEMPOTENCY_KEY_REQUIRED "Falta el encabezado Idempotency-Key o no es un UUID válido."
+POST {{baseUrl}}/payments
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "unitId": {{unitId}}, "periods": ["2025-10"], "paperFolio": "{{$randomInt 1000 9999}}", "expectedTotal": 8000 }
+
+### My cashbox
+# Expected: 200 { cashbox: { cashbox: { id, type: "block", label: "S1-M01" }, balance: 254000,
+#   collected: 254000, handedOver: 0, pendingHandover: 0, available: 254000, openingBalance: null } }
+# (fresh seed: $2,300.00 of seeded payments + $240.00 of this one)
+GET {{baseUrl}}/cashboxes/mine
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Payment detail
+# Expected: 200 { payment: { …, receipts: [ { paperFolio, type: "original" } ], cancelled: false } }
+GET {{baseUrl}}/payments/{{recordPayment.response.body.$.payment.id}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
