@@ -53,7 +53,8 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | GET, POST, PATCH | /manzanas                       | Catálogo; GET incluye jefe vigente      | SEC (consulta todos) |
 | GET              | /asignaciones                   | Cargos vigentes e históricos            | Comité               |
 | POST             | /asignaciones                   | Registra asignación (crea autorización) | SEC                  |
-| POST             | /manzanas/{id}/sustitucion-jefe | Sustitución con corte extraordinario    | SEC                  |
+| POST             | /asignaciones/{id}/cerrar       | Fin de periodo de un cargo del comité (desactiva su cuenta) | SEC |
+| POST             | /manzanas/{id}/sustitucion-jefe | Sustitución con corte extraordinario (paso 8 de la API) | SEC          |
 
 ### Padrón y tomas
 
@@ -164,6 +165,13 @@ Los reportes devuelven JSON; la app genera el PDF.
 
 **Cuentas (solo SA).** `GET /cuentas` devuelve las cuentas (usuario, cargo, persona, manzana y estado: activa, bloqueada, desactivada, debe cambiar contraseña, cargo no vigente) y las asignaciones vigentes sin cuenta. `POST /cuentas` con `{ asignacionId, usuario }` devuelve la contraseña temporal **una sola vez**. Restablecer genera otra contraseña temporal y cierra las sesiones; bloquear (indefinido hasta desbloquear), desbloquear y desactivar piden `motivo`. Todo queda en la bitácora técnica. El SA no puede bloquear ni desactivar su propia cuenta.
 
+## Detalle: organización y autorizaciones
+
+- **Secciones y manzanas.** SEC las crea y edita; el resto del comité y los jefes las consultan. La clave no cambia después de creada (forma el código visible S1-M03); el nombre y `activa` sí. No se crean manzanas en una sección inactiva ni se asignan jefes a una manzana inactiva. La manzana incluye a su **jefe vigente**; su teléfono solo lo ven el comité y el propio jefe (RF-ORG-06).
+- **Asignaciones.** SEC registra la asignación y se crea una autorización pendiente para PRE. Una solicitud pendiente ya ocupa el lugar: un jefe por manzana y una manzana por jefe (`JEFE_YA_ASIGNADO`), y un solo presidente, tesorero y secretario (`CARGO_YA_ASIGNADO`). Al **rechazarse**, la asignación se cierra con `fecha_fin = fecha_inicio` y libera la manzana o el cargo. Estado calculado: pendiente, rechazada, programada, vigente o cerrada.
+- **Cerrar** (`/asignaciones/{id}/cerrar`, SEC, con `fechaFin` no posterior a hoy y `motivo`): fin de periodo de un cargo del comité; en la misma transacción desactiva su cuenta y cierra sus sesiones (D-22). Un jefe de manzana no se cierra: se sustituye con acta de entrega (D-08, paso 8 de la API).
+- **Autorizaciones.** `GET /autorizaciones?estado=pendiente|resueltas|todas`: PRE ve todas; cada cargo ve las que pidió. `POST /autorizaciones/{id}/resolver` con `{ resultado, motivo }`: solo PRE; motivo obligatorio al rechazar; `AUTORIZACION_RESUELTA` si ya se resolvió. Cada módulo registra qué pasa al autorizar o rechazar una solicitud de su tipo; la resolución, ese efecto y la bitácora van en una sola transacción.
+
 ## Ejemplo: registrar pago
 
 `POST /v1/pagos` con `Idempotency-Key`:
@@ -219,6 +227,8 @@ Si el total recalculado no coincide con `totalEsperado` → 409 `TOTAL_CAMBIO` c
 | SALDO_INSUFICIENTE       | 422  | Entrega o gasto mayor al saldo esperado                  |
 | TOMA_NO_ACTIVA           | 422  | Agregar familia a toma no activa                         |
 | JEFE_YA_ASIGNADO         | 409  | La manzana ya tiene jefe o la persona ya es jefe de otra |
+| CARGO_YA_ASIGNADO        | 409  | Ya hay presidente, tesorero o secretario abierto (vigente o pendiente) |
+| CLAVE_REPETIDA           | 409  | Clave o nombre de sección, o clave de manzana, ya registrado |
 | TARIFA_VIGENCIA_INVALIDA | 422  | Vigencia no posterior al mes actual                      |
 | AUTORIZACION_RESUELTA    | 409  | La solicitud ya fue resuelta                             |
 

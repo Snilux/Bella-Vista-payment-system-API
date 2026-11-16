@@ -259,6 +259,8 @@ Lo llena quien ejecuta `pnpm db:seed`, así que sus claves quedan en español (v
 | `SALDO_INSUFICIENTE` | `INSUFFICIENT_BALANCE` |
 | `TOMA_NO_ACTIVA` | `CONNECTION_NOT_ACTIVE` |
 | `JEFE_YA_ASIGNADO` | `LEADER_ALREADY_ASSIGNED` |
+| `CARGO_YA_ASIGNADO` | `ROLE_ALREADY_ASSIGNED` |
+| `CLAVE_REPETIDA` | `DUPLICATE_CODE` |
 | `TARIFA_VIGENCIA_INVALIDA` | `INVALID_RATE_EFFECTIVE_PERIOD` |
 | `AUTORIZACION_RESUELTA` | `APPROVAL_ALREADY_RESOLVED` |
 | `DATOS_INVALIDOS` | `VALIDATION_ERROR` |
@@ -298,3 +300,20 @@ Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 | `asignacionesSinCuenta` | `assignmentsWithoutAccount` |
 | `bloqueadaHasta` | `lockedUntil` |
 | estado de cuenta de acceso: activa, bloqueada, desactivada, debe cambiar contraseña, cargo no vigente | `active`, `locked`, `disabled`, `must_change_password`, `role_not_active` |
+
+## Rutas y campos de organización y autorizaciones
+
+| Español | Inglés |
+| --- | --- |
+| `/secciones`, `/manzanas` | `/v1/sections`, `/v1/blocks` |
+| `/asignaciones`, `/asignaciones/{id}/cerrar` | `/v1/role-assignments`, `/v1/role-assignments/{id}/close` |
+| `/autorizaciones`, `/autorizaciones/{id}/resolver` | `/v1/approvals`, `/v1/approvals/{id}/resolve` |
+| `codigo` de manzana (S1-M03) | `fullCode` (la clave sola es `code`) |
+| `jefe`, `telefonoContacto` | `leader`, `contactPhone` |
+| `personaId`, `cargo`, `manzanaId`, `fechaInicio`, `fechaFin` | `personId`, `role`, `blockId`, `startDate`, `endDate` |
+| `tieneCuenta` | `hasAccount` |
+| `resultado`, `motivo`, `descripcion` | `result`, `reason`, `description` |
+| `solicitadoPor`, `resueltoPor` | `requestedBy`, `resolvedBy` |
+| estado de asignación: pendiente, rechazada, programada, vigente, cerrada | `pending`, `rejected`, `scheduled`, `active`, `closed` |
+| filtro de bandeja: pendiente, resueltas, todas | `pending`, `resolved`, `all` |
+| manejador de autorización (por tipo) | approval handler (`approvalRegistry`) |
