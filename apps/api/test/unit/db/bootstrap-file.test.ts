@@ -3,6 +3,7 @@ import {
   InvalidBootstrapFileError,
   parseBootstrapFile,
 } from '../../../src/db/seed/bootstrap-file.js';
+import { monthRange } from '../../../src/db/seed/dev-data.js';
 import { generateTemporaryPassword } from '../../../src/lib/password.js';
 
 const officer = { nombres: 'Ana', apellidoPaterno: 'Salinas', fechaInicio: '2026-11-01' };
@@ -85,5 +86,15 @@ describe('generateTemporaryPassword', () => {
     for (let i = 0; i < 50; i++) {
       expect(generateTemporaryPassword()).toMatch(/^[a-km-np-zA-HJ-NP-Z2-9]{12}$/);
     }
+  });
+});
+
+describe('monthRange', () => {
+  it.each([
+    ['2025-11-01', '2026-02-01', ['2025-11-01', '2025-12-01', '2026-01-01', '2026-02-01']],
+    ['2026-03-01', '2026-03-01', ['2026-03-01']],
+    ['2026-04-01', '2026-03-01', []],
+  ])('from %s to %s', (from, to, expected) => {
+    expect(monthRange(from, to)).toEqual(expected);
   });
 });

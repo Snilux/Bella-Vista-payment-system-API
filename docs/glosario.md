@@ -224,6 +224,7 @@ No se guardan: las vistas los derivan de las fechas de cada hecho (columna `stat
 | autorizada por arranque     | approved by bootstrap |
 | contraseña temporal         | temporary password   |
 | registro técnico (bitácora) | technical entry (`is_technical`) |
+| datos de desarrollo         | development seed data (`db:seed:dev`) |
 
 ## Archivo de arranque (`arranque.json`)
 

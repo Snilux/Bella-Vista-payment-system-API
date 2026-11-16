@@ -14,14 +14,18 @@ import {
   feeAmount,
   person,
   roleAssignment,
+  section,
   userAccount,
+  vPaymentAmount,
+  vUnit,
 } from '../../../src/db/schema/index.js';
 import { BOOTSTRAP_AUDIT_REASON, runBootstrap } from '../../../src/db/seed/bootstrap.js';
 import { type BootstrapFile, parseBootstrapFile } from '../../../src/db/seed/bootstrap-file.js';
+import { DEV_PASSWORD, DevSeedRefusedError, runDevSeed } from '../../../src/db/seed/dev-data.js';
 import { verifyPassword } from '../../../src/lib/password.js';
 import { folioPattern, migrateDatabase, testDatabaseUrl, withFreshDatabase } from './helpers.js';
 
-// Block 8 (D-27, 3.1 §2.2): `pnpm db:seed`. The scripts commit, so
+// Block 8 (D-27, 3.1 §2.2): `pnpm db:seed` and `pnpm db:seed:dev`. The scripts commit, so
 // each case runs on a fresh, fully migrated database, connected as the API user agua_api
 // (the role the scripts use through DATABASE_URL) to prove its grants are enough.
 
@@ -266,6 +270,83 @@ describe.skipIf(!testDatabaseUrl)('pnpm db:seed (initial bootstrap)', () => {
       expect(results.map((r) => r.status).sort()).toEqual(['already_bootstrapped', 'created']);
       const [accounts] = await db.select({ n: count() }).from(userAccount);
       expect(accounts?.n).toBe(1);
+    }),
+  );
+});
+
+describe.skipIf(!testDatabaseUrl)('pnpm db:seed:dev (development data)', () => {
+  it('refuses to run with NODE_ENV=production', async () => {
+    // Refused before touching the database.
+    const unusedDb = {} as Database;
+    await expect(runDevSeed(unusedDb, { nodeEnv: 'production' })).rejects.toBeInstanceOf(
+      DevSeedRefusedError,
+    );
+  });
+
+  it('requires the initial bootstrap', { timeout: 60_000 }, () =>
+    withSeedDatabase(async (db) => {
+      await expect(runDevSeed(db, { nodeEnv: 'development' })).rejects.toThrow(/pnpm db:seed/);
+      const [sections] = await db.select({ n: count() }).from(section);
+      expect(sections?.n).toBe(0);
+    }),
+  );
+
+  it('loads realistic data once, consistent with the views', { timeout: 60_000 }, () =>
+    withSeedDatabase(async (db) => {
+      await bootstrap(db);
+      const result = await runDevSeed(db, { nodeEnv: 'development' });
+      if (result.status !== 'created') throw new Error('expected new development data');
+      expect(result.counts).toEqual({ people: 11, connections: 5, units: 8, payments: 7 });
+      expect(result.accounts.map((a) => a.username)).toEqual([
+        'presidente',
+        'tesorero',
+        'secretario',
+        'jm.s1m01',
+        'jm.s1m02',
+        'jm.s2m01',
+      ]);
+
+      // Development accounts log in with DEV_PASSWORD.
+      const [leader] = await db
+        .select()
+        .from(userAccount)
+        .where(eq(userAccount.username, 'jm.s1m01'));
+      expect(await verifyPassword(leader?.passwordHash ?? '', DEV_PASSWORD)).toBe(true);
+
+      // Homonyms: two pairs with the same normalized name and different distinguishing notes.
+      const homonyms = await db.execute<{ n: number }>(sql`
+        SELECT count(*)::int AS n FROM (
+          SELECT f_normalize_name(given_names, paternal_surname, maternal_surname)
+          FROM person GROUP BY 1 HAVING count(*) > 1) pairs`);
+      expect(homonyms[0]?.n).toBe(2);
+
+      // A connection with three families.
+      const families = await db.execute<{ n: number }>(sql`
+        SELECT max(c)::int AS n FROM (SELECT count(*) AS c FROM unit GROUP BY connection_id) u`);
+      expect(families[0]?.n).toBe(3);
+
+      const statuses = await db.select({ status: vUnit.status }).from(vUnit);
+      expect(statuses.filter((s) => s.status === 'active')).toHaveLength(7);
+      expect(statuses.filter((s) => s.status === 'pending_activation')).toHaveLength(1);
+
+      // Totals: 2025 at $40.00, 2026 at $50.00; the flores payment doubles 7 months.
+      const payments = await db.select().from(vPaymentAmount);
+      expect(payments).toHaveLength(7);
+      expect(payments.reduce((sum, p) => sum + p.total, 0)).toBe(301_000);
+      expect(payments.map((p) => p.total).sort((a, b) => a - b)).toEqual([
+        15_000, 24_000, 48_000, 48_000, 50_000, 56_000, 60_000,
+      ]);
+      for (const p of payments) {
+        expect(p.receiverPersonId).not.toBeNull();
+        expect(p.holderPersonId).not.toBeNull();
+        expect(p.cancelled).toBe(false);
+      }
+
+      const before = await counts(db);
+      expect(await runDevSeed(db, { nodeEnv: 'development' })).toEqual({
+        status: 'already_seeded',
+      });
+      expect(await counts(db)).toEqual(before);
     }),
   );
 });
