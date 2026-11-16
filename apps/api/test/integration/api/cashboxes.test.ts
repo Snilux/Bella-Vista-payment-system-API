@@ -152,6 +152,20 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
     expect((await call('GET', '/v1/cashboxes', 'jm.s1m01')).body.error.code).toBe('FORBIDDEN');
   });
 
+  it('a block created through the API has its cashbox from the start', async () => {
+    const [section] = await ctx.owner.select({ sectionId: vBlock.sectionId }).from(vBlock).limit(1);
+    const res = await call('POST', '/v1/blocks', 'secretario', {
+      sectionId: section?.sectionId,
+      code: 'M77',
+    });
+    expect(res.status).toBe(201);
+    const boxes = await ctx.owner
+      .select()
+      .from(cashbox)
+      .where(eq(cashbox.blockId, res.body.block.id));
+    expect(boxes).toHaveLength(1);
+  });
+
   // --- Opening balance (D-18) -----------------------------------------------------------------
 
   it('registers an opening balance pending approval; one open per cashbox', async () => {
