@@ -10,3 +10,6 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 .claude/settings.local.json
+
+# Local MCP server configuration
+.mcp.json
