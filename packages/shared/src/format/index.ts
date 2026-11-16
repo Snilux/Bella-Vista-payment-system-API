@@ -28,6 +28,22 @@ export function formatMoney(cents: number): string {
   return `${sign}$${money.format(Math.abs(cents) / 100)}`;
 }
 
+/**
+ * Amount typed by a person (pesos) → integer cents, or null when it is not a valid amount.
+ * Accepts "1234", "1,234.5", "$ 1,234.50" and ".5"; rejects negatives, more than two decimals,
+ * misplaced commas and anything else. It works on the digits as text, never with decimals, so
+ * "0.1" is exactly 10 cents.
+ */
+export function parseMoney(text: string): number | null {
+  const compact = text.replace(/\s/g, '').replace(/^\$/, '');
+  if (compact === '' || compact === '.') return null;
+  const match = /^(\d{1,3}(?:,\d{3})+|\d+)?(?:\.(\d{0,2}))?$/.exec(compact);
+  if (!match) return null;
+  const pesos = (match[1] ?? '0').replace(/,/g, '');
+  const cents = Number(pesos) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
+  return Number.isSafeInteger(cents) ? cents : null;
+}
+
 /** Period AAAA-MM → "Junio 2026". */
 export function formatPeriod(period: string): string {
   const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(period);
