@@ -28,7 +28,7 @@ You normally work **inside the Dev Container** (`api` service of docker-compose)
 | `pnpm dev` | API with hot reload at http://localhost:3000 |
 | `pnpm check` | Lint + types + tests. Must pass before every commit |
 | `pnpm db:generate` | Generates a migration from `apps/api/src/db/schema` |
-| `pnpm db:migrate` | Applies pending migrations |
+| `pnpm db:migrate` | Applies pending migrations, then sets agua_api's password from `DATABASE_URL` |
 | `pnpm install` | After changing dependencies |
 
 ## Structure

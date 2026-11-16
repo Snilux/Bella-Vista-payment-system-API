@@ -13,8 +13,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-agua}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agua_local}
       POSTGRES_DB: ${POSTGRES_DB:-agua}
-      # Password of the API user agua_api (docker/postgres/init/03-api-user.sh).
-      POSTGRES_API_PASSWORD: ${POSTGRES_API_PASSWORD:-agua_api_local}
       TZ: UTC
       PGTZ: UTC
     ports:
@@ -42,10 +40,12 @@ services:
       API_PORT: 3000
       TZ: UTC
       # The API runs as agua_api (limited privileges); migrations run as the owner.
-      DATABASE_URL: postgres://agua_api:${POSTGRES_API_PASSWORD:-agua_api_local}@db:5432/${POSTGRES_DB:-agua}
-      DATABASE_URL_MIGRATIONS: postgres://${POSTGRES_USER:-agua}:${POSTGRES_PASSWORD:-agua_local}@db:5432/${POSTGRES_DB:-agua}
+      # DATABASE_URL is the only source of agua_api's password: pnpm db:migrate sets it on the
+      # role every time it runs (apps/api/src/db/migrate-cli.ts).
+      DATABASE_URL: ${DATABASE_URL:-postgres://agua_api:agua_api_local@db:5432/${POSTGRES_DB:-agua}}
+      DATABASE_URL_MIGRATIONS: ${DATABASE_URL_MIGRATIONS:-postgres://${POSTGRES_USER:-agua}:${POSTGRES_PASSWORD:-agua_local}@db:5432/${POSTGRES_DB:-agua}}
       # Tests apply migrations and switch to agua_api with SET LOCAL ROLE, so they use the owner.
-      DATABASE_URL_TEST: postgres://${POSTGRES_USER:-agua}:${POSTGRES_PASSWORD:-agua_local}@db:5432/${POSTGRES_DB:-agua}_test
+      DATABASE_URL_TEST: ${DATABASE_URL_TEST:-postgres://${POSTGRES_USER:-agua}:${POSTGRES_PASSWORD:-agua_local}@db:5432/${POSTGRES_DB:-agua}_test}
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:
