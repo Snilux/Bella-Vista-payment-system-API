@@ -22,6 +22,7 @@ USER node
 FROM base AS deps
 COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY --chown=node:node apps/api/package.json apps/api/
+COPY --chown=node:node apps/mobile/package.json apps/mobile/
 COPY --chown=node:node packages/shared/package.json packages/shared/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store,uid=1000,gid=1000 \
     pnpm install --frozen-lockfile
@@ -30,7 +31,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store,uid=1000,gid=1000 \
 FROM deps AS dev
 COPY --chown=node:node . .
 ENV NODE_ENV=development
-EXPOSE 3000
+# 3000: API; 8081: Metro (Expo) for the mobile app, started by hand with pnpm dev:mobile
+EXPOSE 3000 8081
 CMD ["pnpm", "--filter", "@bella-vista/api", "dev"]
 
 # ---------- Build ----------
