@@ -24,6 +24,7 @@ const expected: Record<Action, string> = {
   'registry.manage': 'PRE SEC JM',
   'connectionRequests.view': 'PRE TES SEC VOC JM',
   'connectionRequests.manage': 'SEC JM',
+  'connectionRequests.resolve': 'SEC',
   'agreements.view': 'PRE TES SEC VOC',
   'agreements.manage': 'SEC',
   'unitChanges.request': 'SEC JM',
