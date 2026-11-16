@@ -131,7 +131,7 @@ describe.skipIf(!testDatabaseUrl)('authentication', () => {
   it('rejects an expired token with TOKEN_EXPIRED so the app refreshes it', async () => {
     const id = await ctx.accountId('tesorero');
     const expired = ctx.app.jwt.sign(
-      { sub: String(id), role: 'treasurer' },
+      { sub: String(id), username: 'tesorero', role: 'treasurer', blockId: null },
       { clockTimestamp: Date.now() - 60 * 60 * 1000 },
     );
     expect(await errorOf('/v1/test/me', { authorization: `Bearer ${expired}` })).toEqual({
@@ -141,13 +141,23 @@ describe.skipIf(!testDatabaseUrl)('authentication', () => {
   });
 
   it('rejects a token of an unknown account or with a role it does not have', async () => {
-    const unknown = ctx.app.jwt.sign({ sub: '999999', role: 'treasurer' });
+    const unknown = ctx.app.jwt.sign({
+      sub: '999999',
+      username: 'nadie',
+      role: 'treasurer',
+      blockId: null,
+    });
     expect(await errorOf('/v1/test/me', { authorization: `Bearer ${unknown}` })).toEqual({
       status: 401,
       code: 'UNAUTHENTICATED',
     });
     const id = await ctx.accountId('tesorero');
-    const wrongRole = ctx.app.jwt.sign({ sub: String(id), role: 'president' });
+    const wrongRole = ctx.app.jwt.sign({
+      sub: String(id),
+      username: 'tesorero',
+      role: 'president',
+      blockId: null,
+    });
     expect(await errorOf('/v1/test/me', { authorization: `Bearer ${wrongRole}` })).toEqual({
       status: 401,
       code: 'UNAUTHENTICATED',
@@ -239,7 +249,12 @@ describe.skipIf(!testDatabaseUrl)('authentication', () => {
         createdBy: sa,
       })
       .returning();
-    const token = ctx.app.jwt.sign({ sub: String(account?.id), role: 'member' });
+    const token = ctx.app.jwt.sign({
+      sub: String(account?.id),
+      username: 'vocal.pendiente',
+      role: 'member',
+      blockId: null,
+    });
     expect(await errorOf('/v1/test/me', { authorization: `Bearer ${token}` })).toEqual({
       status: 403,
       code: 'ROLE_NOT_ACTIVE',

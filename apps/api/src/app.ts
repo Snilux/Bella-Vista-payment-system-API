@@ -1,4 +1,5 @@
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyServerOptions } from 'fastify';
 import {
   serializerCompiler,
@@ -8,6 +9,8 @@ import {
 import { z } from 'zod';
 import type { Env } from './config/env.js';
 import type { Database } from './db/client.js';
+import { errors } from './lib/errors.js';
+import { registerAuthModule } from './modules/auth/index.js';
 import { registerAuth } from './plugins/auth.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
 import { registerIdempotency } from './plugins/idempotency.js';
@@ -32,11 +35,15 @@ export interface BuildAppOptions {
   logger?: FastifyServerOptions['logger'];
   now?: () => Date;
   healthTimeoutMs?: number;
+  /** Login and refresh limit per IP (RNF-SEG-07); tests raise it. */
+  loginRateLimit?: { max: number; timeWindow: number | string };
 }
+
+export const DEFAULT_LOGIN_RATE_LIMIT = { max: 10, timeWindow: '1 minute' };
 
 /**
  * Builds the Fastify application without listening (server.ts listens; tests use inject()).
- * Module routes are registered under /v1 by the API steps that follow.
+ * Module routes live under /v1; each API step registers its modules here.
  */
 export async function buildApp(options: BuildAppOptions) {
   const { env, db } = options;
@@ -55,6 +62,12 @@ export async function buildApp(options: BuildAppOptions) {
 
   registerErrorHandler(app);
   await app.register(helmet);
+  // Only routes that set config.rateLimit are limited (login and refresh). In memory: the API
+  // runs as a single instance.
+  await app.register(rateLimit, {
+    global: false,
+    errorResponseBuilder: () => errors.tooManyRequests(),
+  });
   // Hook order matters: authentication, then permissions (onRequest), then idempotency
   // (preHandler, after body validation).
   await registerAuth(app, {
@@ -68,6 +81,7 @@ export async function buildApp(options: BuildAppOptions) {
   registerIdempotency(app, { db });
 
   await app.register(healthRoutes, { db, timeoutMs: options.healthTimeoutMs ?? 2_000 });
+  await registerAuthModule(app, { rateLimit: options.loginRateLimit ?? DEFAULT_LOGIN_RATE_LIMIT });
 
   return app;
 }
