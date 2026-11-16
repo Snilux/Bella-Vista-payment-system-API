@@ -103,9 +103,11 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | Método    | Ruta                      | Descripción                                     | Roles                             |
 | --------- | ------------------------- | ----------------------------------------------- | --------------------------------- |
 | GET       | /cajas/mia                | Caja del cargo de la cuenta con saldo y resumen | JM, TES, PRE (apoyo)              |
+| GET       | /cajas                    | Cajas con su saldo esperado                     | Comité                            |
 | GET       | /cajas/{id}/movimientos   | Movimientos                                     | Custodio, comité                  |
 | POST      | /cajas/{id}/saldo-inicial | Saldo inicial (crea autorización)               | TES                               |
 | GET, POST | /entregas                 | Lista y preparación                             | JM, PRE (prepara), TES (consulta) |
+| GET       | /entregas/{id}            | Detalle de la entrega                           | JM, PRE (las suyas), TES, VOC     |
 | POST      | /entregas/{id}/retirar    | Retira entrega pendiente                        | Quien la preparó                  |
 | POST      | /entregas/{id}/confirmar  | Captura importe recibido                        | TES                               |
 | POST      | /aclaraciones             | Propone aclaración (crea autorización)          | TES                               |
@@ -115,11 +117,12 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | Método           | Ruta                             | Descripción                            | Roles                 |
 | ---------------- | -------------------------------- | -------------------------------------- | --------------------- |
 | GET, POST        | /ingresos                        | Otros ingresos                         | TES (consulta comité) |
+| GET              | /categorias-gasto                | Categorías de gasto                    | Comité                |
 | GET, POST        | /gastos                          | Gastos                                 | TES (consulta comité) |
 | POST             | /gastos/{id}/pagar               | Marca pagado y descuenta caja          | TES                   |
 | POST             | /gastos/{id}/rechazar            | Rechaza gasto pendiente                | TES                   |
 | POST             | /gastos/{id}/solicitar-reintegro | Crea autorización                      | TES                   |
-| GET, POST, PATCH | /fontaneros                      | Fontanero                              | TES                   |
+| GET, POST, PATCH | /fontaneros                      | Fontanero                              | TES (consulta comité) |
 | POST             | /fontaneros/{id}/salarios        | Nuevo salario (crea autorización)      | TES                   |
 | POST             | /fontaneros/{id}/pagos           | Paga un periodo con el salario vigente | TES                   |
 
@@ -189,6 +192,20 @@ La búsqueda, la ficha de persona y la ficha de toma incluyen el adeudo de cada 
 - **Asignaciones.** SEC registra la asignación y se crea una autorización pendiente para PRE. Una solicitud pendiente ya ocupa el lugar: un jefe por manzana y una manzana por jefe (`JEFE_YA_ASIGNADO`), y un solo presidente, tesorero y secretario (`CARGO_YA_ASIGNADO`). Al **rechazarse**, la asignación se cierra con `fecha_fin = fecha_inicio` y libera la manzana o el cargo. Estado calculado: pendiente, rechazada, programada, vigente o cerrada.
 - **Cerrar** (`/asignaciones/{id}/cerrar`, SEC, con `fechaFin` no posterior a hoy y `motivo`): fin de periodo de un cargo del comité; en la misma transacción desactiva su cuenta y cierra sus sesiones (D-22). Un jefe de manzana no se cierra: se sustituye con acta de entrega (D-08, paso 8 de la API).
 - **Autorizaciones.** `GET /autorizaciones?estado=pendiente|resueltas|todas`: PRE ve todas; cada cargo ve las que pidió. `POST /autorizaciones/{id}/resolver` con `{ resultado, motivo }`: solo PRE; motivo obligatorio al rechazar; `AUTORIZACION_RESUELTA` si ya se resolvió. Cada módulo registra qué pasa al autorizar o rechazar una solicitud de su tipo; la resolución, ese efecto y la bitácora van en una sola transacción.
+
+## Detalle: cajas
+
+- **Mi caja** (`/cajas/mia`, RF-CAJ-07): la del cargo de la cuenta (JM → su manzana, TES → comité, PRE → apoyo) con `saldo` esperado, `recaudado` (pagos menos cancelaciones), `entregado` (lo recibido por TES), `pendienteDeEntregar`, `disponible` (saldo − pendiente) y su saldo inicial. La caja de apoyo puede no existir aún (se crea con el primer cobro): se devuelve sin id y en ceros. SEC y VOC no custodian efectivo (`SIN_PERMISO`). Cada manzana nueva nace con su caja.
+- **Movimientos** (`/cajas/{id}/movimientos?desde=&hasta=`): de `v_caja_movimiento`, del más reciente al más antiguo, paginados. Comité: todas; JM: solo la de su manzana (`FUERA_DE_ALCANCE`).
+- **Saldo inicial** (`/cajas/{id}/saldo-inicial`, D-18): TES con `{ importe, fecha, motivo }` (fecha no futura) e `Idempotency-Key`; crea una autorización para PRE. Una sola solicitud pendiente o autorizada por caja (`ESTADO_INVALIDO`); una rechazada la libera.
+- **Entregas** (D-16): JM o PRE preparan `{ importeDeclarado, observaciones }` desde su caja, nunca más que el disponible (saldo − entregas pendientes, `SALDO_INSUFICIENTE`). Quien la preparó la retira mientras esté pendiente. TES confirma `{ importeRecibido }` (0 a lo declarado): la caja de origen baja solo lo recibido y la caja del comité sube lo mismo; el faltante se queda en la caja de origen. El folio `EN-` es el de la constancia. JM y PRE ven las de su caja; TES y VOC todas.
+- **Aclaraciones** (`/aclaraciones`, RF-CAJ-06): TES propone `{ entregaId, importe (con signo), motivo }` sobre una entrega confirmada con diferencia, una pendiente a la vez; al autorizarla PRE se mueve la caja de origen (p. ej. `-5000` da de baja un faltante). Las aclaraciones de corte llegan con los cortes (paso 8).
+
+## Detalle: comité
+
+- **Ingresos**: TES registra `{ concepto, importe, fecha?, referenciaComprobante? }` (fecha no futura) en la caja del comité.
+- **Gastos** (D-17, D-21): TES registra `{ categoriaId, descripcion, importe, acuerdoId, referenciaComprobante? }` con acuerdo aprobado; quedan pendientes de pago. Pagar bloquea la caja del comité y exige saldo suficiente (`SALDO_INSUFICIENTE`). Rechazar pide motivo y solo aplica a pendientes. El reintegro de un gasto pagado crea una autorización; al autorizarla el importe vuelve a la caja. Un reintegro pendiente o autorizado por gasto; uno rechazado lo libera.
+- **Fontanero** (D-24): TES lo registra y edita su teléfono (auditado por la base) y si está activo. El salario `{ importe, periodicidad, vigenteDesde, acuerdoId }` lo autoriza PRE; una solicitud pendiente a la vez. El pago `{ fecha? }` (hoy por omisión, nunca futura) cubre el periodo que contiene esa fecha según la periodicidad del salario vigente: semanal de lunes a domingo, quincenal del 1 al 15 y del 16 al último día, mensual el mes natural. El importe es el salario autorizado vigente al inicio del periodo; se registra como gasto pagado de la categoría *Salario del fontanero*, con saldo suficiente, y un periodo se paga una sola vez (`PERIODO_YA_PAGADO`).
 
 ## Ejemplo: registrar pago
 
