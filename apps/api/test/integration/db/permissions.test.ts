@@ -4,12 +4,14 @@ import { describe, expect, it } from 'vitest';
 import type { Transaction } from '../../../src/db/client.js';
 import {
   auditLog,
+  block,
   coveredPeriod,
   handover,
   income,
   payment,
   person,
   plumber,
+  section,
   vCashboxBalance,
 } from '../../../src/db/schema/index.js';
 import { one, pgError, testDatabaseUrl, useTestDb } from './helpers.js';
@@ -211,4 +213,18 @@ describe.skipIf(!testDatabaseUrl)('permissions of agua_api', () => {
         );
       }));
   });
+
+  it('renames sections and blocks but cannot change their codes (migration 0016)', () =>
+    rollback(async (tx) => {
+      const { s1, m01 } = await moneyFixture(tx);
+      await actAsApi(tx);
+      await tx.update(section).set({ name: 'Sección Norte' }).where(eq(section.id, s1.id));
+      await tx.update(block).set({ name: 'Manzana del pozo' }).where(eq(block.id, m01.id));
+      await expectDenied(tx, (sp) =>
+        sp.update(section).set({ code: 'S9' }).where(eq(section.id, s1.id)),
+      );
+      await expectDenied(tx, (sp) =>
+        sp.update(block).set({ code: 'M99' }).where(eq(block.id, m01.id)),
+      );
+    }));
 });

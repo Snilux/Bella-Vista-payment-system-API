@@ -113,6 +113,13 @@
       "when": 1794719849776,
       "tag": "0015_api_user_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794794744764,
+      "tag": "0016_rename_sections_blocks_grant",
+      "breakpoints": true
     }
   ]
 }
