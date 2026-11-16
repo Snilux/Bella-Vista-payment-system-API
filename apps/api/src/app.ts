@@ -25,6 +25,7 @@ import { registerConnectionsModule } from './modules/connections/index.js';
 import { registerOrganizationModule } from './modules/organization/index.js';
 import { registerRatesModule } from './modules/rates/index.js';
 import { registerRegistryModule } from './modules/registry/index.js';
+import { registerReportsModule } from './modules/reports/index.js';
 import { registerAuth } from './plugins/auth.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
 import { registerIdempotency } from './plugins/idempotency.js';
@@ -110,6 +111,7 @@ export async function buildApp(options: BuildAppOptions) {
   await registerCashboxesModule(app, approvalRegistry);
   await registerCommitteeModule(app, approvalRegistry);
   await registerClosingsModule(app);
+  await registerReportsModule(app);
 
   return app;
 }
