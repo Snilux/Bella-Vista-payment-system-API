@@ -1,0 +1,42 @@
+{
+  "superadministrador": {
+    "nombres": "Nombre",
+    "apellidoPaterno": "Apellido",
+    "apellidoMaterno": "Apellido",
+    "distintivo": null,
+    "telefono": "5550000000",
+    "usuario": "admin"
+  },
+  "acuerdo": {
+    "fechaJunta": "2026-11-01",
+    "tema": "Elección del comité de agua",
+    "votosFavor": 80,
+    "votosContra": 4,
+    "abstenciones": 2,
+    "referenciaActa": "Acta de asamblea del 1 de noviembre de 2026, foja 3"
+  },
+  "presidente": {
+    "nombres": "Nombre",
+    "apellidoPaterno": "Presidente",
+    "apellidoMaterno": null,
+    "distintivo": null,
+    "telefono": "5550000001",
+    "fechaInicio": "2026-11-01"
+  },
+  "tesorero": {
+    "nombres": "Nombre",
+    "apellidoPaterno": "Tesorero",
+    "apellidoMaterno": null,
+    "distintivo": null,
+    "telefono": "5550000002",
+    "fechaInicio": "2026-11-01"
+  },
+  "secretario": {
+    "nombres": "Nombre",
+    "apellidoPaterno": "Secretario",
+    "apellidoMaterno": null,
+    "distintivo": null,
+    "telefono": "5550000003",
+    "fechaInicio": "2026-11-01"
+  }
+}

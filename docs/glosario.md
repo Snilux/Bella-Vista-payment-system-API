@@ -220,3 +220,17 @@ No se guardan: las vistas los derivan de las fechas de cada hecho (columna `stat
 | saldo                       | balance              |
 | periodo cerrado             | closed period        |
 | bitácora                    | audit log            |
+| arranque inicial            | bootstrap            |
+| autorizada por arranque     | approved by bootstrap |
+| contraseña temporal         | temporary password   |
+| registro técnico (bitácora) | technical entry (`is_technical`) |
+
+## Archivo de arranque (`arranque.json`)
+
+Lo llena quien ejecuta `pnpm db:seed`, así que sus claves quedan en español (ver `arranque.example.json`). En el código se leen tal cual:
+
+| Clave | Uso en el código |
+| --- | --- |
+| `superadministrador` (`nombres`, `apellidoPaterno`, `apellidoMaterno`, `distintivo`, `telefono`, `usuario`) | `person` + `role_assignment` (`superadmin`) + `user_account` |
+| `acuerdo` (`fechaJunta`, `tema`, `votosFavor`, `votosContra`, `abstenciones`, `referenciaActa`) | `agreement` (`meeting_date`, `topic`, `votes_for`, `votes_against`, `abstentions`, `minutes_reference`) |
+| `presidente`, `tesorero`, `secretario` (datos de persona y `fechaInicio`) | `role_assignment` (`president`, `treasurer`, `secretary`; `start_date`) |
