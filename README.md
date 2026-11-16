@@ -1,6 +1,6 @@
-# Bella Vista payment system — API
+# Bella Vista payment system
 
-API del sistema de cobro de agua de la comunidad Bella Vista. Monorepo con pnpm: `apps/api` (Fastify + PostgreSQL) y `packages/shared` (esquemas y reglas de negocio compartidas con la futura app móvil).
+API y app móvil del sistema de cobro de agua de la comunidad Bella Vista. Monorepo con pnpm: `apps/api` (Fastify + PostgreSQL), `apps/mobile` (Expo + React Native) y `packages/shared` (esquemas y reglas de negocio que comparten la API y la app).
 
 La forma recomendada de trabajar es el **Dev Container**: VS Code, la terminal, Git, Claude Code y la API corren dentro de Docker, así que en su equipo no necesita Node.
 
@@ -50,6 +50,7 @@ Su identidad de Git y su llave SSH se usan dentro del contenedor automáticament
 | Comando | Qué hace |
 |---|---|
 | `pnpm dev` | API en http://localhost:3000 con recarga en caliente |
+| `pnpm dev:mobile` | App móvil con Expo (Metro en el puerto 8081); ábrala con Expo Go |
 | `pnpm check` | Lint, tipos y pruebas |
 | `pnpm db:generate` | Genera una migración desde el esquema |
 | `pnpm db:migrate` | Aplica las migraciones y ajusta la contraseña de `agua_api` a la de `DATABASE_URL` |
@@ -134,6 +135,29 @@ La carpeta `http/` tiene un archivo por escenario para la extensión **REST Clie
 | `06-permisos.http` | Casos que deben fallar: jefe en otra manzana, vocal registrando un gasto, presidente registrando una persona |
 
 Los importes de los comentarios son los de una base recién cargada con `pnpm db:seed:dev` en noviembre de 2026; cambian con la fecha y con lo que ya se haya ejecutado. `01` y `03` se pueden repetir en ese orden (`03` cancela el pago de `01`). El login y el refresco aceptan 10 solicitudes por minuto por IP: si alguna responde 429, espere un minuto.
+
+## App móvil (Expo Go)
+
+La app vive en `apps/mobile` y corre dentro del mismo contenedor que la API. Expo Go (Android o iOS) alcanza para todo el desarrollo.
+
+**Una sola vez:**
+
+1. Averigüe la IP de Windows en el Wi-Fi: en PowerShell, `ipconfig` → *Adaptador de LAN inalámbrica Wi-Fi* → *Dirección IPv4* (p. ej. `192.168.1.20`).
+2. En `.env` (raíz del repositorio) agregue:
+   ```
+   EXPO_PUBLIC_API_URL=http://192.168.1.20:3000
+   REACT_NATIVE_PACKAGER_HOSTNAME=192.168.1.20
+   ```
+   La URL va **sin** `/v1`. `REACT_NATIVE_PACKAGER_HOSTNAME` hace que el código QR apunte a Windows y no al contenedor.
+3. *Dev Containers: Rebuild Container*: publica el puerto 8081, instala las dependencias de la app en la imagen y carga las variables nuevas.
+4. Firewall de Windows: permita Docker Desktop en **redes privadas** y marque su Wi-Fi como red privada.
+5. Instale **Expo Go** en el teléfono, conectado al mismo Wi-Fi que la PC.
+
+**Cada vez:** en una terminal `pnpm dev` (API) y en otra `pnpm dev:mobile`. Escanee el QR con Expo Go (en iOS, con la cámara). La pantalla de inicio dice si la app llega a `/health` de la API; **Ver galería de componentes** abre la galería (solo existe en desarrollo).
+
+- Si el Wi-Fi no lo permite (red pública, aislamiento de clientes): `pnpm dev:mobile --tunnel`, más lento pero funciona en cualquier red.
+- Emulador de Android Studio en Windows: `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000`.
+- Probar con letra grande: en el teléfono, *Ajustes → Pantalla → Tamaño de fuente* al máximo; la app respeta hasta 1.4×.
 
 ## Documentación
 
