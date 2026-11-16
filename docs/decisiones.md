@@ -62,6 +62,14 @@ Precisiones acordadas al implementarlo:
 - **Caja receptora** (D-07): la caja de manzana o la de apoyo se crean con su primer cobro si todavía no existen.
 - **Bloqueos**: la unidad y la solicitud de toma se bloquean con `SELECT ... FOR UPDATE`. En pago, caja, tarifa y concepto el usuario de la API no tiene UPDATE (el dinero no se edita) y PostgreSQL lo exige para bloquear filas, así que se usa un bloqueo transaccional por registro (`pg_advisory_xact_lock`).
 
+## Cajas y comité (paso 7 de la API)
+
+- **Solicitudes rechazadas** (D-18, RF-GAS-04): una caja tiene un solo saldo inicial y un gasto un solo reintegro, pero una solicitud que PRE rechaza libera el lugar para otra (migraciones 0017 y 0018).
+- **Entregas** (D-16): el límite es el saldo esperado menos las entregas pendientes de la misma caja; lo recibido no puede ser mayor que lo declarado.
+- **Aclaraciones**: en este paso solo de entregas con diferencia; las de corte, con los cortes (paso 8).
+- **Periodos del fontanero** (D-24): semanal de lunes a domingo, quincenal del 1 al 15 y del 16 al último día, mensual el mes natural. Se paga el periodo que contiene la fecha indicada (no futura) con el salario autorizado vigente al inicio del periodo.
+- **Caja de manzana**: se crea junto con la manzana.
+
 ## Permisos (resumen)
 
 | Operación                   | SA      | PRE              | TES      | SEC      | VOC             | JM         |
@@ -79,6 +87,7 @@ Precisiones acordadas al implementarlo:
 | Consultar pagos             | —       | sí               | sí       | sí       | sí              | su manzana |
 | Reposición de recibo        | —       | —                | sí       | —        | —               | su manzana |
 | Cancelar pago               | —       | autoriza         | solicita | —        | —               | solicita   |
+| Cajas y movimientos         | —       | sí               | sí       | ver      | ver             | su manzana |
 | Entregas                    | —       | ver              | confirma | —        | ver             | prepara    |
 | Ingresos, gastos, fontanero | —       | confirma salario | sí       | ver      | ver             | —          |
 | Cortes                      | —       | revisa y cierra  | prepara  | ver      | revisa y cierra | prepara    |

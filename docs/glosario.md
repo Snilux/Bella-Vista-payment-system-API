@@ -378,3 +378,27 @@ Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 | `desde`, `hasta` (filtro de pagos) | `from`, `to` |
 | permiso de consultar pagos | `payments.view` |
 | bloqueo de registro sin permiso UPDATE (advisory lock) | `lockRecord` (`db/locks.ts`) |
+
+## Cajas y comité
+
+| Español | Inglés |
+| --- | --- |
+| `/cajas`, `/cajas/mia`, `/cajas/{id}/movimientos` | `/v1/cashboxes`, `/v1/cashboxes/mine`, `/v1/cashboxes/{id}/movements` |
+| `/cajas/{id}/saldo-inicial` | `/v1/cashboxes/{id}/opening-balance` |
+| `/entregas`, `/{id}/retirar`, `/{id}/confirmar` | `/v1/handovers`, `/{id}/withdraw`, `/{id}/confirm` |
+| `/aclaraciones` | `/v1/adjustments` |
+| `/ingresos`, `/gastos`, `/categorias-gasto` | `/v1/incomes`, `/v1/expenses`, `/v1/expense-categories` |
+| `/gastos/{id}/pagar`, `/rechazar`, `/solicitar-reintegro` | `/v1/expenses/{id}/pay`, `/reject`, `/request-refund` |
+| `/fontaneros`, `/{id}/salarios`, `/{id}/pagos` | `/v1/plumbers`, `/{id}/salaries`, `/{id}/payments` |
+| `saldo`, `recaudado`, `entregado`, `pendienteDeEntregar`, `disponible` | `balance`, `collected`, `handedOver`, `pendingHandover`, `available` |
+| `importeDeclarado`, `importeRecibido`, `diferencia`, `importeAclarado` | `declaredAmount`, `receivedAmount`, `difference`, `adjustedAmount` |
+| `observaciones`, `preparo`, `confirmo` | `notes`, `preparedBy`, `confirmedBy` |
+| estado de la entrega: pendiente, retirada, confirmada, con diferencia, aclarada | `pending`, `withdrawn`, `confirmed`, `with_difference`, `adjusted` |
+| `entregaId` | `handoverId` |
+| `referenciaComprobante` | `voucherReference` |
+| estado del gasto: pendiente de pago, pagado, rechazado, reintegrado | `pending_payment`, `paid`, `rejected`, `refunded` |
+| `categoriaId`, `esSalarioFontanero` | `categoryId`, `isPlumberSalary` |
+| periodicidad: semanal, quincenal, mensual | `weekly`, `biweekly`, `monthly` |
+| `salarioVigente`, `inicioPeriodo`, `finPeriodo` | `currentSalary`, `periodStart`, `periodEnd` |
+| periodo de pago del fontanero | `plumberPayPeriod` (`packages/shared/src/domain/plumber.ts`) |
+| permisos: ver cajas, registrar saldo inicial | `cashboxes.view`, `openingBalances.register` |
