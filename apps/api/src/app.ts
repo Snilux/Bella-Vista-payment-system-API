@@ -19,6 +19,7 @@ import { registerApprovalsModule } from './modules/approvals/index.js';
 import { registerAuthModule } from './modules/auth/index.js';
 import { registerBillingModule } from './modules/billing/index.js';
 import { registerCashboxesModule } from './modules/cashboxes/index.js';
+import { registerCommitteeModule } from './modules/committee/index.js';
 import { registerConnectionsModule } from './modules/connections/index.js';
 import { registerOrganizationModule } from './modules/organization/index.js';
 import { registerRatesModule } from './modules/rates/index.js';
@@ -106,6 +107,7 @@ export async function buildApp(options: BuildAppOptions) {
   await registerRatesModule(app, approvalRegistry);
   await registerBillingModule(app, approvalRegistry);
   await registerCashboxesModule(app, approvalRegistry);
+  await registerCommitteeModule(app, approvalRegistry);
 
   return app;
 }
