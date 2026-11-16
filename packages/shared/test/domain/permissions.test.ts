@@ -35,6 +35,8 @@ const expected: Record<Action, string> = {
   'billing.collect': 'PRE TES JM',
   'receipts.replace': 'TES JM',
   'payments.requestCancellation': 'TES JM',
+  'cashboxes.view': 'PRE TES SEC VOC JM',
+  'openingBalances.register': 'TES',
   'handovers.view': 'PRE TES VOC JM',
   'handovers.prepare': 'PRE JM',
   'handovers.confirm': 'TES',

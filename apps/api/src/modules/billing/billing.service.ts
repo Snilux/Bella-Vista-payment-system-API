@@ -1,6 +1,5 @@
 import {
   type AccountStatementResponse,
-  type CashboxRef,
   type CreatePaymentRequest,
   formatMoney,
   type PaidCharge,
@@ -28,6 +27,8 @@ import { dateToPeriod, periodToDate } from '../../lib/periods.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
 import { assertInScope, blockScope } from '../../plugins/permissions.js';
 import type { ApprovalHandler } from '../approvals/approval-registry.js';
+import { cashboxLabels } from '../cashboxes/cashboxes.repository.js';
+import { custodianCashbox } from '../cashboxes/cashboxes.service.js';
 import { loadAccountStatements } from './account-statements.js';
 import { billingErrors } from './billing.errors.js';
 import * as repo from './billing.repository.js';
@@ -195,64 +196,8 @@ export function createBillingService(deps: BillingServiceDeps) {
     return { unit, blockId, months, charges: priced, total };
   }
 
-  /** Where the cash goes (D-07): JM → block box, TES → committee box, PRE → support box. */
-  async function receivingCashbox(
-    exec: Executor,
-    account: AuthenticatedAccount,
-    create: Transaction | null,
-  ): Promise<CashboxRef> {
-    if (account.role === 'block_leader') {
-      const block = blockScope(account);
-      if (block === null) throw errors.roleNotActive();
-      if (create) await lockRecord(create, 'cashbox_block', block);
-      let id = await repo.blockCashbox(exec, block);
-      if (id === null && create) {
-        // Blocks created through the API get their cashbox with their first payment.
-        const row = await repo.insertCashbox(create, {
-          type: 'block',
-          blockId: block,
-          createdBy: account.userAccountId,
-        });
-        await writeAudit(create, auditActor(account), {
-          action: 'create',
-          table: 'cashbox',
-          recordId: row.id,
-          after: { type: 'block', blockId: block },
-        });
-        id = row.id;
-      }
-      return { id, type: 'block', label: (await repo.blockCode(exec, block)) ?? '' };
-    }
-    if (account.role === 'treasurer') {
-      const id = await repo.committeeCashbox(exec);
-      if (id === null) throw errors.internal(); // created by the bootstrap (D-27)
-      return { id, type: 'committee', label: 'Comité' };
-    }
-    if (account.role === 'president') {
-      if (create) await lockRecord(create, 'cashbox_support', account.personId);
-      let id = await repo.supportCashbox(exec, account.personId);
-      if (id === null && create) {
-        const row = await repo.insertCashbox(create, {
-          type: 'support',
-          custodianPersonId: account.personId,
-          createdBy: account.userAccountId,
-        });
-        await writeAudit(create, auditActor(account), {
-          action: 'create',
-          table: 'cashbox',
-          recordId: row.id,
-          after: { type: 'support', custodianPersonId: account.personId },
-        });
-        id = row.id;
-      }
-      const name = await repo.personFullName(exec, account.personId);
-      return { id, type: 'support', label: `Apoyo · ${name ?? ''}` };
-    }
-    throw errors.forbidden();
-  }
-
   async function toSummaries(exec: Executor, rows: repo.PaymentRow[]): Promise<PaymentSummary[]> {
-    const labels = await repo.cashboxLabels(exec, [...new Set(rows.map((r) => r.cashboxId))]);
+    const labels = await cashboxLabels(exec, [...new Set(rows.map((r) => r.cashboxId))]);
     return rows.map((row) => {
       const box = labels.find((l) => l.id === row.cashboxId);
       return {
@@ -348,7 +293,7 @@ export function createBillingService(deps: BillingServiceDeps) {
           })),
           charges: priced.charges.map(toPublicCharge),
           total: priced.total,
-          cashbox: await receivingCashbox(db, viewer, null),
+          cashbox: await custodianCashbox(db, viewer, null),
         },
       };
     },
@@ -381,7 +326,7 @@ export function createBillingService(deps: BillingServiceDeps) {
               charges: priced.charges.map(toPublicCharge),
             });
           }
-          const box = await receivingCashbox(tx, viewer, tx);
+          const box = await custodianCashbox(tx, viewer, tx);
           if (box.id === null) throw errors.internal();
           await lockRecord(tx, 'cashbox', box.id);
           if (await repo.paperFolioTaken(tx, box.id, input.paperFolio)) {
@@ -575,11 +520,6 @@ export function createBillingService(deps: BillingServiceDeps) {
 }
 
 export type BillingService = ReturnType<typeof createBillingService>;
-
-const auditActor = (account: AuthenticatedAccount): Actor => ({
-  userAccountId: account.userAccountId,
-  role: account.role,
-});
 
 /**
  * payment_cancellation (D-15): approving it frees the payment's months (deletes its

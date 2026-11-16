@@ -42,6 +42,14 @@ export function createApprovalRegistry() {
       }
       handlers.set(type, handler);
     },
+    /**
+     * Swaps the handler of `type` (null removes it). Only for tests, which need a handler of
+     * their own or a type without handler now that every module registers one.
+     */
+    replace(type: ApprovalType, handler: ApprovalHandler | null): void {
+      if (handler) handlers.set(type, handler);
+      else handlers.delete(type);
+    },
     /** Handler of `type`, or undefined when no module registered it yet. */
     find(type: ApprovalType): ApprovalHandler | undefined {
       return handlers.get(type);
