@@ -27,7 +27,7 @@ apps/api/src/modules/billing/
 └── billing.errors.ts           códigos de error propios del módulo (opcional)
 ```
 
-Pruebas en `apps/api/test/unit/billing/*.test.ts` (servicio con repositorio simulado) y `apps/api/test/integration/billing/*.test.ts` (contra `DATABASE_URL_TEST`, con `app.inject()`).
+Pruebas en `apps/api/test/unit/billing/*.test.ts` (servicio con repositorio simulado) y `apps/api/test/integration/billing/*.test.ts` (contra `DATABASE_URL_TEST`, con `app.inject()`). Cada archivo de integración crea, migra y carga su propia base, así que corren de uno en uno (proyecto `integration` de Vitest); las unitarias, en paralelo. `test/integration/api/permission-matrix.test.ts` recorre la matriz de permisos completa: una ruta nueva debe agregarse ahí.
 
 Módulos y casos de uso (nombres en inglés según [glosario.md](glosario.md)): auth (CU-01), accounts — cuentas (CU-02), organization — organización (CU-03, CU-04), registry — padrón (CU-05 a CU-07, CU-10, CU-11), connections — tomas (CU-08, CU-09), rates — tarifas (CU-12), billing — cobranza (CU-13 a CU-16), cashboxes — cajas (CU-17, CU-18), committee — comité (CU-19 a CU-21), closings — cortes (CU-22), reports — reportes (CU-23, CU-24), approvals — autorizaciones (transversal), audit — auditoría (CU-25).
 
@@ -35,7 +35,7 @@ Módulos y casos de uso (nombres en inglés según [glosario.md](glosario.md)): 
 
 | Carpeta                       | Contenido                                                                                       |
 | ----------------------------- | ----------------------------------------------------------------------------------------------- |
-| `config/`                     | `env.ts`: lee y valida variables con Zod; falla al arrancar si falta algo                       |
+| `config/`                     | `env.ts`: lee y valida variables con Zod; falla al arrancar si falta algo. `logger.ts`: opciones de pino (oculta secretos, errores de BD sin consulta ni valores, rutas sin parámetros) |
 | `db/`                         | `client.ts` (conexión `postgres` + Drizzle), `schema/` por dominio, `migrations/`               |
 | `plugins/`                    | autenticación JWT y permisos, manejador de errores, idempotencia, contexto de bitácora          |
 | `lib/`                        | `AppError`, dinero en centavos, periodos `AAAA-MM`, zona horaria                                |

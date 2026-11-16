@@ -17,6 +17,7 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | Paginación    | `?limite=20&cursor=...` → `{ datos: [], siguiente: "cursor" }`                                                                                               |
 | Alcance       | La API filtra por manzana según el cargo de la cuenta; un JM nunca recibe datos de pago de otras manzanas                                                    |
 | Errores       | `{ "error": { "codigo": "PERIODO_YA_PAGADO", "mensaje": "Junio 2026 ya está pagado.", "detalles": {} } }`                                                    |
+| Registros     | Sin secretos ni datos personales (RNF-SEG-06): la ruta se registra sin parámetros de búsqueda; `Authorization`, contraseñas y tokens siempre se ocultan; los errores de base de datos se registran sin la consulta ni sus valores |
 
 | HTTP | Uso                                                                          |
 | ---- | ---------------------------------------------------------------------------- |
@@ -160,7 +161,8 @@ Los reportes devuelven JSON; la app genera el PDF.
 - El token de acceso dura 15 min y lleva la cuenta, el usuario, el cargo y la manzana. El de refresco dura 30 días y solo se guarda su hash (SHA-256).
 - Usuario inexistente o contraseña incorrecta → `CREDENCIALES_INVALIDAS`. Al quinto intento fallido seguido la cuenta se bloquea 15 min (`CUENTA_BLOQUEADA`, con `detalles.bloqueadaHasta`). Mientras esté bloqueada no se revisa la contraseña.
 - Con la contraseña correcta: cuenta desactivada → `CUENTA_DESACTIVADA`; asignación cerrada, pendiente o sin iniciar → `CARGO_NO_VIGENTE`.
-- Límite: 10 solicitudes por minuto por IP en login y refresco (`DEMASIADAS_SOLICITUDES`).
+- Límite (RNF-SEG-07): 10 solicitudes por minuto por IP en login y refresco, y 10 intentos de login por minuto por usuario aunque lleguen de IPs distintas (`DEMASIADAS_SOLICITUDES`, con el encabezado `Retry-After`). Los mensajes del login no cambian; cada bloqueo automático queda en la bitácora técnica.
+- IP del cliente: la API solo toma la IP de `X-Forwarded-For` si viene de un proxy de confianza, según la variable `TRUST_PROXY`: `false` (por omisión, sin proxy), el número de proxies delante de la API (p. ej. `1` detrás del proxy HTTPS de la plataforma) o sus direcciones/CIDR separadas por comas. Nunca `true`: cualquier cliente podría inventar una IP por intento y saltarse el límite.
 
 **Refresco** `POST /v1/auth/refrescar` con `{ "tokenRefresco": "..." }`: revoca el token recibido y entrega un par nuevo. Si llega un token que ya fue rotado o revocado, se revoca **toda su cadena** (detección de robo) y responde `NO_AUTENTICADO`.
 
