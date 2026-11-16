@@ -21,7 +21,7 @@ const expected: Record<Action, string> = {
   'assignments.register': 'SEC',
   'assignments.close': 'SEC',
   'registry.view': 'PRE TES SEC VOC JM',
-  'registry.manage': 'PRE SEC JM',
+  'registry.manage': 'SEC JM',
   'connectionRequests.view': 'PRE TES SEC VOC JM',
   'connectionRequests.manage': 'SEC JM',
   'connectionRequests.resolve': 'SEC',

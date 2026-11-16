@@ -432,7 +432,7 @@ describe.skipIf(!testDatabaseUrl)('connections', () => {
       'POST',
       '/v1/connections/pre-existing',
       { address: 'X', blockId: 1, unit: { holderPersonId: 1, billingStartPeriod: '2025-01' } },
-      ['admin', 'tesorero', 'vocal'],
+      ['admin', 'presidente', 'tesorero', 'vocal'],
     ],
     ['connection detail', 'GET', '/v1/connections/1', undefined, ['admin']],
     ['list agreements', 'GET', '/v1/agreements', undefined, ['admin', 'jm.s1m01']],

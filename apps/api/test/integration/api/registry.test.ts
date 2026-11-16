@@ -591,14 +591,14 @@ describe.skipIf(!testDatabaseUrl)('registry', () => {
       'GET',
       '/v1/people/matches?givenNames=A&paternalSurname=B',
       undefined,
-      ['admin', 'tesorero', 'vocal'],
+      ['admin', 'presidente', 'tesorero', 'vocal'],
     ],
     [
       'create person',
       'POST',
       '/v1/people',
       { givenNames: 'A', paternalSurname: 'B' },
-      ['admin', 'tesorero', 'vocal'],
+      ['admin', 'presidente', 'tesorero', 'vocal'],
     ],
     ['person detail', 'GET', '/v1/people/1', undefined, ['admin']],
     [
@@ -606,7 +606,7 @@ describe.skipIf(!testDatabaseUrl)('registry', () => {
       'POST',
       '/v1/units',
       { connectionId: 1, holderPersonId: 1 },
-      ['admin', 'tesorero', 'vocal'],
+      ['admin', 'presidente', 'tesorero', 'vocal'],
     ],
     ['unit detail', 'GET', '/v1/units/1', undefined, ['admin']],
     [

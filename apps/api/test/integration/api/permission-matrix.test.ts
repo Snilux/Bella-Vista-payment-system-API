@@ -144,19 +144,6 @@ const MATRIX: Record<string, R[]> = {
   'GET /v1/audit-log': [PRE, SA],
 };
 
-/**
- * Where the code currently differs from 2.3, pending a decision (review of 2026-11-16,
- * finding "PRE registra personas, tomas preexistentes y unidades"). 1.1 §4 gives PRE
- * "🔸 apoyo" on people, connections and units, 2.3 only JM and SEC. Remove an entry once the
- * code or the documents are aligned.
- */
-const KNOWN_DEVIATIONS: Record<string, R[]> = {
-  'GET /v1/people/matches': [PRE],
-  'POST /v1/people': [PRE],
-  'POST /v1/connections/pre-existing': [PRE],
-  'POST /v1/units': [PRE],
-};
-
 /** Routes every authenticated account may use (no permission of the matrix). */
 const ANY_ACCOUNT = ['POST /v1/auth/change-password', 'POST /v1/auth/logout'];
 const PUBLIC = ['POST /v1/auth/login', 'POST /v1/auth/refresh'];
@@ -228,9 +215,7 @@ describe.skipIf(!testDatabaseUrl)('permission matrix and block isolation', () =>
     for (const [route, allowed] of Object.entries(MATRIX)) {
       const [method = 'GET', path = ''] = route.split(' ');
       const url = path.replaceAll(':id', MISSING_ID);
-      const actual = [...allowed, ...(KNOWN_DEVIATIONS[route] ?? [])];
-
-      it(`${route}: ${actual.join(', ')}`, async () => {
+      it(`${route}: ${allowed.join(', ')}`, async () => {
         const outcome: Record<string, string> = {};
         for (const role of ROLES) {
           // Empty body and a missing id: allowed roles stop at validation or NOT_FOUND, so
@@ -244,7 +229,7 @@ describe.skipIf(!testDatabaseUrl)('permission matrix and block isolation', () =>
           expect(res.status, `${role} → ${res.status} ${res.code}`).not.toBe(401);
         }
         const expected = Object.fromEntries(
-          ROLES.map((role) => [role, actual.includes(role) ? 'passes' : 'FORBIDDEN']),
+          ROLES.map((role) => [role, allowed.includes(role) ? 'passes' : 'FORBIDDEN']),
         );
         expect(outcome).toEqual(expected);
       });
