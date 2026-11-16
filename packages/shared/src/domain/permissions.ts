@@ -16,6 +16,8 @@ export const PERMISSIONS = {
   'organization.manage': ['secretary'],
   'assignments.view': COMMITTEE,
   'assignments.register': ['secretary'],
+  // End of term of a committee officer (D-22); block leaders are replaced, not closed (D-08)
+  'assignments.close': ['secretary'],
   // Registry and connections (CU-05 to CU-11)
   'registry.view': COMMITTEE_AND_LEADERS,
   'registry.manage': ['secretary', 'block_leader', 'president'],

@@ -2,4 +2,5 @@ export * from './accounts.js';
 export * from './approvals.js';
 export * from './auth.js';
 export * from './errors.js';
+export * from './organization.js';
 export * from './role-assignment.js';

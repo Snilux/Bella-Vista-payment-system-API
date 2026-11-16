@@ -23,7 +23,7 @@ const ruleIssue: Record<RoleAssignmentRule, { path: 'blockId' | 'contactPhone'; 
 
 /**
  * Body of `POST /v1/role-assignments` (SEC registers, PRE approves). The approval is created
- * by the service, so it is not part of the input.
+ * by the service; `reason` is its text (a description of the assignment when omitted).
  */
 export const createRoleAssignmentSchema = z
   .object({
@@ -32,6 +32,12 @@ export const createRoleAssignmentSchema = z
     blockId: z.int().positive().nullish(),
     contactPhone: z.string().trim().min(1, 'El teléfono no puede estar vacío.').nullish(),
     startDate: z.iso.date(),
+    reason: z
+      .string()
+      .trim()
+      .min(1, 'El motivo no puede estar vacío.')
+      .max(500, 'El motivo no puede tener más de 500 caracteres.')
+      .optional(),
   })
   .superRefine((input, ctx) => {
     for (const rule of roleAssignmentViolations(input)) {

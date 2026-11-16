@@ -17,6 +17,7 @@ import {
 } from './modules/approvals/approval-registry.js';
 import { registerApprovalsModule } from './modules/approvals/index.js';
 import { registerAuthModule } from './modules/auth/index.js';
+import { registerOrganizationModule } from './modules/organization/index.js';
 import { registerAuth } from './plugins/auth.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
 import { registerIdempotency } from './plugins/idempotency.js';
@@ -94,6 +95,7 @@ export async function buildApp(options: BuildAppOptions) {
   await registerAuthModule(app, { rateLimit: options.loginRateLimit ?? DEFAULT_LOGIN_RATE_LIMIT });
   await registerAccountsModule(app);
   await registerApprovalsModule(app, approvalRegistry);
+  await registerOrganizationModule(app, approvalRegistry);
 
   return app;
 }
