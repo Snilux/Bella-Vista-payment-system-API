@@ -23,6 +23,8 @@ export const PERMISSIONS = {
   'registry.manage': ['secretary', 'block_leader', 'president'],
   'connectionRequests.view': COMMITTEE_AND_LEADERS,
   'connectionRequests.manage': ['secretary', 'block_leader'],
+  // Resolving a request with its meeting agreement (2.3: SEC)
+  'connectionRequests.resolve': ['secretary'],
   'agreements.view': COMMITTEE,
   'agreements.manage': ['secretary'],
   'unitChanges.request': ['secretary', 'block_leader'],
