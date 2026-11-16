@@ -1,6 +1,7 @@
 import { pino } from 'pino';
 import type { z } from 'zod';
 import { envSchema } from '../../config/env.js';
+import { loggerOptions } from '../../config/logger.js';
 
 // Shared pieces of the seed command-line scripts. They only need the database and the
 // business time zone, not the whole API environment (JWT secrets, ports).
@@ -28,10 +29,7 @@ export function loadSeedEnv(source: Record<string, string | undefined> = process
 }
 
 export function createSeedLogger(env: Pick<SeedEnv, 'NODE_ENV' | 'LOG_LEVEL'>) {
-  return pino({
-    level: env.LOG_LEVEL,
-    ...(env.NODE_ENV === 'development' && { transport: { target: 'pino-pretty' } }),
-  });
+  return pino(loggerOptions(env));
 }
 
 /**

@@ -1,5 +1,6 @@
 import { buildApp } from './app.js';
 import { loadEnv } from './config/env.js';
+import { loggerOptions } from './config/logger.js';
 import { createDb } from './db/client.js';
 
 // Process entry point: validates the environment, opens the database pool, builds the app
@@ -11,10 +12,7 @@ const { db, sql } = createDb(env.DATABASE_URL);
 const app = await buildApp({
   env,
   db,
-  logger: {
-    level: env.LOG_LEVEL,
-    ...(env.NODE_ENV === 'development' && { transport: { target: 'pino-pretty' } }),
-  },
+  logger: loggerOptions(env),
 });
 
 let closing = false;
