@@ -129,6 +129,8 @@ Solo para habilitar restricciones únicas, protegida con FK compuestas: `periodo
 | `agua` (dueño) | Migraciones (`DATABASE_URL_MIGRACIONES`) | Todo |
 | `agua_api` | La API en ejecución (`DATABASE_URL`) | SELECT en todo; INSERT en todas las tablas; UPDATE solo en columnas de estado (confirmación de entrega, pago y rechazo de gasto, revisión y cierre de corte, resolución de autorización, cuenta de usuario, fechas de baja e historiales) y en los datos de contacto: `persona.telefono`, `persona.distintivo` y `fontanero.telefono`, cada cambio registrado en la bitácora; DELETE solo en `periodo_cubierto`, `token_refresco` e `idempotencia`. Sin UPDATE ni DELETE en pago, pago_mes, recibo_papel, ingreso y bitacora, ni en el resto de las columnas de persona; sin DELETE en persona ni fontanero |
 
+La contraseña de `agua_api` solo está en `DATABASE_URL`: `pnpm db:migrate`, con la conexión del dueño, aplica las migraciones y después ejecuta `ALTER ROLE agua_api WITH LOGIN PASSWORD …` con la contraseña de esa URL (idempotente, en cada ejecución). La migración 0015 crea el rol sin LOGIN si no existe.
+
 Así la regla de que el dinero no se edita se cumple en la base de datos y no solo en el código. Se implementa en el bloque 7 ([estructura.md](estructura.md#plan-de-implementación)).
 
 Columnas con UPDATE para `agua_api` (migración 0015):

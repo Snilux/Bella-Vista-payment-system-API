@@ -85,7 +85,7 @@ Fuente: documento 3.1 de Notion. **Antes de cada bloque, revisa 3.1 en Notion; s
 
 - Vistas: v_manzana, v_toma, v_solicitud_toma, v_unidad, v_pago_importe, v_caja_movimiento, v_saldo_caja, v_entrega, v_gasto, v_corte, v_autorizacion_pendiente; cada una con una prueba que compruebe su resultado con datos conocidos.
 - Triggers: periodo cerrado (rechaza inserciones en tablas de dinero con fecha dentro de un mes con corte cerrado de la misma caja, D-14); una sola tarifa autorizada por `periodo_vigencia`; una sola cancelación autorizada por pago; el `tipo` de la autorización coincide con la tabla que la referencia.
-- Usuarios de BD `agua` y `agua_api` (ver [modelo-datos.md](modelo-datos.md#usuarios-de-base-de-datos)). En desarrollo, `agua_api` lo crea un script nuevo en `docker/postgres/init/` y los permisos los otorga una migración. Hay que agregar `DATABASE_URL_MIGRACIONES` a `.env.example`, `docker-compose.yml` y `drizzle.config.ts`. Prueba obligatoria: con `agua_api`, un UPDATE o DELETE sobre `pago` falla.
+- Usuarios de BD `agua` y `agua_api` (ver [modelo-datos.md](modelo-datos.md#usuarios-de-base-de-datos)). El rol `agua_api` y sus permisos los crea una migración; `pnpm db:migrate` le asigna LOGIN y la contraseña de `DATABASE_URL` en cada ejecución. Hay que agregar `DATABASE_URL_MIGRACIONES` a `.env.example`, `docker-compose.yml` y `drizzle.config.ts`. Prueba obligatoria: con `agua_api`, un UPDATE o DELETE sobre `pago` falla.
 
 **Bloque 8 — arranque inicial (D-27).** Como no hay registro público (D-19) y la asignación del primer presidente necesitaría que un presidente la confirme, el sistema arranca con `pnpm db:seed`, que se ejecuta una sola vez:
 
