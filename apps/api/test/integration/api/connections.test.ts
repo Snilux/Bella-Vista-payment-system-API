@@ -1,25 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { agreementPageSchema, connectionRequestPageSchema } from '@bella-vista/shared';
-import { and, eq, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { beforeAll, describe, expect, it } from 'vitest';
-import {
-  cashbox,
-  extraCharge,
-  fee,
-  feeAmount,
-  payment,
-  paymentCharge,
-  person,
-  userAccount,
-  vBlock,
-} from '../../../src/db/schema/index.js';
+import { fee, feeAmount, person, userAccount, vBlock } from '../../../src/db/schema/index.js';
 import { businessDate } from '../../../src/lib/dates.js';
 import { testDatabaseUrl } from '../db/helpers.js';
 import { useApiTestApp } from './fixture.js';
 
 // API step 4, connections module: pre-existing connections (D-18), agreements and connection
-// requests from application to installation (RF-TOM, D-12, D-13). The opening fee is paid in
-// API step 6; here a payment inserted as the owner stands in for it. Cases run in order.
+// requests from application to installation (RF-TOM, D-12, D-13). The opening fee is paid
+// through /v1/payments (API step 6). Cases run in order.
 
 const today = () => businessDate(new Date(), 'America/Mexico_City');
 const OPENING_AMOUNT = 150_000;
@@ -78,30 +68,21 @@ describe.skipIf(!testDatabaseUrl)('connections', () => {
       address: `Calle Nueva ${applicantName}`,
       blockId: await blockId(block),
     });
-  /** Pays the opening charge of a request as the owner (the payment flow is API step 6). */
-  const payOpening = async (requestId: number) => {
-    const [charge] = await ctx.owner
-      .select({ id: extraCharge.id })
-      .from(extraCharge)
-      .where(and(eq(extraCharge.connectionRequestId, requestId), isNull(extraCharge.cancelledOn)));
-    const [box] = await ctx.owner
-      .select({ id: cashbox.id })
-      .from(cashbox)
-      .where(eq(cashbox.type, 'committee'));
-    const treasurer = await ctx.accountId('tesorero');
-    const [paid] = await ctx.owner
-      .insert(payment)
-      .values({
-        unitId: null,
-        cashboxId: box?.id ?? 0,
-        occurredAt: new Date(),
-        idempotencyKey: randomUUID(),
-        createdBy: treasurer,
-      })
-      .returning();
-    await ctx.owner
-      .insert(paymentCharge)
-      .values({ paymentId: paid?.id ?? 0, extraChargeId: charge?.id ?? 0, createdBy: treasurer });
+  /** Pays the current opening charge of a request through the API (RF-TOM-05). */
+  const payOpening = async (requestId: number, username: string) => {
+    const { request } = (await call('GET', `/v1/connection-requests/${requestId}`, username)).body;
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/payments',
+      headers: { ...(await ctx.authFor(username)), 'idempotency-key': randomUUID() },
+      payload: {
+        extraChargeIds: [request.openingCharge.id],
+        paperFolio: `AP-${randomUUID().slice(0, 8)}`,
+        expectedTotal: request.openingCharge.amount,
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    return res.json().payment.id as number;
   };
 
   // --- Pre-existing connections ---------------------------------------------------------------
@@ -279,8 +260,33 @@ describe.skipIf(!testDatabaseUrl)('connections', () => {
       connectionId: null,
     });
 
-    // Once paid (API step 6), it can no longer be cancelled and it is activated.
-    await payOpening(id);
+    // Paid and then cancelled (D-15): it waits for the payment again, same amount (D-13).
+    const cancelled = await payOpening(id, 'jm.s2m01');
+    const cancellation = await ctx.app.inject({
+      method: 'POST',
+      url: `/v1/payments/${cancelled}/request-cancellation`,
+      headers: { ...(await ctx.authFor('jm.s2m01')), 'idempotency-key': randomUUID() },
+      payload: { reason: 'Recibo capturado dos veces' },
+    });
+    await call(
+      'POST',
+      `/v1/approvals/${cancellation.json().payment.cancellations[0].approvalId}/resolve`,
+      'presidente',
+      { result: 'approved' },
+    );
+    expect(
+      (await call('GET', `/v1/connection-requests/${id}`, 'secretario')).body.request,
+    ).toMatchObject({
+      status: 'approved_pending_payment',
+      openingCharge: { amount: OPENING_AMOUNT, cancelledOn: null },
+    });
+    expect(
+      (await call('POST', `/v1/connection-requests/${id}/activate`, 'jm.s2m01', {})).body.error
+        .code,
+    ).toBe('OPENING_NOT_PAID');
+
+    // Once paid, it can no longer be cancelled and it is activated.
+    await payOpening(id, 'tesorero');
     expect(
       (await call('GET', `/v1/connection-requests/${id}`, 'secretario')).body.request.status,
     ).toBe('pending_installation');
