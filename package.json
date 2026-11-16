@@ -1,7 +1,7 @@
 {
   "name": "bella-vista-payment-system-api",
   "private": true,
-  "description": "Bella Vista water payment system (monorepo: API and shared package)",
+  "description": "Bella Vista water payment system (monorepo: API, mobile app and shared package)",
   "type": "module",
   "packageManager": "pnpm@12.18.0",
   "engines": {
@@ -10,6 +10,7 @@
   "scripts": {
     "prepare": "husky",
     "dev": "pnpm --filter @bella-vista/api dev",
+    "dev:mobile": "pnpm --filter @bella-vista/mobile start",
     "build": "pnpm -r build",
     "start": "pnpm --filter @bella-vista/api start",
     "typecheck": "pnpm -r typecheck",
