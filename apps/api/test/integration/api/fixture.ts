@@ -15,7 +15,8 @@ import { migrateDatabase, testDatabaseUrl } from '../db/helpers.js';
 
 // API tests with app.inject() against a fresh database per test file: migrated, bootstrapped
 // (superadmin `admin`, who must change the password) and loaded with the development data
-// (accounts presidente, tesorero, secretario, jm.s1m01, jm.s1m02, jm.s2m01). The app connects
+// (accounts presidente, tesorero, secretario, vocal, jm.s1m01, jm.s1m02, jm.s2m01, all with
+// DEV_PASSWORD; the vocal Silvia Montes has no account yet). The app connects
 // as agua_api, like in production; `owner` is the database owner, for test setup only.
 
 export const BOOTSTRAP_FILE = parseBootstrapFile({
@@ -56,14 +57,25 @@ export interface ApiTestContext {
   /** `Authorization` header for an existing username. */
   authFor(username: string): Promise<{ authorization: string }>;
   accountId(username: string): Promise<number>;
+  /** Moves the app clock (null = real time). */
+  setNow(date: Date | null): void;
+}
+
+export interface ApiTestOptions {
+  /** Login/refresh rate limit; high by default so tests are not throttled. */
+  loginRateLimit?: { max: number; timeWindow: number | string };
 }
 
 /**
  * Prepares the database and the app for one `describe` block. `extend` registers extra
  * routes (test-only routes under /v1/test) before the app is ready.
  */
-export function useApiTestApp(extend?: (app: App) => unknown): ApiTestContext {
+export function useApiTestApp(
+  extend?: (app: App) => unknown,
+  options: ApiTestOptions = {},
+): ApiTestContext {
   const ctx = {} as ApiTestContext;
+  let fixedNow: Date | null = null;
   const dbName = `agua_test_api_${randomBytes(4).toString('hex')}`;
   const adminUrl = testDatabaseUrl ?? '';
   const url = new URL(adminUrl);
@@ -90,7 +102,12 @@ export function useApiTestApp(extend?: (app: App) => unknown): ApiTestContext {
     });
     await runDevSeed(api.db, { nodeEnv: 'test' });
 
-    const app = await buildApp({ env: testEnv(url.toString()), db: api.db });
+    const app = await buildApp({
+      env: testEnv(url.toString()),
+      db: api.db,
+      now: () => fixedNow ?? new Date(),
+      loginRateLimit: options.loginRateLimit ?? { max: 10_000, timeWindow: '1 minute' },
+    });
     await extend?.(app);
     await app.ready();
 
@@ -104,12 +121,12 @@ export function useApiTestApp(extend?: (app: App) => unknown): ApiTestContext {
     };
     const tokenFor = async (username: string) => {
       const [row] = await owner.db
-        .select({ id: userAccount.id, role: roleAssignment.role })
+        .select({ id: userAccount.id, role: roleAssignment.role, blockId: roleAssignment.blockId })
         .from(userAccount)
         .innerJoin(roleAssignment, eq(roleAssignment.id, userAccount.roleAssignmentId))
         .where(eq(userAccount.username, username));
       if (!row) throw new Error(`unknown account ${username}`);
-      return app.jwt.sign({ sub: String(row.id), role: row.role });
+      return app.jwt.sign({ sub: String(row.id), username, role: row.role, blockId: row.blockId });
     };
 
     Object.assign(ctx, {
@@ -122,6 +139,9 @@ export function useApiTestApp(extend?: (app: App) => unknown): ApiTestContext {
         authorization: `Bearer ${await tokenFor(username)}`,
       }),
       accountId,
+      setNow: (date: Date | null) => {
+        fixedNow = date;
+      },
     } satisfies ApiTestContext);
   }, 60_000);
 

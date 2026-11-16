@@ -13,10 +13,18 @@ import { type AccountAccess, findAccountAccess } from '../modules/auth/auth.repo
 // database and rejected if it is disabled, locked or its role assignment is not current, so
 // a lock or deactivation applies immediately instead of when the token expires.
 
+/** Claims of the access token: the account (sub), its username, role and block. */
+export interface AccessTokenClaims {
+  sub: string;
+  username: string;
+  role: Role;
+  blockId: number | null;
+}
+
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: { sub: string; role: Role };
-    user: { sub: string; role: Role };
+    payload: AccessTokenClaims;
+    user: AccessTokenClaims;
   }
 }
 

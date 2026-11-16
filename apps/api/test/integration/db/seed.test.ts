@@ -147,8 +147,6 @@ describe.skipIf(!testDatabaseUrl)('pnpm db:seed (initial bootstrap)', () => {
       }),
   );
 
-  it.todo('logs in with the temporary password through POST /v1/auth/login (API step 2)');
-
   it(
     'approves the officers by bootstrap and creates the committee catalogs',
     { timeout: 60_000 },

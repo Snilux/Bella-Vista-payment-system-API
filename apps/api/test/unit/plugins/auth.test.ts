@@ -12,6 +12,7 @@ const account = (overrides: Partial<AccountAccess> = {}): AccountAccess => ({
   userAccountId: 1,
   username: 'tesorero',
   mustChangePassword: false,
+  failedAttempts: 0,
   deactivatedAt: null,
   lockedUntil: null,
   roleAssignmentId: 1,
