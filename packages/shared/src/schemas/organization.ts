@@ -140,6 +140,32 @@ export const closeRoleAssignmentRequestSchema = z.object({
     .max(500, { error: 'El motivo no puede tener más de 500 caracteres.' }),
 });
 
+/**
+ * Body of `POST /v1/blocks/{id}/leader-substitution` (D-08): the counted extraordinary
+ * closing of the block cashbox is the handover record; the new leader starts on startDate.
+ */
+export const leaderSubstitutionRequestSchema = z.object({
+  closingId: z.int({ error: 'Indica el corte extraordinario (acta de entrega).' }).positive(),
+  personId: z.int({ error: 'Elige al nuevo jefe de manzana.' }).positive(),
+  contactPhone: z
+    .string({ error: 'Escribe el teléfono del nuevo jefe.' })
+    .trim()
+    .min(1, { error: 'Escribe el teléfono del nuevo jefe.' })
+    .max(20),
+  startDate: z.iso.date({ error: 'La fecha debe tener el formato AAAA-MM-DD.' }),
+  reason: z
+    .string({ error: 'Escribe el motivo.' })
+    .trim()
+    .min(1, { error: 'Escribe el motivo.' })
+    .max(500, { error: 'El motivo no puede tener más de 500 caracteres.' }),
+});
+
+export const leaderSubstitutionResponseSchema = z.object({
+  outgoing: roleAssignmentSchema,
+  incoming: roleAssignmentSchema,
+});
+
+export type LeaderSubstitutionRequest = z.infer<typeof leaderSubstitutionRequestSchema>;
 export type Section = z.infer<typeof sectionSchema>;
 export type CreateSectionRequest = z.infer<typeof createSectionRequestSchema>;
 export type UpdateSectionRequest = z.infer<typeof updateSectionRequestSchema>;

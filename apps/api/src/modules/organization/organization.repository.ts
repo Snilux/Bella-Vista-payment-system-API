@@ -193,6 +193,28 @@ export function assignmentsByApproval(db: Executor, approvalIds: number[]) {
   return assignmentQuery(db).where(inArray(roleAssignment.approvalId, approvalIds));
 }
 
+/** The open block leader assignment of a block, locked, with its approval result. */
+export async function lockOpenLeader(tx: Transaction, blockId: number) {
+  const [row] = await tx
+    .select({
+      id: roleAssignment.id,
+      personId: roleAssignment.personId,
+      startDate: roleAssignment.startDate,
+      approvalId: roleAssignment.approvalId,
+    })
+    .from(roleAssignment)
+    .where(
+      and(
+        isNull(roleAssignment.endDate),
+        eq(roleAssignment.role, 'block_leader'),
+        eq(roleAssignment.blockId, blockId),
+      ),
+    )
+    .limit(1)
+    .for('update');
+  return row ?? null;
+}
+
 /** Open (end_date null) assignments that block a new one: the same rule as the DB indexes. */
 export async function findOpenConflicts(
   db: Executor,
