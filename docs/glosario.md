@@ -338,3 +338,18 @@ Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 | `titularId`, `nuevoTitularId`, `solicitanteId` | `holderPersonId`, `newHolderId`, `applicantId` |
 | `cambioPendiente`, `cargoApertura` | `pendingChange`, `openingCharge` |
 | `estado`, `accion` (detalles de `ESTADO_INVALIDO`) | `status`, `action` |
+
+## Estado de cuenta
+
+| Español | Inglés |
+| --- | --- |
+| `/unidades/{id}/estado-cuenta` | `/v1/units/{id}/account-statement` |
+| `periodoActual` | `currentPeriod` |
+| estado del mes: pendiente, vencido, pagado, anticipo | `pending`, `overdue`, `paid`, `advance` |
+| `tarifaBase`, `recargo`, `total` | `baseAmount`, `surcharge`, `total` |
+| `vencidos`, `pendientes`, `cicloDeAdeudo` | `overdueCount`, `pendingCount`, `inDebtCycle` |
+| `totalVencido`, `totalPendiente`, `totalRecargo`, `totalAdeudado`, `anticipos` | `overdueTotal`, `pendingTotal`, `surchargeTotal`, `totalDue`, `advanceCount` |
+| `periodosSinTarifa` | `missingRatePeriods` |
+| `adeudo` (resumen en fichas y búsqueda) | `debt` |
+| último mes cobrable (mes de la baja, inclusive) | `lastBillablePeriod` |
+| orden de pago: selección vacía, periodo inválido, repetido, ya pagado, no cobrable, orden de meses, sin tarifa | `EMPTY_SELECTION`, `INVALID_PERIOD`, `DUPLICATE_PERIOD`, `PERIOD_ALREADY_PAID`, `PERIOD_NOT_BILLABLE`, `MONTH_ORDER`, `RATE_MISSING` |

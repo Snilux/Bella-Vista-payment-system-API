@@ -44,6 +44,14 @@ Función pura en `packages/shared/src/domain`:
 6. Con 4 o más vencidos, cada vencido lleva recargo igual a su tarifa base.
 7. Agregar anticipos (meses futuros pagados).
 
+Precisiones acordadas al implementarla (paso 5 de la API):
+
+- **Ciclo de adeudo con historia** (D-02): no basta contar los vencidos de hoy. El ciclo se abre al acumular 4 vencidos, sigue abierto aunque haya pagos parciales y solo se cierra cuando la unidad queda sin vencidos. Se reconstruye con la fecha de cada pago: al inicio de cada mes y después de cada pago se cuentan los vencidos. Con el ciclo abierto, **todos** los vencidos llevan recargo; el mes en curso nunca. Los pagos cancelados se ignoran por completo (sus meses vuelven a estar sin pagar).
+- **Unidad dada de baja**: se cobra hasta el mes de la baja, completo y sin prorrateo; nada después.
+- **Activación a mitad de mes**: ese mes se cobra completo (RF-MEN-02).
+- **Mes sin tarifa autorizada**: aparece en el estado de cuenta sin importe y en `periodosSinTarifa`; cuenta como vencido, no suma al adeudo y no se puede cobrar hasta capturar la tarifa.
+- **Orden de pago** (D-03, para el paso 6): meses completos desde el más antiguo sin pagar, sin huecos; anticipos solo si la misma operación liquida todo lo pendiente, consecutivos (saltando meses suspendidos) y con la tarifa de su mes, sin recargo.
+
 ## Permisos (resumen)
 
 | Operación                   | SA      | PRE              | TES      | SEC      | VOC             | JM         |

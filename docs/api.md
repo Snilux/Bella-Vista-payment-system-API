@@ -166,9 +166,15 @@ Los reportes devuelven JSON; la app genera el PDF.
 
 **Cuentas (solo SA).** `GET /cuentas` devuelve las cuentas (usuario, cargo, persona, manzana y estado: activa, bloqueada, desactivada, debe cambiar contraseña, cargo no vigente) y las asignaciones vigentes sin cuenta. `POST /cuentas` con `{ asignacionId, usuario }` devuelve la contraseña temporal **una sola vez**. Restablecer genera otra contraseña temporal y cierra las sesiones; bloquear (indefinido hasta desbloquear), desbloquear y desactivar piden `motivo`. Todo queda en la bitácora técnica. El SA no puede bloquear ni desactivar su propia cuenta.
 
+## Detalle: estado de cuenta
+
+`GET /unidades/{id}/estado-cuenta` (comité; JM solo de su manzana): calcula al consultar con la función pura de `packages/shared` (ver [decisiones.md](decisiones.md#cálculo-del-estado-de-cuenta-d-01-d-02-d-06-d-25)). Devuelve `periodoActual`, cada mes con `periodo`, `estado` (pendiente, vencido, pagado, anticipo), `tarifaBase`, `recargo` y `total` (centavos; los pagados con su tarifa y recargo fijos), un resumen (`vencidos`, `cicloDeAdeudo`, `totalVencido`, `totalPendiente`, `totalRecargo`, `totalAdeudado`, `anticipos`) y `periodosSinTarifa`.
+
+La búsqueda, la ficha de persona y la ficha de toma incluyen el adeudo de cada unidad (`totalAdeudado`, `vencidos`, `cicloDeAdeudo`) y el total de la persona o de la toma. Un JM nunca recibe importes de unidades de otra manzana.
+
 ## Detalle: padrón y tomas
 
-- **Búsqueda** (`/buscar?q=`, mínimo 2 caracteres): personas por nombre sin acentos y tolerante a errores (`f_normalizar` + pg_trgm), por distintivo o folio; tomas por folio o dirección; unidades por folio o referencia. Hasta 20 por grupo. En el paso 4 no lleva adeudos; se agregan en el paso 5.
+- **Búsqueda** (`/buscar?q=`, mínimo 2 caracteres): personas por nombre sin acentos y tolerante a errores (`f_normalizar` + pg_trgm), por distintivo o folio; tomas por folio o dirección; unidades por folio o referencia. Hasta 20 por grupo. Cada unidad incluye su adeudo.
 - **Lo que ve un JM** (RF-PAD-04, HU-13): tomas, unidades, solicitudes y pagos solo de su manzana (fuera de ella, `FUERA_DE_ALCANCE`; en la búsqueda no aparecen). De una persona ve solo nombre, distintivo y folio, salvo que (a) sea titular vigente de una unidad de su manzana, (b) tenga una solicitud no rechazada ni cancelada en su manzana, o (c) él mismo la haya registrado y aún no tenga unidad ni solicitud. Aun así, sus unidades de otras manzanas aparecen solo como "otra manzana", sin folio, importes ni dirección.
 - **Personas**: `/personas/coincidencias` devuelve los homónimos exactos y los nombres parecidos. Con homónimo y sin distintivo → `HOMONIMO_SIN_DISTINTIVO` (con los homónimos en `detalles`); nombre + distintivo repetido → `DISTINTIVO_REPETIDO` (D-10).
 - **Tomas preexistentes** (`/tomas/preexistentes`): la toma con su manzana y su primera unidad, con titular y `periodoInicioCobro` = primer mes pendiente de la libreta (D-18).
