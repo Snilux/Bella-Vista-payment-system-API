@@ -19,6 +19,7 @@ const expected: Record<Action, string> = {
   'organization.manage': 'SEC',
   'assignments.view': 'PRE TES SEC VOC',
   'assignments.register': 'SEC',
+  'assignments.close': 'SEC',
   'registry.view': 'PRE TES SEC VOC JM',
   'registry.manage': 'PRE SEC JM',
   'connectionRequests.view': 'PRE TES SEC VOC JM',
