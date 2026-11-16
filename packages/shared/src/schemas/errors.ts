@@ -4,12 +4,13 @@ import { z } from 'zod';
 // `code` is stable and in English for the app to react to; `message` is Spanish, ready to show.
 
 export const ERROR_CODES = [
-  // Business codes (2.3 §4)
+  // Business codes (2.3 §5)
   'INVALID_CREDENTIALS',
   'ACCOUNT_LOCKED',
   'ROLE_NOT_ACTIVE',
   'OUT_OF_SCOPE',
   'ASSIGNMENT_HAS_ACCOUNT',
+  'ASSIGNMENT_NOT_ACTIVE',
   'USERNAME_TAKEN',
   'HOMONYM_WITHOUT_NOTE',
   'DUPLICATE_DISTINGUISHING_NOTE',
@@ -23,7 +24,7 @@ export const ERROR_CODES = [
   'LEADER_ALREADY_ASSIGNED',
   'INVALID_RATE_EFFECTIVE_PERIOD',
   'APPROVAL_ALREADY_RESOLVED',
-  // General codes (2.3 §4.1)
+  // General codes (2.3 §5.1)
   'VALIDATION_ERROR',
   'INVALID_REQUEST',
   'IDEMPOTENCY_KEY_REQUIRED',

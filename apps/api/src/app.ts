@@ -10,6 +10,7 @@ import { z } from 'zod';
 import type { Env } from './config/env.js';
 import type { Database } from './db/client.js';
 import { errors } from './lib/errors.js';
+import { registerAccountsModule } from './modules/accounts/index.js';
 import { registerAuthModule } from './modules/auth/index.js';
 import { registerAuth } from './plugins/auth.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
@@ -82,6 +83,7 @@ export async function buildApp(options: BuildAppOptions) {
 
   await app.register(healthRoutes, { db, timeoutMs: options.healthTimeoutMs ?? 2_000 });
   await registerAuthModule(app, { rateLimit: options.loginRateLimit ?? DEFAULT_LOGIN_RATE_LIMIT });
+  await registerAccountsModule(app);
 
   return app;
 }
