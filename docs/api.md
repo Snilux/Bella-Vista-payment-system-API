@@ -50,9 +50,12 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 
 | Método           | Ruta                            | Descripción                             | Roles                |
 | ---------------- | ------------------------------- | --------------------------------------- | -------------------- |
-| GET, POST, PATCH | /secciones                      | Catálogo                                | SEC (consulta todos) |
-| GET, POST, PATCH | /manzanas                       | Catálogo; GET incluye jefe vigente      | SEC (consulta todos) |
-| GET              | /asignaciones                   | Cargos vigentes e históricos            | Comité               |
+| GET, POST        | /secciones                      | Catálogo                                | SEC (consulta todos) |
+| PATCH            | /secciones/{id}                 | Nombre y activa (la clave no cambia)    | SEC                  |
+| GET, POST        | /manzanas?seccion=              | Catálogo; GET incluye jefe vigente      | SEC (consulta todos) |
+| GET              | /manzanas/{id}                  | Ficha con jefe vigente                  | Comité, JM           |
+| PATCH            | /manzanas/{id}                  | Nombre y activa (la clave no cambia)    | SEC                  |
+| GET              | /asignaciones?estado=&cargo=&manzana= | Cargos vigentes e históricos      | Comité               |
 | POST             | /asignaciones                   | Registra asignación (crea autorización) | SEC                  |
 | POST             | /asignaciones/{id}/cerrar       | Fin de periodo de un cargo del comité (desactiva su cuenta) | SEC |
 | POST             | /manzanas/{id}/sustitucion-jefe | Sustitución con corte extraordinario (paso 8 de la API) | SEC          |
@@ -74,7 +77,9 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | POST      | /unidades/{id}/solicitar-cambio-titular  | Crea autorización                                                      | JM, SEC               |
 | POST      | /suspensiones                            | Suspende toma o unidad                                                 | SEC, PRE              |
 | POST      | /suspensiones/{id}/terminar              | Reactiva                                                               | SEC, PRE              |
-| GET, POST | /solicitudes-toma                        | Lista y registro                                                       | JM (su manzana), SEC  |
+| GET       | /solicitudes-toma?estado=&manzana=       | Lista                                                                  | Comité, JM (su manzana) |
+| POST      | /solicitudes-toma                        | Registro                                                               | JM (su manzana), SEC  |
+| GET       | /solicitudes-toma/{id}                   | Detalle con acuerdo y cargo de apertura                                | Comité, JM (su manzana) |
 | POST      | /solicitudes-toma/{id}/resolver          | Aprobar o rechazar con acuerdo                                         | SEC                   |
 | POST      | /solicitudes-toma/{id}/activar           | Instalación y primera unidad                                           | JM, SEC               |
 | POST      | /solicitudes-toma/{id}/cancelar          | Cancela antes del pago (D-12); anula el cargo de apertura              | SEC, JM (su manzana)  |
@@ -87,6 +92,7 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | GET       | /tarifas   | Historial                           | Todos                |
 | POST      | /tarifas   | Registra tarifa (crea autorización) | TES                  |
 | GET, POST | /conceptos | Conceptos e importes                | TES (consulta todos) |
+| POST      | /conceptos/{id}/importes | Agrega un importe desde una fecha | TES       |
 
 ### Cobranza
 
@@ -107,7 +113,7 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | GET       | /cajas                    | Cajas con su saldo esperado                     | Comité                            |
 | GET       | /cajas/{id}/movimientos   | Movimientos                                     | Custodio, comité                  |
 | POST      | /cajas/{id}/saldo-inicial | Saldo inicial (crea autorización)               | TES                               |
-| GET, POST | /entregas                 | Lista y preparación                             | JM, PRE (prepara), TES (consulta) |
+| GET, POST | /entregas?estado=         | Lista y preparación                             | JM, PRE (prepara), TES (consulta) |
 | GET       | /entregas/{id}            | Detalle de la entrega                           | JM, PRE (las suyas), TES, VOC     |
 | POST      | /entregas/{id}/retirar    | Retira entrega pendiente                        | Quien la preparó                  |
 | POST      | /entregas/{id}/confirmar  | Captura importe recibido                        | TES                               |
@@ -119,11 +125,13 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | ---------------- | -------------------------------- | -------------------------------------- | --------------------- |
 | GET, POST        | /ingresos                        | Otros ingresos                         | TES (consulta comité) |
 | GET              | /categorias-gasto                | Categorías de gasto                    | Comité                |
-| GET, POST        | /gastos                          | Gastos                                 | TES (consulta comité) |
+| GET, POST        | /gastos?estado=                  | Gastos                                 | TES (consulta comité) |
+| GET              | /gastos/{id}                     | Detalle del gasto                      | Comité                |
 | POST             | /gastos/{id}/pagar               | Marca pagado y descuenta caja          | TES                   |
 | POST             | /gastos/{id}/rechazar            | Rechaza gasto pendiente                | TES                   |
 | POST             | /gastos/{id}/solicitar-reintegro | Crea autorización                      | TES                   |
-| GET, POST, PATCH | /fontaneros                      | Fontanero                              | TES (consulta comité) |
+| GET, POST        | /fontaneros                      | Fontaneros con su salario vigente      | TES (consulta comité) |
+| GET, PATCH       | /fontaneros/{id}                 | Ficha con salarios y pagos; edita teléfono y activo | TES (consulta comité) |
 | POST             | /fontaneros/{id}/salarios        | Nuevo salario (crea autorización)      | TES                   |
 | POST             | /fontaneros/{id}/pagos           | Paga un periodo con el salario vigente | TES                   |
 
@@ -131,7 +139,7 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 
 | Método | Ruta                                            | Descripción                                  | Roles                              |
 | ------ | ----------------------------------------------- | -------------------------------------------- | ---------------------------------- |
-| GET    | /cortes?caja=&periodo=                          | Lista                                        | Según alcance                      |
+| GET    | /cortes?caja=&periodo=&estado=                  | Lista                                        | Según alcance                      |
 | GET    | /cortes/{id}                                    | Detalle con cifras                           | Según alcance                      |
 | POST   | /cortes                                         | Abre corte (calcula cifras)                  | JM, TES                            |
 | POST   | /cortes/{id}/conteo                             | Efectivo contado y observaciones             | Quien lo prepara                   |
