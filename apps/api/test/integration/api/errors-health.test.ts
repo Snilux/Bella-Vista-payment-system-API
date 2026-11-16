@@ -48,6 +48,7 @@ describe.skipIf(!testDatabaseUrl)('error format', () => {
     const res = await ctx.app.inject({
       method: 'POST',
       url: '/v1/test/validate',
+      headers: await ctx.authFor('tesorero'),
       payload: { amount: 'x', period: '2026' },
     });
     expect(res.statusCode).toBe(400);
@@ -68,6 +69,7 @@ describe.skipIf(!testDatabaseUrl)('error format', () => {
     const res = await ctx.app.inject({
       method: 'POST',
       url: '/v1/test/validate',
+      headers: await ctx.authFor('tesorero'),
       payload: { amount: 5000, period: '2026-06' },
     });
     expect(res.statusCode).toBe(200);
@@ -78,7 +80,7 @@ describe.skipIf(!testDatabaseUrl)('error format', () => {
     const res = await ctx.app.inject({
       method: 'POST',
       url: '/v1/test/validate',
-      headers: { 'content-type': 'application/json' },
+      headers: { ...(await ctx.authFor('tesorero')), 'content-type': 'application/json' },
       payload: '{"amount": ',
     });
     expect(res.statusCode).toBe(400);
@@ -90,6 +92,7 @@ describe.skipIf(!testDatabaseUrl)('error format', () => {
     const res = await ctx.app.inject({
       method: 'GET',
       url: '/v1/test/app-error',
+      headers: await ctx.authFor('tesorero'),
     });
     expect(res.statusCode).toBe(409);
     expect(res.json()).toEqual({
@@ -105,6 +108,7 @@ describe.skipIf(!testDatabaseUrl)('error format', () => {
     const res = await ctx.app.inject({
       method: 'GET',
       url: '/v1/test/boom',
+      headers: await ctx.authFor('tesorero'),
     });
     expect(res.statusCode).toBe(500);
     expect(res.json()).toEqual({
@@ -121,6 +125,7 @@ describe.skipIf(!testDatabaseUrl)('error format', () => {
     const res = await ctx.app.inject({
       method: 'GET',
       url: '/v1/test/bad-response',
+      headers: await ctx.authFor('tesorero'),
     });
     expect(res.statusCode).toBe(500);
     expect(res.json().error.code).toBe('INTERNAL_ERROR');

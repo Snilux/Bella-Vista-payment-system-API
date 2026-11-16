@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq, isNull, sql } from 'drizzle-orm';
 import { hashPassword } from '../../lib/password.js';
+import { type Actor, auditCreate, type Role } from '../audit.js';
 import type { Database } from '../client.js';
 import {
   agreement,
@@ -22,7 +23,6 @@ import {
   unitHolder,
   userAccount,
 } from '../schema/index.js';
-import { type Actor, auditCreate, type Role } from './audit.js';
 
 // Development data (`pnpm db:seed:dev`, 3.1 §2.2): sections, blocks, leaders, homonyms,
 // connections with several units, historical rates and some payments, to exercise the API.

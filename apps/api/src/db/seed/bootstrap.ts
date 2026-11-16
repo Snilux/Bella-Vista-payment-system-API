@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { businessDate } from '../../lib/dates.js';
 import { generateTemporaryPassword, hashPassword } from '../../lib/password.js';
+import { type Actor, auditCreate } from '../audit.js';
 import type { Database, Transaction } from '../client.js';
 import {
   agreement,
@@ -13,7 +14,6 @@ import {
   roleAssignment,
   userAccount,
 } from '../schema/index.js';
-import { type Actor, auditCreate } from './audit.js';
 import type { BootstrapFile, BootstrapPerson } from './bootstrap-file.js';
 
 // Initial bootstrap (D-27, 3.1 §2.2): run once, in a single transaction. It creates the
