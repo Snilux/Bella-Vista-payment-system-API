@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll } from 'vitest';
-import { type App, buildApp } from '../../../src/app.js';
+import { type App, type BuildAppOptions, buildApp } from '../../../src/app.js';
 import { type Env, loadEnv } from '../../../src/config/env.js';
 import type { Database } from '../../../src/db/client.js';
 import * as schema from '../../../src/db/schema/index.js';
@@ -67,6 +67,8 @@ export interface ApiTestOptions {
   loginRateLimit?: { max: number; timeWindow: number | string };
   /** Extra environment variables (e.g. TRUST_PROXY). */
   env?: Record<string, string>;
+  /** Logger of the app (none by default). */
+  logger?: BuildAppOptions['logger'];
 }
 
 /**
@@ -107,6 +109,7 @@ export function useApiTestApp(
 
     const app = await buildApp({
       env: testEnv(url.toString(), options.env),
+      ...(options.logger !== undefined && { logger: options.logger }),
       db: api.db,
       now: () => fixedNow ?? new Date(),
       loginRateLimit: options.loginRateLimit ?? { max: 10_000, timeWindow: '1 minute' },
