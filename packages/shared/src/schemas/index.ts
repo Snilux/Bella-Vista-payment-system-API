@@ -6,5 +6,6 @@ export * from './common.js';
 export * from './connections.js';
 export * from './errors.js';
 export * from './organization.js';
+export * from './rates.js';
 export * from './registry.js';
 export * from './role-assignment.js';
