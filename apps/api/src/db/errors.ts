@@ -29,3 +29,14 @@ export function isDatabaseUnavailable(error: unknown): boolean {
   }
   return false;
 }
+
+/** Whether `error` (or its cause) is a unique violation of `constraint` (SQLSTATE 23505). */
+export function isUniqueViolation(error: unknown, constraint: string): boolean {
+  let current: unknown = error;
+  for (let depth = 0; current && depth < 5; depth++) {
+    const pg = current as { code?: unknown; constraint_name?: unknown };
+    if (pg.code === '23505' && pg.constraint_name === constraint) return true;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
+}
