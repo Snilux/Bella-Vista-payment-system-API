@@ -9,7 +9,7 @@ import { useApiTestApp } from './fixture.js';
 
 // API step 3, approvals module: inbox and resolution by the president, with the outcome
 // delegated to the handler each module registers for its type. These tests register a
-// handler for `rate` (a type whose module does not exist yet); `plumber_salary` stays
+// handler for `opening_balance` (a type whose module arrives in API step 7); `plumber_salary` stays
 // without handler on purpose.
 
 const calls: { kind: 'approved' | 'rejected'; approvalId: number; reason: string | null }[] = [];
@@ -30,12 +30,12 @@ const testHandler: ApprovalHandler = {
     calls.push({ kind: 'rejected', approvalId, reason });
   },
   async describe(_db, ids) {
-    return new Map(ids.map((id) => [id, `Tarifa de prueba #${id}`]));
+    return new Map(ids.map((id) => [id, `Saldo inicial de prueba #${id}`]));
   },
 };
 
 describe.skipIf(!testDatabaseUrl)('/v1/approvals', () => {
-  const ctx = useApiTestApp((app) => app.approvalRegistry.register('rate', testHandler));
+  const ctx = useApiTestApp((app) => app.approvalRegistry.register('opening_balance', testHandler));
 
   beforeAll(async () => {
     await ctx.owner
@@ -45,7 +45,10 @@ describe.skipIf(!testDatabaseUrl)('/v1/approvals', () => {
   });
 
   /** A pending approval requested by `username`. */
-  const request = async (username: string, type: 'rate' | 'plumber_salary' = 'rate') => {
+  const request = async (
+    username: string,
+    type: 'opening_balance' | 'plumber_salary' = 'opening_balance',
+  ) => {
     const requester = await ctx.accountId(username);
     const [row] = await ctx.owner
       .insert(approval)
@@ -93,10 +96,10 @@ describe.skipIf(!testDatabaseUrl)('/v1/approvals', () => {
     expect(
       president.body.approvals.find((a: { id: number }) => a.id === fromTreasurer),
     ).toMatchObject({
-      type: 'rate',
+      type: 'opening_balance',
       status: 'pending',
       reason: 'Solicitud de tesorero',
-      description: `Tarifa de prueba #${fromTreasurer}`,
+      description: `Saldo inicial de prueba #${fromTreasurer}`,
       requestedBy: { username: 'tesorero', role: 'treasurer', fullName: 'Bruno Ochoa' },
       resolvedBy: null,
     });
