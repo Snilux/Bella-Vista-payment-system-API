@@ -139,6 +139,7 @@ export const adjustmentSchema = z.object({
   id: z.int(),
   cashboxId: z.int(),
   handoverId: z.int().nullable(),
+  closingId: z.int().nullable(),
   /** Signed movement of the cashbox: negative takes cash out (e.g. a shortfall written off). */
   amount: z.int(),
   date: z.iso.date(),
@@ -146,13 +147,20 @@ export const adjustmentSchema = z.object({
   approvalId: z.int(),
 });
 
-export const createAdjustmentRequestSchema = z.object({
-  handoverId: z.int({ error: 'Elige la entrega.' }).positive(),
-  amount: z
-    .int({ error: 'El importe debe ser un número entero de centavos.' })
-    .refine((value) => value !== 0, { error: 'El importe no puede ser cero.' }),
-  reason: requiredText(500, 'Escribe el motivo de la aclaración.'),
-});
+/** An adjustment of a handover difference or of a closing difference (exactly one). */
+export const createAdjustmentRequestSchema = z
+  .object({
+    handoverId: z.int().positive().optional(),
+    closingId: z.int().positive().optional(),
+    amount: z
+      .int({ error: 'El importe debe ser un número entero de centavos.' })
+      .refine((value) => value !== 0, { error: 'El importe no puede ser cero.' }),
+    reason: requiredText(500, 'Escribe el motivo de la aclaración.'),
+  })
+  .refine((body) => (body.handoverId === undefined) !== (body.closingId === undefined), {
+    path: ['handoverId'],
+    error: 'Elige la entrega o el corte que se aclara (solo uno).',
+  });
 
 export const adjustmentResponseSchema = z.object({ adjustment: adjustmentSchema });
 

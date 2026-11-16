@@ -27,6 +27,7 @@ import { AppError, errors } from '../../lib/errors.js';
 import type { ApprovalHandler } from '../approvals/approval-registry.js';
 import { balanceOf, committeeCashbox } from '../cashboxes/cashboxes.repository.js';
 import { cashboxErrors } from '../cashboxes/cashboxes.service.js';
+import { assertDateOpen } from '../closings/period-lock.js';
 import * as repo from './committee.repository.js';
 
 // Committee cashbox (CU-19 to CU-21; RF-GAS; D-17, D-21, D-24): other incomes, expenses paid
@@ -197,6 +198,8 @@ export function createCommitteeService(deps: CommitteeServiceDeps) {
       const on = input.date ?? today();
       if (on > today()) throw committeeErrors.futureDate('body.date');
       return idempotentTransaction(db, idempotency, async (tx) => {
+        const box = await committeeCashbox(tx);
+        if (box !== null) await assertDateOpen(tx, box, on);
         const row = await repo.insertIncome(tx, {
           concept: input.concept,
           amount: input.amount,

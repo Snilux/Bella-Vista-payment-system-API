@@ -5,6 +5,7 @@ import {
   adjustment,
   approval,
   cashbox,
+  closing,
   handover,
   openingBalance,
   person,
@@ -12,6 +13,7 @@ import {
   vBlock,
   vCashboxBalance,
   vCashboxMovement,
+  vClosing,
   vHandover,
 } from '../../db/schema/index.js';
 
@@ -367,6 +369,7 @@ const adjustmentColumns = {
   id: adjustment.id,
   cashboxId: adjustment.cashboxId,
   handoverId: adjustment.handoverId,
+  closingId: adjustment.closingId,
   amount: adjustment.amount,
   date: adjustment.date,
   approvalId: adjustment.approvalId,
@@ -382,14 +385,44 @@ export async function findAdjustment(db: Executor, id: number) {
   return row ?? null;
 }
 
-export async function hasPendingAdjustment(db: Executor, handoverId: number) {
+export async function hasPendingAdjustment(
+  db: Executor,
+  origin: { handoverId: number } | { closingId: number },
+) {
   const [row] = await db
     .select({ id: adjustment.id })
     .from(adjustment)
     .innerJoin(approval, eq(approval.id, adjustment.approvalId))
-    .where(and(eq(adjustment.handoverId, handoverId), isNull(approval.result)))
+    .where(
+      and(
+        'handoverId' in origin
+          ? eq(adjustment.handoverId, origin.handoverId)
+          : eq(adjustment.closingId, origin.closingId),
+        isNull(approval.result),
+      ),
+    )
     .limit(1);
   return row !== undefined;
+}
+
+/** A closing with its cashbox, status and difference, locked (closing has UPDATE grants). */
+export async function lockClosingForAdjustment(tx: Transaction, id: number) {
+  const [locked] = await tx
+    .select({ id: closing.id })
+    .from(closing)
+    .where(eq(closing.id, id))
+    .for('update');
+  if (!locked) return null;
+  const [row] = await tx
+    .select({
+      cashboxId: vClosing.cashboxId,
+      folio: vClosing.folio,
+      status: vClosing.status,
+      difference: vClosing.difference,
+    })
+    .from(vClosing)
+    .where(eq(vClosing.id, id));
+  return row ?? null;
 }
 
 export async function insertAdjustment(tx: Transaction, values: typeof adjustment.$inferInsert) {
@@ -405,8 +438,10 @@ export function adjustmentsByApproval(db: Executor, approvalIds: number[]) {
       approvalId: adjustment.approvalId,
       amount: adjustment.amount,
       handoverFolio: handover.folio,
+      closingFolio: closing.folio,
     })
     .from(adjustment)
     .leftJoin(handover, eq(handover.id, adjustment.handoverId))
+    .leftJoin(closing, eq(closing.id, adjustment.closingId))
     .where(inArray(adjustment.approvalId, approvalIds));
 }
