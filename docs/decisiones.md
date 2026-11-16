@@ -52,6 +52,16 @@ Precisiones acordadas al implementarla (paso 5 de la API):
 - **Mes sin tarifa autorizada**: aparece en el estado de cuenta sin importe y en `periodosSinTarifa`; cuenta como vencido, no suma al adeudo y no se puede cobrar hasta capturar la tarifa.
 - **Orden de pago** (D-03, para el paso 6): meses completos desde el más antiguo sin pagar, sin huecos; anticipos solo si la misma operación liquida todo lo pendiente, consecutivos (saltando meses suspendidos) y con la tarifa de su mes, sin recargo.
 
+## Tarifas y cobranza (paso 6 de la API)
+
+Precisiones acordadas al implementarlo:
+
+- **Tarifas pasadas al arranque** (D-05, D-18): una tarifa nueva entra en vigor desde el mes siguiente. Para capturar la historia, se acepta un mes pasado solo si es anterior a la tarifa autorizada más antigua (o cualquiera mientras no haya ninguna autorizada); así nunca cambia el precio de meses que ya tenían tarifa.
+- **Importes de conceptos** (D-13): aplican desde hoy o después y no se aceptan si cambiarían cargos ya registrados (el importe de un cargo es el vigente en su fecha).
+- **Cancelar un pago** (D-15): al autorizarse, sus meses vuelven a pendiente o vencido y sus cargos extraordinarios se reemiten con la misma fecha y el mismo importe para poder cobrarse otra vez. Un pago que liquidó la apertura de una toma ya instalada no se puede cancelar.
+- **Caja receptora** (D-07): la caja de manzana o la de apoyo se crean con su primer cobro si todavía no existen.
+- **Bloqueos**: la unidad y la solicitud de toma se bloquean con `SELECT ... FOR UPDATE`. En pago, caja, tarifa y concepto el usuario de la API no tiene UPDATE (el dinero no se edita) y PostgreSQL lo exige para bloquear filas, así que se usa un bloqueo transaccional por registro (`pg_advisory_xact_lock`).
+
 ## Permisos (resumen)
 
 | Operación                   | SA      | PRE              | TES      | SEC      | VOC             | JM         |
@@ -66,6 +76,7 @@ Precisiones acordadas al implementarla (paso 5 de la API):
 | Suspender / reactivar       | —       | sí               | —        | sí       | —               | —          |
 | Tarifas y saldos iniciales  | —       | confirma         | registra | ver      | ver             | ver        |
 | Cobrar                      | —       | en apoyo         | sí       | —        | —               | su manzana |
+| Consultar pagos             | —       | sí               | sí       | sí       | sí              | su manzana |
 | Reposición de recibo        | —       | —                | sí       | —        | —               | su manzana |
 | Cancelar pago               | —       | autoriza         | solicita | —        | —               | solicita   |
 | Entregas                    | —       | ver              | confirma | —        | ver             | prepara    |
