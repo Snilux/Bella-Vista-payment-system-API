@@ -44,7 +44,8 @@ export const PERMISSIONS = {
   'closings.view': COMMITTEE_AND_LEADERS,
   'closings.prepare': ['treasurer', 'block_leader'],
   'closings.review': ['president', 'member'],
-  // Approvals inbox (transversal)
+  // Approvals inbox (transversal): the president sees all; everyone else only their own
+  'approvals.view': COMMITTEE_AND_LEADERS,
   'approvals.resolve': ['president'],
   // Reports (CU-23, CU-24)
   'reports.block': COMMITTEE_AND_LEADERS,
