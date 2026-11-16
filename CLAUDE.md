@@ -37,7 +37,7 @@ You normally work **inside the Dev Container** (`api` service of docker-compose)
 apps/api/src/
   server.ts            process entry: env, database pool, listen, graceful shutdown
   app.ts               buildApp({ env, db }): Fastify + Zod, plugins and routes (tests use inject())
-  config/              environment variables validated with Zod
+  config/              environment variables validated with Zod; pino logger options (redaction)
   db/schema/           Drizzle tables;  db/migrations/  generated migrations
   db/audit.ts, db/idempotency.ts   audit log writes and Idempotency-Key storage (inside transactions)
   db/seed/             pnpm db:seed (bootstrap, D-27) and pnpm db:seed:dev
@@ -49,6 +49,18 @@ apps/api/test/         unit/ and integration/ (integration uses DATABASE_URL_TES
 packages/shared/src/   schemas/ (Zod), domain/ (pure rules), format/ (es-MX)
 docs/                  business context, data model, API contract, glossary
 ```
+
+## Packages
+
+Workspace package names (use them as dependencies and imports, e.g. in `apps/mobile`):
+
+| Package | Path | Notes |
+|---|---|---|
+| `@bella-vista/shared` | `packages/shared` | Zod schemas, pure domain rules, es-MX formats. Import from the package root: `import { loginRequestSchema, can } from '@bella-vista/shared'`. Exports `src/` under the `development` condition and `dist/` otherwise |
+| `@bella-vista/api` | `apps/api` | The API; nothing imports it |
+| `bella-vista-payment-system-api` | repository root | Private workspace root (scripts only) |
+
+The mobile app should be named `@bella-vista/mobile` and depend on `"@bella-vista/shared": "workspace:*"`.
 
 ## Coding rules
 

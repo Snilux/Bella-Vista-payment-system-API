@@ -84,7 +84,7 @@ Precisiones acordadas al implementarlo:
 | Cuentas de acceso           | sí      | —                | —        | —        | —               | —          |
 | Cargos y jefes              | —       | confirma         | —        | registra | —               | —          |
 | Secciones y manzanas        | —       | ver              | ver      | sí       | ver             | ver        |
-| Personas, tomas, unidades   | —       | apoyo            | ver      | sí       | ver             | su manzana |
+| Personas, tomas, unidades   | —       | ver (para cobrar en apoyo) | ver      | sí       | ver             | su manzana |
 | Solicitudes de toma         | —       | ver              | ver      | sí       | ver             | su manzana |
 | Acuerdos                    | —       | ver              | ver      | sí       | ver             | —          |
 | Baja / cambio de titular    | —       | autoriza         | —        | solicita | —               | solicita   |
