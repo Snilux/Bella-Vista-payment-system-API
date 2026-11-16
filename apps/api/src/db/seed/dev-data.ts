@@ -24,7 +24,7 @@ import {
   userAccount,
 } from '../schema/index.js';
 
-// Development data (`pnpm db:seed:dev`, 3.1 §2.2): sections, blocks, leaders, homonyms,
+// Development data (`pnpm db:seed:dev`, 3.1 §2.2): sections, blocks, leaders, members, homonyms,
 // connections with several units, historical rates and some payments, to exercise the API.
 // It runs on top of the bootstrap (it needs the superadmin and the officers) and never with
 // NODE_ENV=production.
@@ -122,6 +122,14 @@ const PEOPLE: PersonSeed[] = [
   { key: 'carmen', givenNames: 'Carmen', paternalSurname: 'Aguilar' },
   { key: 'rafael', givenNames: 'Rafael', paternalSurname: 'Domínguez', maternalSurname: 'Flores' },
   { key: 'teresa', givenNames: 'Teresa', paternalSurname: 'Navarro', maternalSurname: 'Cruz' },
+  {
+    key: 'pedro',
+    givenNames: 'Pedro',
+    paternalSurname: 'Ibarra',
+    maternalSurname: 'Solís',
+    phone: '5551002004',
+  },
+  { key: 'silvia', givenNames: 'Silvia', paternalSurname: 'Montes', phone: '5551002005' },
 ];
 
 const SECTIONS = [
@@ -135,6 +143,12 @@ const LEADERS = [
   { block: 'S1-M02', person: 'rogelio', username: 'jm.s1m02' },
   { block: 'S2-M01', person: 'josefina', username: 'jm.s2m01' },
 ] as const;
+
+/** Committee members; silvia has no account yet. */
+const MEMBERS: { person: string; username: string | null }[] = [
+  { person: 'pedro', username: 'vocal' },
+  { person: 'silvia', username: null },
+];
 
 interface UnitSeed {
   key: string;
@@ -465,6 +479,31 @@ export async function runDevSeed(db: Database, options: DevSeedOptions): Promise
       );
       await audit(secretary, roleAssignment, assignment.id, assignment);
       leaders.set(seed.block, await createAccount(assignment.id, seed.username, 'block_leader'));
+    }
+
+    // Committee members (vocales): one with an account, one still waiting for the superadmin
+    // to create it (it appears among the assignments without account).
+    for (const seed of MEMBERS) {
+      const memberApproval = await approved(
+        'role_assignment',
+        secretary,
+        'Vocal del comité',
+        '2024-12-15',
+      );
+      const assignment = one(
+        await tx
+          .insert(roleAssignment)
+          .values({
+            personId: need(people, seed.person),
+            role: 'member',
+            startDate: '2024-12-15',
+            approvalId: memberApproval.id,
+            createdBy: secretary.userAccountId,
+          })
+          .returning(),
+      );
+      await audit(secretary, roleAssignment, assignment.id, assignment);
+      if (seed.username) await createAccount(assignment.id, seed.username, 'member');
     }
 
     // Pre-existing connections and their units (captured at startup, D-18).

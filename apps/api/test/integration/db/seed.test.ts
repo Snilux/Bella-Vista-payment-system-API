@@ -296,7 +296,7 @@ describe.skipIf(!testDatabaseUrl)('pnpm db:seed:dev (development data)', () => {
       await bootstrap(db);
       const result = await runDevSeed(db, { nodeEnv: 'development' });
       if (result.status !== 'created') throw new Error('expected new development data');
-      expect(result.counts).toEqual({ people: 11, connections: 5, units: 8, payments: 7 });
+      expect(result.counts).toEqual({ people: 13, connections: 5, units: 8, payments: 7 });
       expect(result.accounts.map((a) => a.username)).toEqual([
         'presidente',
         'tesorero',
@@ -304,6 +304,7 @@ describe.skipIf(!testDatabaseUrl)('pnpm db:seed:dev (development data)', () => {
         'jm.s1m01',
         'jm.s1m02',
         'jm.s2m01',
+        'vocal',
       ]);
 
       // Development accounts log in with DEV_PASSWORD.
