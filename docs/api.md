@@ -26,6 +26,9 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | 404  | No existe o no es visible para el cargo                                      |
 | 409  | Conflicto (importe cambió, periodo ya pagado, folio repetido, corte cerrado) |
 | 422  | Regla de negocio no cumplida (orden de meses, saldo insuficiente)            |
+| 429  | Demasiadas solicitudes en poco tiempo                                        |
+| 500  | Error inesperado del servidor (sin detalles internos)                        |
+| 503  | La base de datos no responde                                                 |
 
 ## Endpoints
 
@@ -191,3 +194,25 @@ Si el total recalculado no coincide con `totalEsperado` → 409 `TOTAL_CAMBIO` c
 | JEFE_YA_ASIGNADO         | 409  | La manzana ya tiene jefe o la persona ya es jefe de otra |
 | TARIFA_VIGENCIA_INVALIDA | 422  | Vigencia no posterior al mes actual                      |
 | AUTORIZACION_RESUELTA    | 409  | La solicitud ya fue resuelta                             |
+
+### Códigos generales
+
+Los usa cualquier endpoint; no dependen de una regla de negocio.
+
+| Código                          | HTTP | Cuándo                                                                                   |
+| ------------------------------- | ---- | ---------------------------------------------------------------------------------------- |
+| DATOS_INVALIDOS                 | 400  | La validación Zod falló; `detalles.problemas` lista cada campo con su mensaje            |
+| SOLICITUD_INVALIDA              | 400  | El cuerpo no es JSON válido o la solicitud está mal formada                              |
+| CLAVE_IDEMPOTENCIA_REQUERIDA    | 400  | Falta `Idempotency-Key` o no es un UUID en un POST que mueve dinero                      |
+| NO_AUTENTICADO                  | 401  | Sin token de acceso o token inválido                                                     |
+| SESION_VENCIDA                  | 401  | El token de acceso venció; la app debe refrescarlo                                       |
+| CUENTA_DESACTIVADA              | 401  | La cuenta fue desactivada por el SA o al cerrarse su asignación                          |
+| CAMBIO_CONTRASENA_OBLIGATORIO   | 403  | La cuenta debe cambiar su contraseña antes de usar otros endpoints                       |
+| SIN_PERMISO                     | 403  | El cargo de la cuenta no puede hacer esa operación                                       |
+| NO_ENCONTRADO                   | 404  | La ruta o el recurso no existe                                                           |
+| CLAVE_IDEMPOTENCIA_REUTILIZADA  | 409  | La `Idempotency-Key` ya se usó en otra operación o por otra cuenta                       |
+| DEMASIADAS_SOLICITUDES          | 429  | Se superó el límite de solicitudes                                                       |
+| ERROR_INTERNO                   | 500  | Error inesperado; el detalle queda solo en el registro del servidor                      |
+| BASE_DE_DATOS_NO_DISPONIBLE     | 503  | La base de datos no responde (también lo usa `/health`)                                  |
+
+Una cuenta se valida contra la base en **cada** solicitud autenticada (desactivación, bloqueo y vigencia de la asignación), no solo en las operaciones de dinero: un bloqueo surte efecto de inmediato. Si la misma `Idempotency-Key` llega otra vez de la misma cuenta y a la misma ruta, se devuelve la respuesta guardada con el encabezado `Idempotent-Replayed: true`; las claves se guardan 24 h.

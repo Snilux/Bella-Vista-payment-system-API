@@ -235,3 +235,45 @@ Lo llena quien ejecuta `pnpm db:seed`, así que sus claves quedan en español (v
 | `superadministrador` (`nombres`, `apellidoPaterno`, `apellidoMaterno`, `distintivo`, `telefono`, `usuario`) | `person` + `role_assignment` (`superadmin`) + `user_account` |
 | `acuerdo` (`fechaJunta`, `tema`, `votosFavor`, `votosContra`, `abstenciones`, `referenciaActa`) | `agreement` (`meeting_date`, `topic`, `votes_for`, `votes_against`, `abstentions`, `minutes_reference`) |
 | `presidente`, `tesorero`, `secretario` (datos de persona y `fechaInicio`) | `role_assignment` (`president`, `treasurer`, `secretary`; `start_date`) |
+
+## Códigos de error
+
+`docs/api.md` los describe en español; en el código y en la respuesta (`error.code`) van en inglés. El `message` sigue en español.
+
+| Español | Inglés |
+| --- | --- |
+| `CREDENCIALES_INVALIDAS` | `INVALID_CREDENTIALS` |
+| `CUENTA_BLOQUEADA` | `ACCOUNT_LOCKED` |
+| `CARGO_NO_VIGENTE` | `ROLE_NOT_ACTIVE` |
+| `FUERA_DE_ALCANCE` | `OUT_OF_SCOPE` |
+| `ASIGNACION_CON_CUENTA` | `ASSIGNMENT_HAS_ACCOUNT` |
+| `USUARIO_REPETIDO` | `USERNAME_TAKEN` |
+| `HOMONIMO_SIN_DISTINTIVO` | `HOMONYM_WITHOUT_NOTE` |
+| `DISTINTIVO_REPETIDO` | `DUPLICATE_DISTINGUISHING_NOTE` |
+| `ORDEN_DE_MESES` | `MONTH_ORDER` |
+| `PERIODO_YA_PAGADO` | `PERIOD_ALREADY_PAID` |
+| `TOTAL_CAMBIO` | `TOTAL_CHANGED` |
+| `FOLIO_PAPEL_REPETIDO` | `DUPLICATE_PAPER_FOLIO` |
+| `PERIODO_CERRADO` | `PERIOD_CLOSED` |
+| `SALDO_INSUFICIENTE` | `INSUFFICIENT_BALANCE` |
+| `TOMA_NO_ACTIVA` | `CONNECTION_NOT_ACTIVE` |
+| `JEFE_YA_ASIGNADO` | `LEADER_ALREADY_ASSIGNED` |
+| `TARIFA_VIGENCIA_INVALIDA` | `INVALID_RATE_EFFECTIVE_PERIOD` |
+| `AUTORIZACION_RESUELTA` | `APPROVAL_ALREADY_RESOLVED` |
+| `DATOS_INVALIDOS` | `VALIDATION_ERROR` |
+| `SOLICITUD_INVALIDA` | `INVALID_REQUEST` |
+| `CLAVE_IDEMPOTENCIA_REQUERIDA` | `IDEMPOTENCY_KEY_REQUIRED` |
+| `NO_AUTENTICADO` | `UNAUTHENTICATED` |
+| `SESION_VENCIDA` | `TOKEN_EXPIRED` |
+| `CUENTA_DESACTIVADA` | `ACCOUNT_DISABLED` |
+| `CAMBIO_CONTRASENA_OBLIGATORIO` | `PASSWORD_CHANGE_REQUIRED` |
+| `SIN_PERMISO` | `FORBIDDEN` |
+| `NO_ENCONTRADO` | `NOT_FOUND` |
+| `CLAVE_IDEMPOTENCIA_REUTILIZADA` | `IDEMPOTENCY_KEY_REUSED` |
+| `DEMASIADAS_SOLICITUDES` | `TOO_MANY_REQUESTS` |
+| `ERROR_INTERNO` | `INTERNAL_ERROR` |
+| `BASE_DE_DATOS_NO_DISPONIBLE` | `DATABASE_UNAVAILABLE` |
+
+Campos de `detalles` (`details`): `problemas` → `issues`, cada uno con `ruta` → `path` y `mensaje` → `message`.
+
+Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
