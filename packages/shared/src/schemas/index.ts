@@ -11,4 +11,5 @@ export * from './errors.js';
 export * from './organization.js';
 export * from './rates.js';
 export * from './registry.js';
+export * from './reports.js';
 export * from './role-assignment.js';
