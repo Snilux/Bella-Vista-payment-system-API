@@ -16,6 +16,7 @@ import {
   createApprovalRegistry,
 } from './modules/approvals/approval-registry.js';
 import { registerApprovalsModule } from './modules/approvals/index.js';
+import { registerAuditModule } from './modules/audit/index.js';
 import { registerAuthModule } from './modules/auth/index.js';
 import { registerBillingModule } from './modules/billing/index.js';
 import { registerCashboxesModule } from './modules/cashboxes/index.js';
@@ -112,6 +113,7 @@ export async function buildApp(options: BuildAppOptions) {
   await registerCommitteeModule(app, approvalRegistry);
   await registerClosingsModule(app);
   await registerReportsModule(app);
+  await registerAuditModule(app);
 
   return app;
 }
