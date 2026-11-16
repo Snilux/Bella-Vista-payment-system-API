@@ -353,3 +353,28 @@ Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 | `adeudo` (resumen en fichas y búsqueda) | `debt` |
 | último mes cobrable (mes de la baja, inclusive) | `lastBillablePeriod` |
 | orden de pago: selección vacía, periodo inválido, repetido, ya pagado, no cobrable, orden de meses, sin tarifa | `EMPTY_SELECTION`, `INVALID_PERIOD`, `DUPLICATE_PERIOD`, `PERIOD_ALREADY_PAID`, `PERIOD_NOT_BILLABLE`, `MONTH_ORDER`, `RATE_MISSING` |
+
+## Tarifas, conceptos y cobranza
+
+| Español | Inglés |
+| --- | --- |
+| `/tarifas` | `/v1/rates` |
+| `/conceptos`, importes de un concepto | `/v1/fees`, `/v1/fees/{id}/amounts` |
+| `periodoVigencia`, `importe`, `fechaAprobacion`, `acuerdoId` | `effectivePeriod`, `amount`, `approvedOn`, `agreementId` |
+| estado de la tarifa: pendiente, autorizada, rechazada | `pending`, `approved`, `rejected` |
+| `vigenteDesde`, `importeVigente`, `importes` | `effectiveFrom`, `currentAmount`, `amounts` |
+| `/pagos/previsualizar` | `/v1/payments/preview` |
+| `/pagos`, `/pagos/{id}` | `/v1/payments`, `/v1/payments/{id}` |
+| `/pagos/{id}/reposiciones` | `/v1/payments/{id}/replacements` |
+| `/pagos/{id}/solicitar-cancelacion` | `/v1/payments/{id}/request-cancellation` |
+| `unidadId`, `periodos`, `cargosExtraordinarios` | `unitId`, `periods`, `extraChargeIds` |
+| `folioReciboPapel`, `totalEsperado` | `paperFolio`, `expectedTotal` |
+| `meses`, `cargos`, `caja`, `recibos` | `months`, `charges`, `cashbox`, `receipts` |
+| tipo de mes cobrado: vencido, pendiente, anticipo | `kind`: `overdue`, `pending`, `advance` |
+| `titular` (en la fecha del pago), `fechaHora`, `capturo` | `holder`, `occurredAt`, `capturedBy` |
+| `cancelado`, `cancelaciones` | `cancelled`, `cancellations` |
+| `previsualizacion` | `preview` |
+| etiqueta de caja: clave de manzana, Comité, Apoyo · nombre | `label` |
+| `desde`, `hasta` (filtro de pagos) | `from`, `to` |
+| permiso de consultar pagos | `payments.view` |
+| bloqueo de registro sin permiso UPDATE (advisory lock) | `lockRecord` (`db/locks.ts`) |

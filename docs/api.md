@@ -209,7 +209,7 @@ Respuesta 201:
 ```json
 {
   "id": 981,
-  "folio": "PG-000981",
+  "folio": "PG-202610-000981",
   "unidad": { "folio": "U-000045", "titular": "Juan Pérez López" },
   "meses": [
     { "periodo": "2026-06", "tarifaBase": 5000, "recargo": 5000, "total": 10000 },
@@ -223,6 +223,21 @@ Respuesta 201:
 ```
 
 Si el total recalculado no coincide con `totalEsperado` → 409 `TOTAL_CAMBIO` con el nuevo resumen. Si la misma `Idempotency-Key` llega otra vez → se devuelve el pago ya registrado.
+
+## Detalle: tarifas y conceptos
+
+- **Tarifas** (`/tarifas`): TES registra `{ periodoVigencia, importe, fechaAprobacion, acuerdoId, motivo? }` con un acuerdo aprobado por mayoría y se crea una autorización para PRE (D-20). La vigencia debe ser **posterior al mes actual** (D-05); la única excepción es capturar la historia al arranque (D-18): se acepta un mes pasado solo si es anterior a la tarifa autorizada más antigua, o cualquier mes mientras no haya ninguna autorizada. Si no → `TARIFA_VIGENCIA_INVALIDA`. Un periodo con una tarifa pendiente o autorizada no acepta otra (`ESTADO_INVALIDO`); una rechazada lo libera. Solo las autorizadas ponen precio a los meses. `GET /tarifas` devuelve el historial con su estado.
+- **Conceptos** (`/conceptos`): TES crea conceptos (nombre único, `CLAVE_REPETIDA`) y les agrega importes con `POST /conceptos/{id}/importes` `{ vigenteDesde, importe }`: desde hoy o después, nunca hacia atrás. Un cargo no guarda importe (es el vigente en su fecha), así que se rechaza un importe nuevo si ya hay cargos de ese concepto con esa fecha o posterior (`ESTADO_INVALIDO`). La consulta incluye el importe vigente y el historial.
+
+## Detalle: cobranza
+
+- **Previsualizar y registrar** (`/pagos/previsualizar`, `/pagos`): `{ unidadId?, periodos, cargosExtraordinarios, folioReciboPapel, totalEsperado }` (los dos últimos solo al registrar). Hay que elegir al menos un mes o un cargo; los meses exigen la unidad. El servidor recalcula con la función del estado de cuenta: `ORDEN_DE_MESES` (desde el más antiguo, sin huecos, anticipos solo liquidando todo), `PERIODO_YA_PAGADO`, y `DATOS_INVALIDOS` para meses no cobrables o sin tarifa. Los meses vencidos llevan recargo si el ciclo de adeudo está abierto; el pendiente y los anticipos nunca, y cada anticipo usa la tarifa de su mes.
+- **Cargos extraordinarios**: vigentes y sin pagar en un pago vigente. Con unidad, los de esa unidad o de su toma; sin unidad, solo la apertura de una solicitud aprobada pendiente de pago. Al pagarla la solicitud pasa a pendiente de instalación y ya se puede activar.
+- **Registro**: en una transacción con la `Idempotency-Key`, la unidad bloqueada (`FOR UPDATE`), la caja bloqueada y la bitácora; guarda el pago, sus meses con tarifa y recargo fijos (D-25), los meses cubiertos, los cargos y el recibo de papel original. Dos cobros simultáneos del mismo mes: uno entra y el otro recibe `PERIODO_YA_PAGADO`.
+- **Caja receptora** (D-07): la del cargo de la cuenta. JM → caja de su manzana (se crea con el primer cobro si la manzana no tiene); TES → caja del comité; PRE → su caja de apoyo, que se crea con su primer cobro. La manzana atendida es la de la unidad (o la de la solicitud).
+- **Alcance**: un JM solo cobra, consulta y repone en su manzana (`FUERA_DE_ALCANCE`). `GET /pagos` filtra por `unidad`, `manzana` y fechas `desde`/`hasta`, paginado; el detalle incluye meses, cargos, recibos de papel y cancelaciones.
+- **Reposición** (`/pagos/{id}/reposiciones`, D-23): `{ folioReciboPapel }`, sin costo ni movimiento de caja, en el talonario de la caja del pago (`FOLIO_PAPEL_REPETIDO`). No aplica a un pago cancelado.
+- **Cancelación** (`/pagos/{id}/solicitar-cancelacion`, D-15): `{ motivo }` con `Idempotency-Key`; crea una autorización para PRE. Una sola pendiente por pago; no aplica a un pago ya cancelado. Al autorizarse se borran sus meses cubiertos (vuelven a pendiente o vencido), el contramovimiento aparece en la caja receptora y sus cargos se reemiten con la misma fecha (mismo importe) para poder cobrarse otra vez. No se puede cancelar un pago que liquidó la apertura de una toma ya instalada (`ESTADO_INVALIDO`), ni autorizarla en un mes con corte cerrado (`PERIODO_CERRADO`).
 
 ## Códigos de error
 
