@@ -60,6 +60,12 @@ export const errors = {
     new AppError('TOO_MANY_REQUESTS', 429, 'Demasiadas solicitudes. Espera un momento.'),
   internal: () =>
     new AppError('INTERNAL_ERROR', 500, 'Ocurrió un error inesperado. Intenta de nuevo.'),
+  /**
+   * The operation does not fit the current state of the record. Only when no more specific
+   * code applies (APPROVAL_ALREADY_RESOLVED, CONNECTION_NOT_ACTIVE...).
+   */
+  invalidState: (message: string, status: string, action: string) =>
+    new AppError('INVALID_STATE', 409, message, { status, action }),
   databaseUnavailable: () =>
     new AppError('DATABASE_UNAVAILABLE', 503, 'La base de datos no responde. Intenta más tarde.'),
 };
