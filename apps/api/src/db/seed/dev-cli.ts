@@ -1,8 +1,14 @@
 import { createDb } from '../client.js';
 import { createSeedLogger, loadSeedEnv } from './cli-support.js';
-import { DEV_PASSWORD, DevSeedRefusedError, runDevSeed } from './dev-data.js';
+import {
+  applyDevSuperadminPassword,
+  DEV_PASSWORD,
+  DevSeedRefusedError,
+  runDevSeed,
+} from './dev-data.js';
 
-// `pnpm db:seed:dev`: development data on top of the bootstrap. Refuses NODE_ENV=production.
+// `pnpm db:seed:dev`: development data on top of the bootstrap, and a known password for the
+// superadmin (also on an already seeded database). Refuses NODE_ENV=production.
 
 const env = loadSeedEnv();
 const log = createSeedLogger(env);
@@ -15,8 +21,15 @@ if (env.NODE_ENV === 'production') {
 const { db, sql } = createDb(env.DATABASE_URL, { max: 1 });
 try {
   const result = await runDevSeed(db, { nodeEnv: env.NODE_ENV });
+  const superadmin = await applyDevSuperadminPassword(db, { nodeEnv: env.NODE_ENV });
+  if (superadmin.changed) {
+    log.info(`El superadministrador ${superadmin.username} ahora usa la contraseña de desarrollo.`);
+  }
   if (result.status === 'already_seeded') {
     log.warn('La base ya tiene secciones registradas; no se cargaron datos de desarrollo.');
+    process.stdout.write(
+      `\n  Cuentas de desarrollo (contraseña: ${DEV_PASSWORD}): vea "Cuentas de desarrollo" en el README.\n\n`,
+    );
   } else {
     const { counts } = result;
     log.info(
@@ -26,6 +39,7 @@ try {
       [
         '',
         `  Cuentas de desarrollo (contraseña: ${DEV_PASSWORD})`,
+        `  ${superadmin.username.padEnd(14)} superadmin`,
         ...result.accounts.map((a) => `  ${a.username.padEnd(14)} ${a.role}`),
         '',
         '',

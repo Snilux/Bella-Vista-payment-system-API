@@ -21,7 +21,12 @@ import {
 } from '../../../src/db/schema/index.js';
 import { BOOTSTRAP_AUDIT_REASON, runBootstrap } from '../../../src/db/seed/bootstrap.js';
 import { type BootstrapFile, parseBootstrapFile } from '../../../src/db/seed/bootstrap-file.js';
-import { DEV_PASSWORD, DevSeedRefusedError, runDevSeed } from '../../../src/db/seed/dev-data.js';
+import {
+  applyDevSuperadminPassword,
+  DEV_PASSWORD,
+  DevSeedRefusedError,
+  runDevSeed,
+} from '../../../src/db/seed/dev-data.js';
 import { verifyPassword } from '../../../src/lib/password.js';
 import { folioPattern, migrateDatabase, testDatabaseUrl, withFreshDatabase } from './helpers.js';
 
@@ -346,6 +351,29 @@ describe.skipIf(!testDatabaseUrl)('pnpm db:seed:dev (development data)', () => {
         status: 'already_seeded',
       });
       expect(await counts(db)).toEqual(before);
+    }),
+  );
+
+  it('gives the superadmin the development password once', { timeout: 60_000 }, () =>
+    withSeedDatabase(async (db) => {
+      await bootstrap(db);
+      expect(await applyDevSuperadminPassword(db, { nodeEnv: 'development' })).toEqual({
+        username: 'admin',
+        changed: true,
+      });
+      const [sa] = await db.select().from(userAccount).where(eq(userAccount.username, 'admin'));
+      expect(sa?.mustChangePassword).toBe(false);
+      expect(await verifyPassword(sa?.passwordHash ?? '', DEV_PASSWORD)).toBe(true);
+
+      const before = await counts(db);
+      expect(await applyDevSuperadminPassword(db, { nodeEnv: 'development' })).toEqual({
+        username: 'admin',
+        changed: false,
+      });
+      expect(await counts(db)).toEqual(before);
+      await expect(
+        applyDevSuperadminPassword(db, { nodeEnv: 'production' }),
+      ).rejects.toBeInstanceOf(DevSeedRefusedError);
     }),
   );
 });

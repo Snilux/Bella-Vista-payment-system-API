@@ -22,7 +22,7 @@ El sistema se inicializa **una sola vez**, con las migraciones ya aplicadas:
 
 Si ya existe un superadministrador, `pnpm db:seed` no hace nada y lo informa. En producción (sin `tsx`) se ejecuta con `node dist/db/seed/seed-cli.js` desde `apps/api`.
 
-`pnpm db:seed:dev` carga datos de prueba encima del arranque (secciones, manzanas, jefes con cuenta, homónimos, tomas con varias familias, tarifas históricas y algunos pagos) e imprime las cuentas de desarrollo y su contraseña. Se niega a correr con `NODE_ENV=production`, sin arranque previo o si ya hay secciones registradas.
+`pnpm db:seed:dev` carga datos de prueba encima del arranque (secciones, manzanas, jefes con cuenta, homónimos, tomas con varias familias, tarifas históricas y algunos pagos) e imprime las cuentas de desarrollo y su contraseña. También le asigna esa contraseña al superadministrador del arranque, sin obligar a cambiarla, cada vez que se ejecuta (aunque los datos ya existan), para que todos los cargos entren con una contraseña conocida (ver «Cuentas de desarrollo» en el README de la raíz). Se niega a correr con `NODE_ENV=production` o sin arranque previo; si ya hay secciones registradas, no carga datos.
 
 ## Documentos en Notion
 

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq, isNull, sql } from 'drizzle-orm';
-import { hashPassword } from '../../lib/password.js';
-import { type Actor, auditCreate, type Role } from '../audit.js';
+import { hashPassword, verifyPassword } from '../../lib/password.js';
+import { type Actor, auditCreate, type Role, writeAudit } from '../audit.js';
 import type { Database } from '../client.js';
 import {
   agreement,
@@ -29,7 +29,7 @@ import {
 // It runs on top of the bootstrap (it needs the superadmin and the officers) and never with
 // NODE_ENV=production.
 
-/** Password of every development account (printed by the CLI). */
+/** Password of every development account, the superadmin included (printed by the CLI). */
 export const DEV_PASSWORD = 'desarrollo-bella-vista';
 
 export const DEV_AUDIT_REASON = 'Datos de desarrollo (pnpm db:seed:dev)';
@@ -621,6 +621,71 @@ export async function runDevSeed(db: Database, options: DevSeedOptions): Promise
         payments: PAYMENTS.length,
       },
     };
+  });
+}
+
+/**
+ * Gives the bootstrap superadmin DEV_PASSWORD without a forced change, so every role signs in
+ * with a known password in development (REST Client files in http/). It runs on every
+ * `pnpm db:seed:dev`, also on an already seeded database, and does nothing once applied.
+ * Returns the superadmin's username.
+ */
+export async function applyDevSuperadminPassword(
+  db: Database,
+  options: DevSeedOptions,
+): Promise<{ username: string; changed: boolean }> {
+  if (options.nodeEnv === 'production') {
+    throw new DevSeedRefusedError(
+      'pnpm db:seed:dev no se ejecuta con NODE_ENV=production: solo carga datos de prueba.',
+    );
+  }
+  const devPasswordHash = await hashPassword(DEV_PASSWORD);
+
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${SEED_LOCK_KEY}))`);
+    const [sa] = await tx
+      .select({
+        id: userAccount.id,
+        username: userAccount.username,
+        passwordHash: userAccount.passwordHash,
+        mustChangePassword: userAccount.mustChangePassword,
+      })
+      .from(userAccount)
+      .innerJoin(roleAssignment, eq(userAccount.roleAssignmentId, roleAssignment.id))
+      .where(eq(roleAssignment.role, 'superadmin'))
+      .limit(1);
+    if (!sa) {
+      throw new DevSeedRefusedError(
+        'La base no ha sido arrancada: ejecuta primero pnpm db:seed (D-27).',
+      );
+    }
+    if (!sa.mustChangePassword && (await verifyPassword(sa.passwordHash, DEV_PASSWORD))) {
+      return { username: sa.username, changed: false };
+    }
+
+    await tx
+      .update(userAccount)
+      .set({
+        passwordHash: devPasswordHash,
+        mustChangePassword: false,
+        failedAttempts: 0,
+        lockedUntil: null,
+      })
+      .where(eq(userAccount.id, sa.id));
+    await writeAudit(
+      tx,
+      { userAccountId: sa.id, role: 'superadmin' },
+      {
+        action: 'set_dev_password',
+        table: userAccount,
+        recordId: sa.id,
+        before: { mustChangePassword: sa.mustChangePassword },
+        after: { mustChangePassword: false },
+        reason: DEV_AUDIT_REASON,
+        technical: true,
+      },
+    );
+    return { username: sa.username, changed: true };
   });
 }
 
