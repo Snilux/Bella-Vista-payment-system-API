@@ -100,13 +100,13 @@ Fuente: documento 3.1 de Notion. **Antes de cada bloque, revisa 3.1 en Notion; s
 
 ### API
 
-| Paso | Contenido | Pruebas clave |
-| --- | --- | --- |
-| 1. Base | `app.ts` separado de `server.ts`; manejador de errores con `{ error: { codigo, mensaje, detalles } }`; `/health` que consulta la base; plugin de autenticación y permisos (cargo de la cuenta + manzana + vigencia); plugin de idempotencia; contexto de bitácora | Error de validación con formato correcto; `/health` falla si la base no responde |
-| 2. auth y cuentas | Login, refresco rotativo, salir, cambio de contraseña obligatorio, bloqueo tras 5 intentos; alta de cuenta por el SA para una asignación sin cuenta, restablecer, bloquear, desactivar | Reutilizar un token de refresco revoca la familia; cargo cerrado no entra; nadie más que el SA crea cuentas |
-| 3. organización y autorizaciones | Secciones, manzanas, asignaciones (con autorización), sustitución de jefe; bandeja y resolución | Un jefe por manzana; solo PRE resuelve |
-| 4. padrón y tomas | Búsqueda, homónimos, personas, tomas preexistentes, unidades, suspensiones, solicitudes, acuerdos, activación | JM no ve pagos de otra manzana; familia en toma no activa rechazada |
-| 5. Estado de cuenta (`packages/shared/src/domain`) | Función pura (ver [decisiones.md](decisiones.md#cálculo-del-estado-de-cuenta-d-01-d-02-d-06-d-25)) | Pruebas de tabla: D-01, D-02 (pago parcial con recargo), D-03, D-05, D-06, cambio de tarifa, anticipos, mes en curso |
-| 6. tarifas y cobranza | Tarifas y conceptos; previsualizar, registrar pago, reposición, cancelación | Idempotencia; TOTAL_CAMBIO; orden de meses; folio repetido; doble pago concurrente |
-| 7. cajas y comité | Saldos, entregas, aclaraciones; ingresos, gastos, fontanero | Entrega mayor al saldo; gasto sin saldo; periodo del fontanero repetido |
-| 8. cortes, reportes, auditoría | Cortes y cierre de periodo; datos de los dos reportes; bitácora | Movimiento en mes cerrado rechazado; totales del reporte comunitario cuadran con los cortes |
+| Paso | Contenido | Pruebas clave | Estado |
+| --- | --- | --- | --- |
+| 1. Base | `app.ts` separado de `server.ts`; manejador de errores con `{ error: { codigo, mensaje, detalles } }`; `/health` que consulta la base; plugin de autenticación y permisos (cargo de la cuenta + manzana + vigencia); plugin de idempotencia; contexto de bitácora | Error de validación con formato correcto; `/health` falla si la base no responde | **Hecho** |
+| 2. auth y cuentas | Login, refresco rotativo, salir, cambio de contraseña obligatorio, bloqueo tras 5 intentos; alta de cuenta por el SA para una asignación sin cuenta, restablecer, bloquear, desactivar | Reutilizar un token de refresco revoca la familia; cargo cerrado no entra; nadie más que el SA crea cuentas | Pendiente |
+| 3. organización y autorizaciones | Secciones, manzanas, asignaciones (con autorización), sustitución de jefe; bandeja y resolución | Un jefe por manzana; solo PRE resuelve | Pendiente |
+| 4. padrón y tomas | Búsqueda, homónimos, personas, tomas preexistentes, unidades, suspensiones, solicitudes, acuerdos, activación | JM no ve pagos de otra manzana; familia en toma no activa rechazada | Pendiente |
+| 5. Estado de cuenta (`packages/shared/src/domain`) | Función pura (ver [decisiones.md](decisiones.md#cálculo-del-estado-de-cuenta-d-01-d-02-d-06-d-25)) | Pruebas de tabla: D-01, D-02 (pago parcial con recargo), D-03, D-05, D-06, cambio de tarifa, anticipos, mes en curso | Pendiente |
+| 6. tarifas y cobranza | Tarifas y conceptos; previsualizar, registrar pago, reposición, cancelación | Idempotencia; TOTAL_CAMBIO; orden de meses; folio repetido; doble pago concurrente | Pendiente |
+| 7. cajas y comité | Saldos, entregas, aclaraciones; ingresos, gastos, fontanero | Entrega mayor al saldo; gasto sin saldo; periodo del fontanero repetido | Pendiente |
+| 8. cortes, reportes, auditoría | Cortes y cierre de periodo; datos de los dos reportes; bitácora | Movimiento en mes cerrado rechazado; totales del reporte comunitario cuadran con los cortes | Pendiente |
