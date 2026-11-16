@@ -18,6 +18,7 @@ import { businessDate } from '../../lib/dates.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
 import type { ApprovalHandler } from '../approvals/approval-registry.js';
 import { revokeAllRefreshTokens } from '../auth/auth.repository.js';
+import { ensureBlockCashbox } from '../cashboxes/cashboxes.service.js';
 import { organizationErrors } from './organization.errors.js';
 import {
   type AssignmentRow,
@@ -252,6 +253,9 @@ export function createOrganizationService(deps: OrganizationServiceDeps) {
             recordId: id,
             after: { sectionId: created.sectionId, code: created.code, name: created.name },
           });
+          // The cashbox belongs to the block (D-08): it exists from day one, so the treasurer
+          // can capture its opening balance before the first payment.
+          await ensureBlockCashbox(tx, id, actor);
           return { block: created };
         });
       } catch (error) {
