@@ -35,11 +35,14 @@ You normally work **inside the Dev Container** (`api` service of docker-compose)
 
 ```
 apps/api/src/
-  server.ts            bootstrap (only /health for now)
-  app.ts               Fastify construction (pending)
+  server.ts            process entry: env, database pool, listen, graceful shutdown
+  app.ts               buildApp({ env, db }): Fastify + Zod, plugins and routes (tests use inject())
   config/              environment variables validated with Zod
   db/schema/           Drizzle tables;  db/migrations/  generated migrations
-  plugins/             auth, error handling, idempotency, audit log
+  db/audit.ts, db/idempotency.ts   audit log writes and Idempotency-Key storage (inside transactions)
+  db/seed/             pnpm db:seed (bootstrap, D-27) and pnpm db:seed:dev
+  plugins/             auth (/v1 secure by default), permissions, idempotency, audit context, errors
+  routes/              routes outside the modules (/health)
   lib/                 domain-free utilities (money, dates, errors)
   modules/<module>/    one module per domain (see docs/estructura.md)
 apps/api/test/         unit/ and integration/ (integration uses DATABASE_URL_TEST)

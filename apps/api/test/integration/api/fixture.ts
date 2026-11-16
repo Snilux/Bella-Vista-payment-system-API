@@ -7,7 +7,7 @@ import { type App, buildApp } from '../../../src/app.js';
 import { type Env, loadEnv } from '../../../src/config/env.js';
 import type { Database } from '../../../src/db/client.js';
 import * as schema from '../../../src/db/schema/index.js';
-import { userAccount } from '../../../src/db/schema/index.js';
+import { roleAssignment, userAccount } from '../../../src/db/schema/index.js';
 import { runBootstrap } from '../../../src/db/seed/bootstrap.js';
 import { parseBootstrapFile } from '../../../src/db/seed/bootstrap-file.js';
 import { runDevSeed } from '../../../src/db/seed/dev-data.js';
@@ -51,6 +51,10 @@ export interface ApiTestContext {
   /** Connection as the owner, to change state the API user cannot (setup only). */
   owner: Database;
   url: string;
+  /** Signed access token for an existing username. */
+  tokenFor(username: string): Promise<string>;
+  /** `Authorization` header for an existing username. */
+  authFor(username: string): Promise<{ authorization: string }>;
   accountId(username: string): Promise<number>;
 }
 
@@ -98,12 +102,25 @@ export function useApiTestApp(extend?: (app: App) => unknown): ApiTestContext {
       if (!row) throw new Error(`unknown account ${username}`);
       return row.id;
     };
+    const tokenFor = async (username: string) => {
+      const [row] = await owner.db
+        .select({ id: userAccount.id, role: roleAssignment.role })
+        .from(userAccount)
+        .innerJoin(roleAssignment, eq(roleAssignment.id, userAccount.roleAssignmentId))
+        .where(eq(userAccount.username, username));
+      if (!row) throw new Error(`unknown account ${username}`);
+      return app.jwt.sign({ sub: String(row.id), role: row.role });
+    };
 
     Object.assign(ctx, {
       app,
       db: api.db,
       owner: owner.db,
       url: url.toString(),
+      tokenFor,
+      authFor: async (username: string) => ({
+        authorization: `Bearer ${await tokenFor(username)}`,
+      }),
       accountId,
     } satisfies ApiTestContext);
   }, 60_000);

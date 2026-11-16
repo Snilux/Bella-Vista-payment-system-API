@@ -8,7 +8,10 @@ import {
 import { z } from 'zod';
 import type { Env } from './config/env.js';
 import type { Database } from './db/client.js';
+import { registerAuth } from './plugins/auth.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
+import { registerIdempotency } from './plugins/idempotency.js';
+import { registerPermissions } from './plugins/permissions.js';
 import { healthRoutes } from './routes/health.js';
 
 // Validation messages in Spanish (es-MX users); the API turns them into VALIDATION_ERROR.
@@ -52,6 +55,17 @@ export async function buildApp(options: BuildAppOptions) {
 
   registerErrorHandler(app);
   await app.register(helmet);
+  // Hook order matters: authentication, then permissions (onRequest), then idempotency
+  // (preHandler, after body validation).
+  await registerAuth(app, {
+    db,
+    jwtSecret: env.JWT_ACCESS_SECRET,
+    accessTokenTtl: env.JWT_ACCESS_TTL,
+    timeZone: env.BUSINESS_TIMEZONE,
+    now,
+  });
+  registerPermissions(app);
+  registerIdempotency(app, { db });
 
   await app.register(healthRoutes, { db, timeoutMs: options.healthTimeoutMs ?? 2_000 });
 
