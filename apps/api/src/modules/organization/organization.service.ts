@@ -5,6 +5,7 @@ import type {
   CreateBlockRequest,
   CreateRoleAssignmentInput,
   CreateSectionRequest,
+  LeaderSubstitutionRequest,
   RoleAssignment,
   RoleAssignmentListQuery,
   UpdateBlockRequest,
@@ -15,10 +16,13 @@ import { type Actor, writeAudit } from '../../db/audit.js';
 import type { Database, Transaction } from '../../db/client.js';
 import { isUniqueViolation } from '../../db/errors.js';
 import { businessDate } from '../../lib/dates.js';
+import { AppError, errors } from '../../lib/errors.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
 import type { ApprovalHandler } from '../approvals/approval-registry.js';
 import { revokeAllRefreshTokens } from '../auth/auth.repository.js';
+import { blockCashbox } from '../cashboxes/cashboxes.repository.js';
 import { ensureBlockCashbox } from '../cashboxes/cashboxes.service.js';
+import { findClosing, hasMovementsAfter } from '../closings/closings.repository.js';
 import { organizationErrors } from './organization.errors.js';
 import {
   type AssignmentRow,
@@ -41,6 +45,7 @@ import {
   listSections,
   lockAssignment,
   lockBlock,
+  lockOpenLeader,
   personExists,
   setAssignmentEndDate,
   updateBlock,
@@ -162,6 +167,107 @@ export function createOrganizationService(deps: OrganizationServiceDeps) {
     const row = await findAssignment(executor, id);
     if (!row) throw organizationErrors.assignmentNotFound();
     return toAssignment(row, today());
+  }
+
+  /** Registers an assignment pending the president's approval, inside `tx`. */
+  async function registerAssignment(
+    tx: Transaction,
+    actor: Actor,
+    input: CreateRoleAssignmentInput,
+  ) {
+    const blockId = input.blockId ?? null;
+    if (!(await personExists(tx, input.personId))) throw organizationErrors.personNotFound();
+    let blockCode: string | null = null;
+    if (blockId !== null) {
+      const target = await lockBlock(tx, blockId);
+      if (!target) throw organizationErrors.blockNotFound();
+      if (!target.active) {
+        throw organizationErrors.invalidField('body.blockId', 'La manzana está inactiva.');
+      }
+      blockCode = (await findBlock(tx, blockId))?.fullCode ?? null;
+    }
+
+    const conflicts = await findOpenConflicts(tx, {
+      role: input.role,
+      blockId,
+      personId: input.personId,
+    });
+    if (conflicts.blockHasLeader) throw organizationErrors.blockHasLeader(blockCode ?? '');
+    if (conflicts.personIsLeader) throw organizationErrors.personIsLeader();
+    if (conflicts.roleTaken)
+      throw organizationErrors.roleTaken(ROLE_LABELS[input.role] ?? input.role);
+
+    const label = ROLE_LABELS[input.role] ?? input.role;
+    const approvalId = await insertApproval(tx, {
+      reason:
+        input.reason ?? `Registro de ${label}${blockCode ? ` de la manzana ${blockCode}` : ''}`,
+      requestedBy: actor.userAccountId,
+      requestedAt: deps.now(),
+    });
+    const id = await insertAssignment(tx, {
+      personId: input.personId,
+      role: input.role,
+      blockId,
+      contactPhone: input.contactPhone ?? null,
+      startDate: input.startDate,
+      approvalId,
+      createdBy: actor.userAccountId,
+    });
+    const created = await assignmentOrThrow(tx, id);
+    await writeAudit(tx, actor, {
+      action: 'create',
+      table: 'role_assignment',
+      recordId: id,
+      after: {
+        personId: input.personId,
+        role: input.role,
+        blockId,
+        startDate: input.startDate,
+        approvalId,
+      },
+    });
+    return { assignment: created };
+  }
+
+  /** Translates the unique violations of open assignments into business errors. */
+  async function assignmentConflict(error: unknown, input: CreateRoleAssignmentInput) {
+    const blockId = input.blockId ?? null;
+    if (isUniqueViolation(error, 'role_assignment_open_leader_block_uq')) {
+      return organizationErrors.blockHasLeader((await findBlock(db, blockId ?? 0))?.fullCode ?? '');
+    }
+    if (isUniqueViolation(error, 'role_assignment_open_leader_person_uq')) {
+      return organizationErrors.personIsLeader();
+    }
+    if (isUniqueViolation(error, 'role_assignment_open_officer_uq')) {
+      return organizationErrors.roleTaken(ROLE_LABELS[input.role] ?? input.role);
+    }
+    return null;
+  }
+
+  /** Ends an assignment and deactivates its account, closing its sessions (D-22). */
+  async function endAssignment(
+    tx: Transaction,
+    actor: Actor,
+    id: number,
+    endDate: string,
+    reason: string,
+    now: Date,
+    extra: Record<string, unknown> = {},
+  ) {
+    await setAssignmentEndDate(tx, id, endDate);
+    const account = await findAccountOfAssignment(tx, id);
+    if (account && !account.deactivatedAt) {
+      await deactivateAccount(tx, account.id, now);
+      await revokeAllRefreshTokens(tx, account.id, now);
+    }
+    await writeAudit(tx, actor, {
+      action: 'close',
+      table: 'role_assignment',
+      recordId: id,
+      before: { endDate: null },
+      after: { endDate, deactivatedAccountId: account?.id ?? null, ...extra },
+      reason,
+    });
   }
 
   return {
@@ -300,75 +406,10 @@ export function createOrganizationService(deps: OrganizationServiceDeps) {
 
     /** SEC registers; the assignment waits for the president's approval (pending). */
     async createAssignment(actor: Actor, input: CreateRoleAssignmentInput) {
-      const blockId = input.blockId ?? null;
       try {
-        return await db.transaction(async (tx) => {
-          if (!(await personExists(tx, input.personId))) throw organizationErrors.personNotFound();
-          let blockCode: string | null = null;
-          if (blockId !== null) {
-            const target = await lockBlock(tx, blockId);
-            if (!target) throw organizationErrors.blockNotFound();
-            if (!target.active) {
-              throw organizationErrors.invalidField('body.blockId', 'La manzana está inactiva.');
-            }
-            blockCode = (await findBlock(tx, blockId))?.fullCode ?? null;
-          }
-
-          const conflicts = await findOpenConflicts(tx, {
-            role: input.role,
-            blockId,
-            personId: input.personId,
-          });
-          if (conflicts.blockHasLeader) throw organizationErrors.blockHasLeader(blockCode ?? '');
-          if (conflicts.personIsLeader) throw organizationErrors.personIsLeader();
-          if (conflicts.roleTaken)
-            throw organizationErrors.roleTaken(ROLE_LABELS[input.role] ?? input.role);
-
-          const label = ROLE_LABELS[input.role] ?? input.role;
-          const approvalId = await insertApproval(tx, {
-            reason:
-              input.reason ??
-              `Registro de ${label}${blockCode ? ` de la manzana ${blockCode}` : ''}`,
-            requestedBy: actor.userAccountId,
-            requestedAt: deps.now(),
-          });
-          const id = await insertAssignment(tx, {
-            personId: input.personId,
-            role: input.role,
-            blockId,
-            contactPhone: input.contactPhone ?? null,
-            startDate: input.startDate,
-            approvalId,
-            createdBy: actor.userAccountId,
-          });
-          const created = await assignmentOrThrow(tx, id);
-          await writeAudit(tx, actor, {
-            action: 'create',
-            table: 'role_assignment',
-            recordId: id,
-            after: {
-              personId: input.personId,
-              role: input.role,
-              blockId,
-              startDate: input.startDate,
-              approvalId,
-            },
-          });
-          return { assignment: created };
-        });
+        return await db.transaction((tx) => registerAssignment(tx, actor, input));
       } catch (error) {
-        if (isUniqueViolation(error, 'role_assignment_open_leader_block_uq')) {
-          throw organizationErrors.blockHasLeader(
-            (await findBlock(db, blockId ?? 0))?.fullCode ?? '',
-          );
-        }
-        if (isUniqueViolation(error, 'role_assignment_open_leader_person_uq')) {
-          throw organizationErrors.personIsLeader();
-        }
-        if (isUniqueViolation(error, 'role_assignment_open_officer_uq')) {
-          throw organizationErrors.roleTaken(ROLE_LABELS[input.role] ?? input.role);
-        }
-        throw error;
+        throw (await assignmentConflict(error, input)) ?? error;
       }
     },
 
@@ -386,7 +427,7 @@ export function createOrganizationService(deps: OrganizationServiceDeps) {
         if (current.role === 'block_leader') {
           throw organizationErrors.invalidField(
             'params.id',
-            'El jefe de manzana se sustituye con acta de entrega de la caja (corte extraordinario), no se cierra.',
+            'El jefe de manzana no se cierra: se sustituye con POST /v1/blocks/{id}/leader-substitution y el acta de entrega (corte extraordinario).',
           );
         }
         if (current.role === 'superadmin') {
@@ -418,25 +459,130 @@ export function createOrganizationService(deps: OrganizationServiceDeps) {
           );
         }
 
-        await setAssignmentEndDate(tx, id, input.endDate);
-        const account = await findAccountOfAssignment(tx, id);
-        if (account && !account.deactivatedAt) {
-          await deactivateAccount(tx, account.id, now);
-          await revokeAllRefreshTokens(tx, account.id, now);
-        }
-        await writeAudit(tx, actor, {
-          action: 'close',
-          table: 'role_assignment',
-          recordId: id,
-          before: { endDate: null },
-          after: { endDate: input.endDate, deactivatedAccountId: account?.id ?? null },
-          reason: input.reason,
-        });
+        await endAssignment(tx, actor, id, input.endDate, input.reason, now);
         return { assignment: await assignmentOrThrow(tx, id) };
       });
     },
+
+    /**
+     * Block leader substitution (D-08): the counted extraordinary closing of the block
+     * cashbox is the handover record. In one transaction the outgoing leader's assignment
+     * ends (and their account is deactivated) and the new leader is registered pending the
+     * president's approval; the cashbox stays with the block and its balance.
+     */
+    async substituteLeader(actor: Actor, blockId: number, input: LeaderSubstitutionRequest) {
+      const now = deps.now();
+      const todayDate = businessDate(now, deps.timeZone);
+      if (input.startDate > todayDate) {
+        throw organizationErrors.invalidField(
+          'body.startDate',
+          'La fecha de inicio no puede ser posterior a hoy.',
+        );
+      }
+      const incomingInput: CreateRoleAssignmentInput = {
+        personId: input.personId,
+        role: 'block_leader',
+        blockId,
+        contactPhone: input.contactPhone,
+        startDate: input.startDate,
+        reason: input.reason,
+      };
+      try {
+        return await db.transaction(async (tx) => {
+          const target = await lockBlock(tx, blockId);
+          if (!target) throw organizationErrors.blockNotFound();
+          const outgoing = await lockOpenLeader(tx, blockId);
+          const outgoingRow = outgoing ? await findAssignment(tx, outgoing.id) : null;
+          if (!outgoing || !outgoingRow || assignmentStatus(outgoingRow, todayDate) !== 'active') {
+            throw errors.invalidState(
+              'La manzana no tiene un jefe vigente; registra al nuevo jefe con una asignación normal.',
+              'no_leader',
+              'substitute_leader',
+            );
+          }
+          if (outgoing.personId === input.personId) {
+            throw organizationErrors.invalidField(
+              'body.personId',
+              'El nuevo jefe debe ser otra persona.',
+            );
+          }
+          if (input.startDate < outgoing.startDate) {
+            throw organizationErrors.invalidField(
+              'body.startDate',
+              'La fecha no puede ser anterior al inicio del jefe saliente.',
+            );
+          }
+
+          // The handover record: an extraordinary closing of this block's cashbox, counted,
+          // and no cash movement after it.
+          const cashboxId = await blockCashbox(tx, blockId);
+          const record = await findClosing(tx, input.closingId);
+          if (!record) throw new AppError('NOT_FOUND', 404, 'No existe ese corte.');
+          if (record.type !== 'extraordinary' || record.cashboxId !== cashboxId) {
+            throw errors.invalidState(
+              'El acta de entrega debe ser un corte extraordinario de la caja de esta manzana.',
+              record.type,
+              'substitute_leader',
+            );
+          }
+          if (record.status === 'draft') {
+            throw errors.invalidState(
+              'El corte extraordinario aún no tiene el conteo del efectivo.',
+              record.status,
+              'substitute_leader',
+            );
+          }
+          if (await hasMovementsAfter(tx, record.cashboxId, nextDay(record.dateTo))) {
+            throw errors.invalidState(
+              'La caja tuvo movimientos después del corte; haz un corte extraordinario nuevo.',
+              'stale_closing',
+              'substitute_leader',
+            );
+          }
+          if (input.startDate < record.dateTo) {
+            throw organizationErrors.invalidField(
+              'body.startDate',
+              'El nuevo jefe no puede empezar antes de la fecha del acta de entrega.',
+            );
+          }
+
+          await endAssignment(tx, actor, outgoing.id, input.startDate, input.reason, now, {
+            substitution: true,
+            closingId: record.id,
+            closingFolio: record.folio,
+          });
+          const incoming = await registerAssignment(tx, actor, incomingInput);
+          await writeAudit(tx, actor, {
+            action: 'substitute_leader',
+            table: 'block',
+            recordId: blockId,
+            after: {
+              outgoingAssignmentId: outgoing.id,
+              incomingAssignmentId: incoming.assignment.id,
+              closingId: record.id,
+              closingFolio: record.folio,
+              countedCash: record.countedCash,
+              expectedBalance: record.expectedBalance,
+            },
+            reason: input.reason,
+          });
+          return {
+            outgoing: await assignmentOrThrow(tx, outgoing.id),
+            incoming: incoming.assignment,
+          };
+        });
+      } catch (error) {
+        throw (await assignmentConflict(error, incomingInput)) ?? error;
+      }
+    },
   };
 }
+
+const nextDay = (date: string) => {
+  const day = new Date(`${date}T00:00:00Z`);
+  day.setUTCDate(day.getUTCDate() + 1);
+  return day.toISOString().slice(0, 10);
+};
 
 export type OrganizationService = ReturnType<typeof createOrganizationService>;
 

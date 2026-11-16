@@ -7,6 +7,8 @@ import {
   createRoleAssignmentSchema,
   createSectionRequestSchema,
   idParamsSchema,
+  leaderSubstitutionRequestSchema,
+  leaderSubstitutionResponseSchema,
   roleAssignmentListQuerySchema,
   roleAssignmentListResponseSchema,
   roleAssignmentResponseSchema,
@@ -62,6 +64,21 @@ export const sectionRoutes: FastifyPluginAsyncZod<Options> = async (app, { servi
 };
 
 export const blockRoutes: FastifyPluginAsyncZod<Options> = async (app, { service }) => {
+  // D-08: SEC replaces the leader with the extraordinary closing as handover record.
+  app.post(
+    '/:id/leader-substitution',
+    {
+      config: { permission: 'assignments.register' },
+      schema: {
+        params: idParamsSchema,
+        body: leaderSubstitutionRequestSchema,
+        response: { 200: leaderSubstitutionResponseSchema },
+      },
+    },
+    async (request) =>
+      service.substituteLeader(requireActor(request), request.params.id, request.body),
+  );
+
   app.get(
     '/',
     {
