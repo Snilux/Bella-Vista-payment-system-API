@@ -19,6 +19,7 @@ import { dateToPeriod, periodOf, periodToDate } from '../../lib/periods.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
 import { assertInScope, blockScope } from '../../plugins/permissions.js';
 import type { ApprovalHandler } from '../approvals/approval-registry.js';
+import { loadDebts, NO_DEBT } from '../billing/account-statements.js';
 import { registryErrors } from './registry.errors.js';
 import * as repo from './registry.repository.js';
 
@@ -92,6 +93,14 @@ export function createRegistryService(deps: RegistryServiceDeps) {
       return { access: 'basic', ...basic };
     }
     const units = await repo.unitsHeldBy(executor, id);
+    // Debt only of the units in scope: a leader never gets amounts of another block.
+    const visibleUnits = units.filter((u) => scope === null || u.blockId === scope);
+    const debts = await loadDebts(
+      executor,
+      visibleUnits.map((u) => u.id),
+      deps.now(),
+      deps.timeZone,
+    );
     const requests = await repo.requestsOf(executor, id, scope);
     return {
       access: 'full',
@@ -116,8 +125,10 @@ export function createRegistryService(deps: RegistryServiceDeps) {
               address: u.address,
               blockCode: u.blockCode,
               holderSince: u.holderSince,
+              debt: debts.get(u.id) ?? NO_DEBT,
             },
       ),
+      totalDue: visibleUnits.reduce((sum, u) => sum + (debts.get(u.id)?.totalDue ?? 0), 0),
       connectionRequests: requests.map((r) => ({
         id: r.id,
         folio: r.folio,
@@ -250,6 +261,12 @@ export function createRegistryService(deps: RegistryServiceDeps) {
         repo.searchConnections(db, q, scope),
         repo.searchUnits(db, q, scope),
       ]);
+      const debts = await loadDebts(
+        db,
+        units.map((u) => u.id),
+        deps.now(),
+        deps.timeZone,
+      );
       return {
         people: people.map(personBasic),
         connections: connections.map((c) => ({
@@ -270,6 +287,7 @@ export function createRegistryService(deps: RegistryServiceDeps) {
           address: u.address,
           blockCode: u.blockCode,
           holder: optionalPerson(u.holder),
+          debt: debts.get(u.id) ?? NO_DEBT,
         })),
       };
     },

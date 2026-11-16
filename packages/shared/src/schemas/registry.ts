@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { debtSummarySchema } from './billing.js';
 import { optionalText, periodSchema, personBasicSchema, requiredText } from './common.js';
 
 // Registry endpoints (/v1/search, /v1/people, /v1/units, /v1/suspensions; CU-05 to CU-07,
@@ -37,6 +38,8 @@ export const searchUnitSchema = z.object({
   address: z.string(),
   blockCode: z.string().nullable(),
   holder: personBasicSchema.nullable(),
+  /** What the unit owes today (API step 5). */
+  debt: debtSummarySchema,
 });
 
 export const searchResponseSchema = z.object({
@@ -82,6 +85,7 @@ export const personUnitSchema = z.discriminatedUnion('scope', [
     address: z.string(),
     blockCode: z.string().nullable(),
     holderSince: z.iso.date(),
+    debt: debtSummarySchema,
   }),
   z.object({ scope: z.literal('other_block') }),
 ]);
@@ -103,6 +107,8 @@ export const personDetailSchema = z.discriminatedUnion('access', [
     phone: z.string().nullable(),
     registeredOn: z.iso.date(),
     units: z.array(personUnitSchema),
+    /** Sum of what the units in scope owe (units of other blocks excluded). */
+    totalDue: z.int(),
     connectionRequests: z.array(personConnectionRequestSchema),
   }),
   personBasicSchema.extend({ access: z.literal('basic') }),
