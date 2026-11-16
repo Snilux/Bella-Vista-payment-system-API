@@ -14,6 +14,7 @@ describe('loadEnv', () => {
       API_PORT: 3000,
       LOG_LEVEL: 'info',
       BUSINESS_TIMEZONE: 'America/Mexico_City',
+      TRUST_PROXY: false,
       JWT_ACCESS_TTL: '15m',
       REFRESH_TOKEN_TTL_DAYS: 30,
       LOGIN_MAX_ATTEMPTS: 5,
@@ -32,6 +33,24 @@ describe('loadEnv', () => {
   });
 
   it.each([
+    ['false', false],
+    ['0', false],
+    ['1', 1],
+    ['2', 2],
+    ['10.0.0.5', ['10.0.0.5']],
+    ['10.0.0.0/8, 192.168.1.1, ::1/128', ['10.0.0.0/8', '192.168.1.1', '::1/128']],
+  ])('reads TRUST_PROXY=%s', (value, expected) => {
+    expect(loadEnv({ ...required, TRUST_PROXY: value }).TRUST_PROXY).toEqual(expected);
+  });
+
+  it.each([
+    [
+      'TRUST_PROXY=true (any client could pick its IP)',
+      { ...required, TRUST_PROXY: 'true' },
+      'TRUST_PROXY',
+    ],
+    ['TRUST_PROXY with a bad address', { ...required, TRUST_PROXY: '10.0.0.0/33' }, 'TRUST_PROXY'],
+    ['TRUST_PROXY with a name', { ...required, TRUST_PROXY: 'loopback' }, 'TRUST_PROXY'],
     ['missing DATABASE_URL', { JWT_ACCESS_SECRET: required.JWT_ACCESS_SECRET }, 'DATABASE_URL'],
     ['non-postgres DATABASE_URL', { ...required, DATABASE_URL: 'mysql://x/y' }, 'DATABASE_URL'],
     ['short JWT secret', { ...required, JWT_ACCESS_SECRET: 'short' }, 'JWT_ACCESS_SECRET'],

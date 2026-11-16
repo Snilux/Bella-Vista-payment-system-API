@@ -36,12 +36,13 @@ const connect = (url: string, asApi: boolean) => {
   return { client, db: drizzle({ client, schema, casing: 'snake_case' }) as Database };
 };
 
-export function testEnv(databaseUrl: string): Env {
+export function testEnv(databaseUrl: string, overrides: Record<string, string> = {}): Env {
   return loadEnv({
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
     DATABASE_URL: databaseUrl,
     JWT_ACCESS_SECRET: 'test-secret-with-at-least-32-characters!',
+    ...overrides,
   });
 }
 
@@ -64,6 +65,8 @@ export interface ApiTestContext {
 export interface ApiTestOptions {
   /** Login/refresh rate limit; high by default so tests are not throttled. */
   loginRateLimit?: { max: number; timeWindow: number | string };
+  /** Extra environment variables (e.g. TRUST_PROXY). */
+  env?: Record<string, string>;
 }
 
 /**
@@ -103,7 +106,7 @@ export function useApiTestApp(
     await runDevSeed(api.db, { nodeEnv: 'test' });
 
     const app = await buildApp({
-      env: testEnv(url.toString()),
+      env: testEnv(url.toString(), options.env),
       db: api.db,
       now: () => fixedNow ?? new Date(),
       loginRateLimit: options.loginRateLimit ?? { max: 10_000, timeWindow: '1 minute' },
