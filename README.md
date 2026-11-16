@@ -52,7 +52,7 @@ Su identidad de Git y su llave SSH se usan dentro del contenedor automáticament
 | `pnpm dev` | API en http://localhost:3000 con recarga en caliente |
 | `pnpm check` | Lint, tipos y pruebas |
 | `pnpm db:generate` | Genera una migración desde el esquema |
-| `pnpm db:migrate` | Aplica las migraciones |
+| `pnpm db:migrate` | Aplica las migraciones y ajusta la contraseña de `agua_api` a la de `DATABASE_URL` |
 | `pnpm db:studio` | Explorador de la base de datos de Drizzle |
 | `claude` | Claude Code (use `/commit` para los commits) |
 
@@ -82,13 +82,15 @@ curl http://localhost:3000/health
 | `pnpm docker:logs` / `pnpm docker:down` | Ver logs / detener |
 | `pnpm docker:rebuild` | Reconstruir la API tras cambiar dependencias |
 | `pnpm docker:reset-db` | Borrar los datos de la base y empezar de cero |
-| `docker compose exec api pnpm db:migrate` | Aplicar migraciones |
+| `docker compose exec api pnpm db:migrate` | Aplicar migraciones (y ajustar la contraseña de `agua_api`) |
 
 No use al mismo tiempo el Dev Container y `pnpm docker:up`: comparten los mismos contenedores.
 
 ## Base de datos
 
 Desde su equipo (DBeaver, TablePlus): `localhost:5432`, usuario `agua`, contraseña `agua_local`, bases `agua` y `agua_test`. Si ya tiene PostgreSQL instalado y ocupando el 5432, detenga ese servicio o cambie `DB_PORT` en `.env`.
+
+La API se conecta como `agua_api`, con permisos limitados. Su contraseña sale **solo** de `DATABASE_URL` en `.env`: cada `pnpm db:migrate` se conecta como el dueño (`DATABASE_URL_MIGRATIONS`), aplica las migraciones y le asigna al rol esa contraseña, también en una base que ya existía (el rol es del servidor, así que sirve igual para `agua` y `agua_test`). Si cambia `DATABASE_URL`, reconstruya el contenedor (*Dev Containers: Rebuild Container*, o `pnpm docker:up` sin Dev Container) para que tome el valor nuevo y ejecute `pnpm db:migrate`. Si `pnpm dev` o `pnpm db:seed:dev` fallan con `password authentication failed for user "agua_api"`, ejecute `pnpm db:migrate`.
 
 ## Documentación
 

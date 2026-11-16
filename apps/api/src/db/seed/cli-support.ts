@@ -3,8 +3,8 @@ import type { z } from 'zod';
 import { envSchema } from '../../config/env.js';
 import { loggerOptions } from '../../config/logger.js';
 
-// Shared pieces of the seed command-line scripts. They only need the database and the
-// business time zone, not the whole API environment (JWT secrets, ports).
+// Shared pieces of the database command-line scripts (seeds and migrate). They only need the
+// database and a few settings, not the whole API environment (JWT secrets, ports).
 
 const seedEnvSchema = envSchema.pick({
   NODE_ENV: true,
@@ -16,8 +16,16 @@ const seedEnvSchema = envSchema.pick({
 export type SeedEnv = z.infer<typeof seedEnvSchema>;
 
 export function loadSeedEnv(source: Record<string, string | undefined> = process.env): SeedEnv {
+  return parseCliEnv(seedEnvSchema, source);
+}
+
+/** Validates the variables a command-line script needs; empty values count as missing. */
+export function parseCliEnv<T extends z.ZodType>(
+  schema: T,
+  source: Record<string, string | undefined> = process.env,
+): z.infer<T> {
   const cleaned = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ''));
-  const result = seedEnvSchema.safeParse(cleaned);
+  const result = schema.safeParse(cleaned);
   if (!result.success) {
     throw new Error(
       `Variables de entorno inválidas:\n${result.error.issues

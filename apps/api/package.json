@@ -18,7 +18,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "tsx --conditions=development src/db/migrate-cli.ts",
     "db:seed": "tsx --conditions=development src/db/seed/seed-cli.ts",
     "db:seed:dev": "tsx --conditions=development src/db/seed/dev-cli.ts",
     "db:studio": "drizzle-kit studio"
