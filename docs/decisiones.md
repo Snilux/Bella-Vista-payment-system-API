@@ -70,6 +70,13 @@ Precisiones acordadas al implementarlo:
 - **Periodos del fontanero** (D-24): semanal de lunes a domingo, quincenal del 1 al 15 y del 16 al último día, mensual el mes natural. Se paga el periodo que contiene la fecha indicada (no futura) con el salario autorizado vigente al inicio del periodo.
 - **Caja de manzana**: se crea junto con la manzana.
 
+## Cortes, reportes y auditoría (paso 8 de la API)
+
+- **Cortes mensuales en orden** (D-14): solo de meses terminados; un mes se cierra si el anterior de la caja ya está cerrado (o no hay movimientos antes). Ningún movimiento puede fecharse en o antes del último mes cerrado de su caja, así las cifras de un corte cerrado nunca cambian.
+- **Diferencia de un corte**: obligan observaciones al contar, revisar y cerrar; se corrige con una aclaración en el periodo abierto.
+- **Sustitución de jefe** (D-08): basta el corte extraordinario contado de la caja de la manzana sin movimientos posteriores; su revisión y cierre siguen el flujo normal.
+- **Reportes**: el adeudo es a la fecha de consulta; el resto de las cifras, del rango de meses, con los mismos movimientos que los cortes.
+
 ## Permisos (resumen)
 
 | Operación                   | SA      | PRE              | TES      | SEC      | VOC             | JM         |

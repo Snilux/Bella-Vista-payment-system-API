@@ -131,6 +131,7 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | Método | Ruta                                            | Descripción                                  | Roles                              |
 | ------ | ----------------------------------------------- | -------------------------------------------- | ---------------------------------- |
 | GET    | /cortes?caja=&periodo=                          | Lista                                        | Según alcance                      |
+| GET    | /cortes/{id}                                    | Detalle con cifras                           | Según alcance                      |
 | POST   | /cortes                                         | Abre corte (calcula cifras)                  | JM, TES                            |
 | POST   | /cortes/{id}/conteo                             | Efectivo contado y observaciones             | Quien lo prepara                   |
 | POST   | /cortes/{id}/revisar                            | Marca revisado                               | PRE, VOC                           |
@@ -206,6 +207,21 @@ La búsqueda, la ficha de persona y la ficha de toma incluyen el adeudo de cada 
 - **Ingresos**: TES registra `{ concepto, importe, fecha?, referenciaComprobante? }` (fecha no futura) en la caja del comité.
 - **Gastos** (D-17, D-21): TES registra `{ categoriaId, descripcion, importe, acuerdoId, referenciaComprobante? }` con acuerdo aprobado; quedan pendientes de pago. Pagar bloquea la caja del comité y exige saldo suficiente (`SALDO_INSUFICIENTE`). Rechazar pide motivo y solo aplica a pendientes. El reintegro de un gasto pagado crea una autorización; al autorizarla el importe vuelve a la caja. Un reintegro pendiente o autorizado por gasto; uno rechazado lo libera.
 - **Fontanero** (D-24): TES lo registra y edita su teléfono (auditado por la base) y si está activo. El salario `{ importe, periodicidad, vigenteDesde, acuerdoId }` lo autoriza PRE; una solicitud pendiente a la vez. El pago `{ fecha? }` (hoy por omisión, nunca futura) cubre el periodo que contiene esa fecha según la periodicidad del salario vigente: semanal de lunes a domingo, quincenal del 1 al 15 y del 16 al último día, mensual el mes natural. El importe es el salario autorizado vigente al inicio del periodo; se registra como gasto pagado de la categoría *Salario del fontanero*, con saldo suficiente, y un periodo se paga una sola vez (`PERIODO_YA_PAGADO`).
+
+## Detalle: cortes
+
+- **Abrir** (`/cortes`, JM o TES): `{ tipo, periodo?, cajaId? }`. JM corta la caja de su manzana; TES la del comité por omisión o cualquier caja con `cajaId`. **Mensual**: solo de un mes ya terminado (`DATOS_INVALIDOS`), uno por caja y mes (`ESTADO_INVALIDO`). **Extraordinario**: del día 1 del mes en curso a hoy (acta de entrega, D-08); no bloquea periodos. Las cifras salen de `v_corte`: saldo inicial, saldos iniciales, cobros, cancelaciones, entregas (salida y entrada), ingresos, gastos, reintegros, aclaraciones y saldo esperado.
+- **Conteo** (`/cortes/{id}/conteo`): `{ efectivoContado, observaciones }`; solo quien lo preparó y hasta que se revise. Con diferencia, las observaciones son obligatorias.
+- **Revisar y cerrar** (PRE o VOC): revisar exige el conteo; cerrar exige la revisión. Un corte mensual solo se cierra si el del mes anterior de la caja ya está cerrado (o la caja no tiene movimientos antes), así sus cifras ya no cambian. Al cerrarlo, el mes queda bloqueado (D-14, `PERIODO_CERRADO`), y también cualquier fecha anterior en movimientos con fecha elegida (ingresos y saldos iniciales).
+- **Aclaraciones de corte** (`/aclaraciones` con `corteId`): sobre un corte revisado o cerrado con diferencia, con fecha de hoy (periodo abierto, D-14) y autorización de PRE.
+- **Sustitución de jefe** (`/manzanas/{id}/sustitucion-jefe`, SEC, D-08): `{ corteId, personaId, telefonoContacto, fechaInicio, motivo }`. Exige un jefe vigente y un corte **extraordinario** de la caja de esa manzana, contado y sin movimientos de la caja después de su fecha; el nuevo jefe empieza en o después de esa fecha. En una transacción cierra la asignación saliente (`fechaFin = fechaInicio`), desactiva su cuenta y registra al nuevo jefe pendiente de autorización de PRE. La caja sigue con la manzana y su saldo.
+
+## Detalle: reportes y bitácora
+
+- **Rango**: `?desde=AAAA-MM&hasta=AAAA-MM` (por omisión el mes actual). Lo recaudado, entregado, ingresos y gastos se filtran por el rango con los mismos movimientos que los cortes, así que cuadran con ellos; el adeudo es el estado de cuenta a la fecha de consulta (D-25).
+- **Padrón por manzana** (JM de su manzana, comité): encabezado (sección, manzana, jefe y teléfono); tomas con sus unidades (titular con distintivo, fechas, estado, pagos del rango con folio de papel, meses adeudados con base, recargo y total, anticipos); resumen de la caja (saldo inicial, recaudado por mensualidades y cargos, cancelaciones, entregas confirmadas y pendientes, saldo esperado, último corte y su diferencia) y totales.
+- **Comunitario** (comité): por sección y manzana (unidades activas, recaudado de las unidades de la manzana en cualquier caja, adeudo, anticipos, entregado y efectivo con el jefe); cajas de apoyo; caja del comité (saldo inicial, cobros directos, entregas recibidas, ingresos, gastos por categoría, reintegros, aclaraciones, saldo); totales por separado: recaudado, efectivo con jefes y en apoyo, caja del comité, fondos comunitarios esperados (suma de todas las cajas), adeudo, anticipos y diferencias de cortes.
+- **Bitácora** (`/bitacora?usuario=&tabla=&registro=&accion=&desde=&hasta=`): PRE ve todo; SA solo los registros técnicos. Paginada, del más reciente al más antiguo.
 
 ## Ejemplo: registrar pago
 

@@ -402,3 +402,24 @@ Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
 | `salarioVigente`, `inicioPeriodo`, `finPeriodo` | `currentSalary`, `periodStart`, `periodEnd` |
 | periodo de pago del fontanero | `plumberPayPeriod` (`packages/shared/src/domain/plumber.ts`) |
 | permisos: ver cajas, registrar saldo inicial | `cashboxes.view`, `openingBalances.register` |
+
+## Cortes, reportes y bitácora
+
+| Español | Inglés |
+| --- | --- |
+| `/cortes`, `/{id}/conteo`, `/{id}/revisar`, `/{id}/cerrar` | `/v1/closings`, `/{id}/count`, `/{id}/review`, `/{id}/close` |
+| tipo de corte: mensual, extraordinario | `monthly`, `extraordinary` |
+| estado del corte: borrador, contado, revisado, cerrado | `draft`, `counted`, `reviewed`, `closed` |
+| `efectivoContado`, `observaciones`, `diferencia` | `countedCash`, `notes`, `difference` |
+| cifras: saldo inicial, saldos iniciales, cobros, cancelaciones, entregas (salida, entrada), ingresos, gastos, reintegros, aclaraciones, saldo esperado | `figures`: `startingBalance`, `openingBalances`, `payments`, `cancellations`, `handoversOut`, `handoversIn`, `incomes`, `expenses`, `refunds`, `adjustments`, `expectedBalance` |
+| `preparo`, `reviso`, `cerro` | `preparedBy`, `reviewedBy`, `closedBy` |
+| `corteId` (aclaración) | `closingId` |
+| `/manzanas/{id}/sustitucion-jefe` | `/v1/blocks/{id}/leader-substitution` |
+| jefe saliente, jefe entrante | `outgoing`, `incoming` |
+| `/reportes/padron-manzana`, `/reportes/comunitario` | `/v1/reports/block`, `/v1/reports/community` |
+| `desde`, `hasta` (meses del reporte) | `from`, `to` |
+| adeudo a la fecha de consulta | `debtAsOf` |
+| `mesesAdeudados`, `recaudadoMensualidades`, `recaudadoCargos` | `debtMonths`, `collectedFees`, `collectedCharges` |
+| efectivo con el jefe, en apoyo, fondos comunitarios esperados, diferencias de cortes | `cashWithLeader`, `cashInSupport`, `expectedCommunityFunds`, `closingDifferences` |
+| `/bitacora` | `/v1/audit-log` |
+| `usuario`, `tabla`, `registro`, `accion`, `esTecnica` (filtros y campos de bitácora) | `userAccountId`, `tableName`, `recordId`, `action`, `isTechnical` |
