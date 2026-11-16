@@ -18,6 +18,9 @@ export default {
         'docker',
         'deps',
         'config',
+        // Mobile app (3.2 §7): configuration, navigation, session and screens; design system
+        'mobile',
+        'ui',
         // API domain modules (document 2.1, names per docs/glosario.md)
         'auth',
         'accounts',

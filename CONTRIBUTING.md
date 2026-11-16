@@ -51,10 +51,13 @@ First-line rules:
 | Group          | Scopes                                                                                                                                         |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Infrastructure | `api`, `shared`, `db`, `docker`, `deps`, `config`                                                                                              |
+| Mobile app     | `mobile` (configuration, navigation, session, screens), `ui` (design-system components and tokens)                                              |
 | API modules    | `auth`, `accounts`, `organization`, `registry`, `connections`, `rates`, `billing`, `cashboxes`, `committee`, `closings`, `reports`, `approvals`, `audit` |
 
 - Schema changes and migrations use the `db` scope.
 - Pure rules in `packages/shared` use the `shared` scope, unless they clearly belong to a module (e.g. the account statement calculation is `billing`).
+- In `apps/mobile`, the components and tokens of `src/ui` use `ui`; everything else uses `mobile`.
+- In `apps/mobile`, components and tokens of `src/ui` use `ui`; everything else uses `mobile`.
 
 ### Footer
 
