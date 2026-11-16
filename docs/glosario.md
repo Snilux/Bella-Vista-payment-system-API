@@ -247,6 +247,7 @@ Lo llena quien ejecuta `pnpm db:seed`, así que sus claves quedan en español (v
 | `CARGO_NO_VIGENTE` | `ROLE_NOT_ACTIVE` |
 | `FUERA_DE_ALCANCE` | `OUT_OF_SCOPE` |
 | `ASIGNACION_CON_CUENTA` | `ASSIGNMENT_HAS_ACCOUNT` |
+| `ASIGNACION_NO_VIGENTE` | `ASSIGNMENT_NOT_ACTIVE` |
 | `USUARIO_REPETIDO` | `USERNAME_TAKEN` |
 | `HOMONIMO_SIN_DISTINTIVO` | `HOMONYM_WITHOUT_NOTE` |
 | `DISTINTIVO_REPETIDO` | `DUPLICATE_DISTINGUISHING_NOTE` |
@@ -277,3 +278,23 @@ Lo llena quien ejecuta `pnpm db:seed`, así que sus claves quedan en español (v
 Campos de `detalles` (`details`): `problemas` → `issues`, cada uno con `ruta` → `path` y `mensaje` → `message`.
 
 Encabezados: `Idempotency-Key` y `Idempotent-Replayed` no se traducen.
+
+## Rutas y campos de sesión y cuentas
+
+| Español | Inglés |
+| --- | --- |
+| `/auth/login` | `/v1/auth/login` |
+| `/auth/refrescar` | `/v1/auth/refresh` |
+| `/auth/cambiar-contrasena` | `/v1/auth/change-password` |
+| `/auth/salir` | `/v1/auth/logout` |
+| `/cuentas` | `/v1/accounts` |
+| `/cuentas/{id}/restablecer` | `/v1/accounts/{id}/reset-password` |
+| `/cuentas/{id}/bloquear`, `/desbloquear`, `/desactivar` | `/v1/accounts/{id}/lock`, `/unlock`, `/deactivate` |
+| `usuario`, `contrasena` | `username`, `password` |
+| `contrasenaActual`, `contrasenaNueva` | `currentPassword`, `newPassword` |
+| `tokenAcceso`, `tokenAccesoExpiraEn`, `tokenRefresco` | `accessToken`, `accessTokenExpiresIn`, `refreshToken` |
+| `cuenta`, `debeCambiarContrasena`, `manzanaId` | `account`, `mustChangePassword`, `blockId` |
+| `asignacionId`, `contrasenaTemporal`, `motivo` | `roleAssignmentId`, `temporaryPassword`, `reason` |
+| `asignacionesSinCuenta` | `assignmentsWithoutAccount` |
+| `bloqueadaHasta` | `lockedUntil` |
+| estado de cuenta de acceso: activa, bloqueada, desactivada, debe cambiar contraseña, cargo no vigente | `active`, `locked`, `disabled`, `must_change_password`, `role_not_active` |

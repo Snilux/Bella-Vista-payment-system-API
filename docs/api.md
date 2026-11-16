@@ -138,6 +138,32 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 
 Los reportes devuelven JSON; la app genera el PDF.
 
+## Detalle: sesión y cuentas
+
+**Login** `POST /v1/auth/login` con `{ "usuario": "tesorero", "contrasena": "..." }`. Respuesta 200:
+
+```json
+{
+  "tokenAcceso": "eyJ...",
+  "tokenAccesoExpiraEn": 900,
+  "tokenRefresco": "q3Vx...",
+  "cuenta": { "usuario": "tesorero", "cargo": "tesorero", "manzanaId": null, "debeCambiarContrasena": false }
+}
+```
+
+- El token de acceso dura 15 min y lleva la cuenta, el usuario, el cargo y la manzana. El de refresco dura 30 días y solo se guarda su hash (SHA-256).
+- Usuario inexistente o contraseña incorrecta → `CREDENCIALES_INVALIDAS`. Al quinto intento fallido seguido la cuenta se bloquea 15 min (`CUENTA_BLOQUEADA`, con `detalles.bloqueadaHasta`). Mientras esté bloqueada no se revisa la contraseña.
+- Con la contraseña correcta: cuenta desactivada → `CUENTA_DESACTIVADA`; asignación cerrada, pendiente o sin iniciar → `CARGO_NO_VIGENTE`.
+- Límite: 10 solicitudes por minuto por IP en login y refresco (`DEMASIADAS_SOLICITUDES`).
+
+**Refresco** `POST /v1/auth/refrescar` con `{ "tokenRefresco": "..." }`: revoca el token recibido y entrega un par nuevo. Si llega un token que ya fue rotado o revocado, se revoca **toda su cadena** (detección de robo) y responde `NO_AUTENTICADO`.
+
+**Cambiar contraseña** `POST /v1/auth/cambiar-contrasena` con `{ "contrasenaActual", "contrasenaNueva" }` (8 a 128 caracteres, distinta de la actual): apaga `debe_cambiar_contrasena`, cierra las demás sesiones y devuelve un par de tokens nuevo. Mientras `debe_cambiar_contrasena` sea verdadero, la cuenta solo puede llamar a este endpoint y a `/auth/salir`.
+
+**Salir** `POST /v1/auth/salir` con `{ "tokenRefresco" }`: revoca ese token; responde 204.
+
+**Cuentas (solo SA).** `GET /cuentas` devuelve las cuentas (usuario, cargo, persona, manzana y estado: activa, bloqueada, desactivada, debe cambiar contraseña, cargo no vigente) y las asignaciones vigentes sin cuenta. `POST /cuentas` con `{ asignacionId, usuario }` devuelve la contraseña temporal **una sola vez**. Restablecer genera otra contraseña temporal y cierra las sesiones; bloquear (indefinido hasta desbloquear), desbloquear y desactivar piden `motivo`. Todo queda en la bitácora técnica. El SA no puede bloquear ni desactivar su propia cuenta.
+
 ## Ejemplo: registrar pago
 
 `POST /v1/pagos` con `Idempotency-Key`:
@@ -181,6 +207,7 @@ Si el total recalculado no coincide con `totalEsperado` → 409 `TOTAL_CAMBIO` c
 | CARGO_NO_VIGENTE         | 403  | La asignación de la cuenta ya se cerró                   |
 | FUERA_DE_ALCANCE         | 403  | Recurso de otra manzana                                  |
 | ASIGNACION_CON_CUENTA    | 409  | La asignación ya tiene cuenta                            |
+| ASIGNACION_NO_VIGENTE    | 422  | Se pidió una cuenta para una asignación pendiente, rechazada, cerrada o aún sin iniciar |
 | USUARIO_REPETIDO         | 409  | El nombre de usuario ya existe                           |
 | HOMONIMO_SIN_DISTINTIVO  | 422  | Mismo nombre sin distintivo                              |
 | DISTINTIVO_REPETIDO      | 409  | Nombre + distintivo ya existe                            |
