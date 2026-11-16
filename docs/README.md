@@ -12,6 +12,18 @@ Resumen del análisis (Fase 1), del diseño (Fase 2) y del plan de implementaci�
 | [estructura.md](estructura.md)     | Cómo se organiza un módulo, convenciones de código y plan de implementación (bloques de BD y pasos de la API) |
 | [glosario.md](glosario.md)         | Traducción español → inglés de módulos, tablas, columnas y enums para el código |
 
+## Arranque inicial (D-27)
+
+El sistema se inicializa **una sola vez**, con las migraciones ya aplicadas:
+
+1. Copia `arranque.example.json` a `arranque.json` en la raíz del repositorio y llénalo con los datos reales (superadministrador, acuerdo de la junta y presidente, tesorero y secretario con su fecha de inicio). `arranque.json` no se versiona.
+2. Ejecuta `pnpm db:seed` (o `pnpm db:seed ruta/al/archivo.json`). En una transacción crea la cuenta del superadministrador, el acuerdo de elección, las asignaciones de presidente, tesorero y secretario **autorizadas por arranque**, la caja del comité, las categorías de gasto y los conceptos sin importe, con registros técnicos en la bitácora.
+3. Anota la **contraseña temporal** que imprime: se muestra una sola vez, no se guarda y debe cambiarse al entrar. Las cuentas de presidente, tesorero y secretario las crea después el superadministrador desde la app.
+
+Si ya existe un superadministrador, `pnpm db:seed` no hace nada y lo informa. En producción (sin `tsx`) se ejecuta con `node dist/db/seed/seed-cli.js` desde `apps/api`.
+
+`pnpm db:seed:dev` carga datos de prueba encima del arranque (secciones, manzanas, jefes con cuenta, homónimos, tomas con varias familias, tarifas históricas y algunos pagos) e imprime las cuentas de desarrollo y su contraseña. Se niega a correr con `NODE_ENV=production`, sin arranque previo o si ya hay secciones registradas.
+
 ## Documentos en Notion
 
 - Proyecto: Sistema de cobro de agua-Bella Vista — https://app.notion.com/p/404088c27ae0800a8f58db8b91f584c9
