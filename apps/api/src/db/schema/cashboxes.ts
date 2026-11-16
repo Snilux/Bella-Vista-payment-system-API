@@ -47,12 +47,15 @@ export const cashbox = pgTable(
   ],
 );
 
-// Cash a box already held when the system started (D-18). A box without one has no row.
+// Cash a box already held when the system started (D-18), requested by the treasurer and
+// approved by the president. A rejected request frees the box for a new one: a trigger allows
+// a single pending or approved opening balance per cashbox (migration 0017).
 export const openingBalance = pgTable(
   'opening_balance',
   {
+    id: id(),
     cashboxId: fk()
-      .primaryKey()
+      .notNull()
       .references((): AnyPgColumn => cashbox.id),
     amount: money().notNull(),
     date: date({ mode: 'string' }).notNull(),
@@ -63,7 +66,10 @@ export const openingBalance = pgTable(
     createdBy: createdBy(userAccountId),
     createdAt: createdAt(),
   },
-  (t) => [check('opening_balance_amount_positive', sql`${t.amount} > 0`)],
+  (t) => [
+    index('opening_balance_cashbox_id_idx').on(t.cashboxId),
+    check('opening_balance_amount_positive', sql`${t.amount} > 0`),
+  ],
 );
 
 export const handoverFolioSeq = pgSequence('handover_folio_seq');

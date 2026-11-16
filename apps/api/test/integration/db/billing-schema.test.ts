@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { createDb, type Transaction } from '../../../src/db/client.js';
 import {
   agreement,
+  approval,
   cashbox,
   connection,
   coveredPeriod,
@@ -271,7 +272,7 @@ describe.skipIf(!testDatabaseUrl)('cashboxes and billing schema', () => {
         );
       }));
 
-    it('rejects an opening balance of 0 and a second one for the same cashbox', () =>
+    it('rejects an opening balance of 0 and a second open one for the same cashbox', () =>
       rollback(async (tx) => {
         const { sa, blockBox, newApproval } = await fixture(tx);
         const values = async (amount: number) => ({
@@ -285,11 +286,23 @@ describe.skipIf(!testDatabaseUrl)('cashboxes and billing schema', () => {
         await expectViolation(tx, 'opening_balance_amount_positive', (sp) =>
           sp.insert(openingBalance).values(zero),
         );
-        await tx.insert(openingBalance).values(await values(120_000));
+        const first = await values(120_000);
+        await tx.insert(openingBalance).values(first);
         const second = await values(50_000);
-        await expectViolation(tx, 'opening_balance_pkey', (sp) =>
+        await expectViolation(tx, 'opening_balance_single_open', (sp) =>
           sp.insert(openingBalance).values(second),
         );
+        // A rejected request frees the cashbox for a new one (migration 0018).
+        await tx
+          .update(approval)
+          .set({
+            result: 'rejected',
+            resolvedBy: sa.id,
+            resolvedAt: new Date(),
+            resolutionReason: 'Mal capturado',
+          })
+          .where(eq(approval.id, first.approvalId));
+        await tx.insert(openingBalance).values(second);
       }));
   });
 

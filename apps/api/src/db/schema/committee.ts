@@ -104,21 +104,26 @@ export const expense = pgTable(
   ],
 );
 
-// Refund of a paid expense, resolved through its approval. An expense is refunded once.
-export const expenseRefund = pgTable('expense_refund', {
-  id: id(),
-  expenseId: fk()
-    .notNull()
-    .unique('expense_refund_expense_id_unique')
-    .references((): AnyPgColumn => expense.id),
-  date: date({ mode: 'string' }).notNull(),
-  approvalId: fk()
-    .notNull()
-    .unique('expense_refund_approval_id_unique')
-    .references((): AnyPgColumn => approval.id),
-  createdBy: createdBy(userAccountId),
-  createdAt: createdAt(),
-});
+// Refund of a paid expense, resolved through its approval. An expense is refunded once: a
+// trigger allows a single pending or approved refund per expense, so a rejected request frees
+// it for a new one (migration 0017).
+export const expenseRefund = pgTable(
+  'expense_refund',
+  {
+    id: id(),
+    expenseId: fk()
+      .notNull()
+      .references((): AnyPgColumn => expense.id),
+    date: date({ mode: 'string' }).notNull(),
+    approvalId: fk()
+      .notNull()
+      .unique('expense_refund_approval_id_unique')
+      .references((): AnyPgColumn => approval.id),
+    createdBy: createdBy(userAccountId),
+    createdAt: createdAt(),
+  },
+  (t) => [index('expense_refund_expense_id_idx').on(t.expenseId)],
+);
 
 // The plumber does not use the app (D-24).
 export const plumber = pgTable(

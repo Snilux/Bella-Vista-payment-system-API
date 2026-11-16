@@ -1,7 +1,9 @@
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import type { Transaction } from '../../../src/db/client.js';
 import {
   agreement,
+  approval,
   cashbox,
   expense,
   expenseCategory,
@@ -304,18 +306,29 @@ describe.skipIf(!testDatabaseUrl)('handovers and committee schema', () => {
         );
       }));
 
-    it('rejects a second refund of the same expense', () =>
+    it('rejects a second open refund of the same expense; a rejected one frees it', () =>
       rollback(async (tx) => {
         const { sa, newExpense, newApproval } = await fixture(tx);
         const paid = await newExpense({ paidOn: '2026-03-15' });
         const refund = async (sp: Transaction) => {
           const { id: approvalId } = await newApproval('expense_refund');
-          return sp
+          await sp
             .insert(expenseRefund)
             .values({ expenseId: paid.id, date: '2026-03-20', approvalId, createdBy: sa.id });
+          return approvalId;
         };
+        const firstApproval = await refund(tx);
+        await expectViolation(tx, 'expense_refund_single_open', refund);
+        await tx
+          .update(approval)
+          .set({
+            result: 'rejected',
+            resolvedBy: sa.id,
+            resolvedAt: new Date(),
+            resolutionReason: 'No procede',
+          })
+          .where(eq(approval.id, firstApproval));
         await refund(tx);
-        await expectViolation(tx, 'expense_refund_expense_id_unique', refund);
       }));
   });
 
