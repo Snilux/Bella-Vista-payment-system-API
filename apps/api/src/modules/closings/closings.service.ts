@@ -49,7 +49,7 @@ export const closingErrors = {
       issues: [
         {
           path: 'body.notes',
-          message: `Hay una diferencia de ${formatMoney(difference)}; escribe las observaciones.`,
+          message: `Hay una diferencia de ${formatMoney(difference)}; escriba las observaciones.`,
         },
       ],
       difference,

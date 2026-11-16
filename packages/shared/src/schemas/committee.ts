@@ -25,7 +25,7 @@ export const incomeSchema = z.object({
 });
 
 export const createIncomeRequestSchema = z.object({
-  concept: requiredText(200, 'Escribe el concepto del ingreso.'),
+  concept: requiredText(200, 'Escriba el concepto del ingreso.'),
   amount: amountSchema,
   /** Today when omitted; never a future date. */
   date: z.iso.date({ error: 'La fecha debe tener el formato AAAA-MM-DD.' }).optional(),
@@ -77,20 +77,20 @@ export const expensePageSchema = page(expenseSchema);
 export const expenseResponseSchema = z.object({ expense: expenseSchema });
 
 export const createExpenseRequestSchema = z.object({
-  categoryId: z.int({ error: 'Elige la categoría.' }).positive(),
-  description: requiredText(300, 'Escribe la descripción del gasto.'),
+  categoryId: z.int({ error: 'Elija la categoría.' }).positive(),
+  description: requiredText(300, 'Escriba la descripción del gasto.'),
   amount: amountSchema,
   /** Every expense needs a meeting agreement (D-17). */
-  agreementId: z.int({ error: 'Indica el acuerdo de junta.' }).positive(),
+  agreementId: z.int({ error: 'Indique el acuerdo de junta.' }).positive(),
   voucherReference: optionalText(100),
 });
 
 export const rejectExpenseRequestSchema = z.object({
-  reason: requiredText(500, 'Escribe el motivo del rechazo.'),
+  reason: requiredText(500, 'Escriba el motivo del rechazo.'),
 });
 
 export const refundExpenseRequestSchema = z.object({
-  reason: requiredText(500, 'Escribe el motivo del reintegro.'),
+  reason: requiredText(500, 'Escriba el motivo del reintegro.'),
 });
 
 // --- Plumber --------------------------------------------------------------------------------
@@ -135,7 +135,7 @@ export const plumberListResponseSchema = z.object({ plumbers: z.array(plumberSch
 export const plumberResponseSchema = z.object({ plumber: plumberDetailSchema });
 
 export const createPlumberRequestSchema = z.object({
-  name: requiredText(150, 'Escribe el nombre del fontanero.'),
+  name: requiredText(150, 'Escriba el nombre del fontanero.'),
   phone: optionalText(20),
 });
 
@@ -147,14 +147,14 @@ export const updatePlumberRequestSchema = z
     reason: optionalText(200),
   })
   .refine((body) => body.phone !== undefined || body.active !== undefined, {
-    error: 'Indica el teléfono o si está activo.',
+    error: 'Indique el teléfono o si está activo.',
   });
 
 export const createPlumberSalaryRequestSchema = z.object({
   amount: amountSchema,
-  frequency: z.enum(SALARY_FREQUENCIES, { error: 'Indica la periodicidad.' }),
+  frequency: z.enum(SALARY_FREQUENCIES, { error: 'Indique la periodicidad.' }),
   effectiveFrom: z.iso.date({ error: 'La fecha debe tener el formato AAAA-MM-DD.' }),
-  agreementId: z.int({ error: 'Indica el acuerdo de junta.' }).positive(),
+  agreementId: z.int({ error: 'Indique el acuerdo de junta.' }).positive(),
   reason: optionalText(500),
 });
 

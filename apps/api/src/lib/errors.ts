@@ -33,23 +33,19 @@ export const errors = {
       400,
       'Falta el encabezado Idempotency-Key o no es un UUID válido.',
     ),
-  unauthenticated: () => new AppError('UNAUTHENTICATED', 401, 'Inicia sesión para continuar.'),
-  tokenExpired: () => new AppError('TOKEN_EXPIRED', 401, 'Tu sesión venció. Vuelve a intentarlo.'),
-  accountDisabled: () => new AppError('ACCOUNT_DISABLED', 401, 'Tu cuenta está desactivada.'),
+  unauthenticated: () => new AppError('UNAUTHENTICATED', 401, 'Inicie sesión para continuar.'),
+  tokenExpired: () => new AppError('TOKEN_EXPIRED', 401, 'Su sesión venció. Vuelva a intentarlo.'),
+  accountDisabled: () => new AppError('ACCOUNT_DISABLED', 401, 'Su cuenta está desactivada.'),
   accountLocked: (lockedUntil: Date) =>
-    new AppError('ACCOUNT_LOCKED', 401, 'Tu cuenta está bloqueada temporalmente.', {
+    new AppError('ACCOUNT_LOCKED', 401, 'Su cuenta está bloqueada temporalmente.', {
       lockedUntil: lockedUntil.toISOString(),
     }),
-  roleNotActive: () => new AppError('ROLE_NOT_ACTIVE', 403, 'Tu cargo no está vigente.'),
+  roleNotActive: () => new AppError('ROLE_NOT_ACTIVE', 403, 'Su cargo no está vigente.'),
   passwordChangeRequired: () =>
-    new AppError(
-      'PASSWORD_CHANGE_REQUIRED',
-      403,
-      'Debes cambiar tu contraseña antes de continuar.',
-    ),
-  forbidden: () => new AppError('FORBIDDEN', 403, 'Tu cargo no tiene permiso para esta operación.'),
+    new AppError('PASSWORD_CHANGE_REQUIRED', 403, 'Debe cambiar su contraseña antes de continuar.'),
+  forbidden: () => new AppError('FORBIDDEN', 403, 'Su cargo no tiene permiso para esta operación.'),
   outOfScope: () => new AppError('OUT_OF_SCOPE', 403, 'Este registro pertenece a otra manzana.'),
-  notFound: () => new AppError('NOT_FOUND', 404, 'No se encontró lo que buscas.'),
+  notFound: () => new AppError('NOT_FOUND', 404, 'No se encontró lo que busca.'),
   idempotencyKeyReused: () =>
     new AppError(
       'IDEMPOTENCY_KEY_REUSED',
@@ -57,9 +53,9 @@ export const errors = {
       'La clave Idempotency-Key ya se usó en otra operación.',
     ),
   tooManyRequests: () =>
-    new AppError('TOO_MANY_REQUESTS', 429, 'Demasiadas solicitudes. Espera un momento.'),
+    new AppError('TOO_MANY_REQUESTS', 429, 'Demasiadas solicitudes. Espere un momento.'),
   internal: () =>
-    new AppError('INTERNAL_ERROR', 500, 'Ocurrió un error inesperado. Intenta de nuevo.'),
+    new AppError('INTERNAL_ERROR', 500, 'Ocurrió un error inesperado. Intente de nuevo.'),
   /**
    * The operation does not fit the current state of the record. Only when no more specific
    * code applies (APPROVAL_ALREADY_RESOLVED, CONNECTION_NOT_ACTIVE...).
@@ -73,5 +69,5 @@ export const errors = {
       'El mes ya tiene un corte cerrado; el movimiento debe registrarse en el periodo abierto.',
     ),
   databaseUnavailable: () =>
-    new AppError('DATABASE_UNAVAILABLE', 503, 'La base de datos no responde. Intenta más tarde.'),
+    new AppError('DATABASE_UNAVAILABLE', 503, 'La base de datos no responde. Intente más tarde.'),
 };

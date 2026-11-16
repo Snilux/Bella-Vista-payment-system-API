@@ -48,7 +48,7 @@ export type DebtSummary = z.infer<typeof debtSummarySchema>;
 
 // --- Payments (/v1/payments; CU-13 to CU-16, 2.3 §4) ----------------------------------------
 
-const paperFolioSchema = requiredText(30, 'Escribe el folio del recibo de papel.');
+const paperFolioSchema = requiredText(30, 'Escriba el folio del recibo de papel.');
 
 const selectionShape = {
   /** Required to pay months; omitted for an opening fee alone (it belongs to a request). */
@@ -70,14 +70,14 @@ const selectionRules = <
     ctx.addIssue({
       code: 'custom',
       path: ['periods'],
-      message: 'Elige al menos un mes o un cargo.',
+      message: 'Elija al menos un mes o un cargo.',
     });
   }
   if (body.periods.length > 0 && body.unitId === undefined) {
     ctx.addIssue({
       code: 'custom',
       path: ['unitId'],
-      message: 'Elige la unidad a la que corresponden los meses.',
+      message: 'Elija la unidad a la que corresponden los meses.',
     });
   }
 };
@@ -89,7 +89,7 @@ export const createPaymentRequestSchema = z
     ...selectionShape,
     paperFolio: paperFolioSchema,
     /** Total the operator saw in the preview (RF-PAG-03). */
-    expectedTotal: z.int({ error: 'Indica el total que viste en el resumen.' }).min(0),
+    expectedTotal: z.int({ error: 'Indique el total que vio en el resumen.' }).min(0),
   })
   .superRefine(selectionRules);
 
@@ -197,7 +197,7 @@ export const paymentPageSchema = page(paymentSummarySchema);
 export const paperReceiptReplacementRequestSchema = z.object({ paperFolio: paperFolioSchema });
 
 export const paymentCancellationRequestSchema = z.object({
-  reason: requiredText(500, 'Escribe el motivo de la cancelación.'),
+  reason: requiredText(500, 'Escriba el motivo de la cancelación.'),
 });
 
 export type PaymentPreviewRequest = z.infer<typeof paymentPreviewRequestSchema>;

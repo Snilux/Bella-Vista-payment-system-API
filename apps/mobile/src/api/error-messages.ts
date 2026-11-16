@@ -5,8 +5,8 @@ import { type ApiErrorCode, isApiError } from './errors.js';
 // Mensajes de error (3.2 §11.1 and §11.3): API code → Spanish message (formal "usted", 2.4 §7)
 // → suggested action. The record is typed over every code, so a code the API adds to
 // packages/shared without a message here fails the type check and test/error-messages.test.ts.
-// The app writes its own texts because the API's messages use "tú"; it uses the API's text only
-// where it carries data the app cannot rebuild (useServerMessage).
+// The app keeps its own text per code so each one matches the screen (3.2 §11.3 wording); it
+// uses the API's text only where it carries data the app cannot rebuild (useServerMessage).
 
 /** What the screen offers after the message. */
 export type ErrorAction =
@@ -34,7 +34,7 @@ type Details = Record<string, unknown>;
 export type ErrorInfo = {
   message: string | ((details: Details) => string);
   action: ErrorAction;
-  /** Show the API's message instead (it has data and no "tú"). */
+  /** Show the API's message instead (it carries data, e.g. the amounts). */
   useServerMessage?: boolean;
 };
 

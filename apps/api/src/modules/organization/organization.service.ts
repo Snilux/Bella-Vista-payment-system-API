@@ -495,7 +495,7 @@ export function createOrganizationService(deps: OrganizationServiceDeps) {
           const outgoingRow = outgoing ? await findAssignment(tx, outgoing.id) : null;
           if (!outgoing || !outgoingRow || assignmentStatus(outgoingRow, todayDate) !== 'active') {
             throw errors.invalidState(
-              'La manzana no tiene un jefe vigente; registra al nuevo jefe con una asignación normal.',
+              'La manzana no tiene un jefe vigente; registre al nuevo jefe con una asignación normal.',
               'no_leader',
               'substitute_leader',
             );
@@ -534,7 +534,7 @@ export function createOrganizationService(deps: OrganizationServiceDeps) {
           }
           if (await hasMovementsAfter(tx, record.cashboxId, nextDay(record.dateTo))) {
             throw errors.invalidState(
-              'La caja tuvo movimientos después del corte; haz un corte extraordinario nuevo.',
+              'La caja tuvo movimientos después del corte; haga un corte extraordinario nuevo.',
               'stale_closing',
               'substitute_leader',
             );

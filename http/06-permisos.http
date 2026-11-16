@@ -1,8 +1,8 @@
 # Permissions: requests that must fail. Each one says the expected answer.
 #
-#   403 FORBIDDEN     the role cannot do it at all: "Tu cargo no tiene permiso para esta operación."
+#   403 FORBIDDEN     the role cannot do it at all: "Su cargo no tiene permiso para esta operación."
 #   403 OUT_OF_SCOPE  a block leader outside their block: "Este registro pertenece a otra manzana."
-#   401 UNAUTHENTICATED without a session: "Inicia sesión para continuar."
+#   401 UNAUTHENTICATED without a session: "Inicie sesión para continuar."
 #
 # The role is checked before the body and the Idempotency-Key, so FORBIDDEN arrives even with
 # a body that would be invalid.
@@ -92,7 +92,7 @@ Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
 # --- Roles without permission ------------------------------------------------------------
 
 ### Vocal records an expense (treasurer only)
-# Expected: 403 FORBIDDEN "Tu cargo no tiene permiso para esta operación."
+# Expected: 403 FORBIDDEN "Su cargo no tiene permiso para esta operación."
 POST {{baseUrl}}/expenses
 Authorization: Bearer {{loginMember.response.body.$.accessToken}}
 Content-Type: application/json
@@ -138,7 +138,7 @@ Content-Type: application/json
 # --- Without a session -------------------------------------------------------------------
 
 ### No token
-# Expected: 401 UNAUTHENTICATED "Inicia sesión para continuar."
+# Expected: 401 UNAUTHENTICATED "Inicie sesión para continuar."
 GET {{baseUrl}}/rates
 
 ### Invalid token

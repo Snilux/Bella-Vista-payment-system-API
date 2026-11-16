@@ -88,7 +88,7 @@ Content-Type: application/json
 { "refreshToken": "{{loginMember.response.body.$.refreshToken}}" }
 
 ### Refresh again with the token already rotated (theft detection)
-# Expected: 401 UNAUTHENTICATED "Tu sesión ya no es válida. Inicia sesión de nuevo."
+# Expected: 401 UNAUTHENTICATED "Su sesión ya no es válida. Inicie sesión de nuevo."
 # The whole chain is revoked: the token returned by refreshMember stops working too.
 POST {{baseUrl}}/auth/refresh
 Content-Type: application/json
@@ -132,7 +132,7 @@ Content-Type: application/json
 { "refreshToken": "{{changePasswordBack.response.body.$.refreshToken}}" }
 
 ### Refresh with the token revoked by the logout
-# Expected: 401 UNAUTHENTICATED "Tu sesión ya no es válida. Inicia sesión de nuevo."
+# Expected: 401 UNAUTHENTICATED "Su sesión ya no es válida. Inicie sesión de nuevo."
 # (the access token keeps working until it expires: 15 min)
 POST {{baseUrl}}/auth/refresh
 Content-Type: application/json
@@ -140,5 +140,5 @@ Content-Type: application/json
 { "refreshToken": "{{changePasswordBack.response.body.$.refreshToken}}" }
 
 ### Without a token
-# Expected: 401 UNAUTHENTICATED "Inicia sesión para continuar."
+# Expected: 401 UNAUTHENTICATED "Inicie sesión para continuar."
 GET {{baseUrl}}/cashboxes/mine

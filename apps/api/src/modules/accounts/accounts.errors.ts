@@ -14,5 +14,5 @@ export const accountErrors = {
   usernameTaken: (username: string) =>
     new AppError('USERNAME_TAKEN', 409, `El usuario "${username}" ya existe.`, { username }),
   ownAccount: () =>
-    new AppError('FORBIDDEN', 403, 'No puedes bloquear ni desactivar tu propia cuenta.'),
+    new AppError('FORBIDDEN', 403, 'No puede bloquear ni desactivar su propia cuenta.'),
 };

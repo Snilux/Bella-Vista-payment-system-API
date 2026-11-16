@@ -36,7 +36,7 @@ export const billingErrors = {
             : issue.code === 'DUPLICATE_PERIOD'
               ? `${formatPeriod(issue.period ?? '')} está repetido.`
               : issue.code === 'EMPTY_SELECTION'
-                ? 'Elige al menos un mes.'
+                ? 'Elija al menos un mes.'
                 : `${issue.period ? formatPeriod(issue.period) : 'Ese periodo'} no se cobra a esta unidad.`,
       })),
       selection: issues,
@@ -45,7 +45,7 @@ export const billingErrors = {
     new AppError(
       'TOTAL_CHANGED',
       409,
-      `El total cambió: ahora es ${formatMoney(details.total)} (antes ${formatMoney(expected)}). Revisa el resumen y confirma de nuevo.`,
+      `El total cambió: ahora es ${formatMoney(details.total)} (antes ${formatMoney(expected)}). Revise el resumen y confirme de nuevo.`,
       { expectedTotal: expected, ...details },
     ),
   duplicatePaperFolio: (paperFolio: string) =>

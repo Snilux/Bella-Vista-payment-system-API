@@ -145,7 +145,7 @@ describe.skipIf(!testDatabaseUrl)('/v1/approvals', () => {
     const missing = await resolve(id, { result: 'rejected', reason: '  ' });
     expect(missing.status).toBe(400);
     expect(missing.body.error.details.issues).toEqual([
-      { path: 'body.reason', message: 'Escribe el motivo del rechazo.' },
+      { path: 'body.reason', message: 'Escriba el motivo del rechazo.' },
     ]);
     expect((await stored(id))?.result).toBeNull();
 

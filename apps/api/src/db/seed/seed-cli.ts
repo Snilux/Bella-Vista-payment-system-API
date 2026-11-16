@@ -18,7 +18,7 @@ try {
 } catch (error) {
   log.error(
     { err: error },
-    `No se pudo leer ${filePath}. Copia arranque.example.json a arranque.json y llénalo.`,
+    `No se pudo leer ${filePath}. Copie arranque.example.json a arranque.json y llénelo.`,
   );
   process.exit(1);
 }

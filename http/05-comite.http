@@ -236,7 +236,7 @@ Content-Type: application/json
 ### Count the cash (the expected balance: no difference)
 # Expected: 200 { closing: { status: "counted", countedCash, difference: 0 } }
 # A difference without notes → 400 VALIDATION_ERROR
-#   "Hay una diferencia de -$…; escribe las observaciones."
+#   "Hay una diferencia de -$…; escriba las observaciones."
 POST {{baseUrl}}/closings/{{closingId}}/count
 Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
 Content-Type: application/json

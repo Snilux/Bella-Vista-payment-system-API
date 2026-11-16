@@ -8,5 +8,5 @@ export const authErrors = {
     new AppError('INVALID_CREDENTIALS', 401, 'La contraseña actual no es correcta.'),
   /** Refresh token unknown, expired, revoked or reused. */
   sessionInvalid: () =>
-    new AppError('UNAUTHENTICATED', 401, 'Tu sesión ya no es válida. Inicia sesión de nuevo.'),
+    new AppError('UNAUTHENTICATED', 401, 'Su sesión ya no es válida. Inicie sesión de nuevo.'),
 };

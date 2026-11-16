@@ -335,7 +335,7 @@ export function createConnectionsService(deps: ConnectionsServiceDeps) {
         if (!approved && input.resolutionReason === null) {
           throw connectionErrors.invalidField(
             'body.resolutionReason',
-            'Escribe el motivo del rechazo.',
+            'Escriba el motivo del rechazo.',
           );
         }
         let chargeId: number | null = null;

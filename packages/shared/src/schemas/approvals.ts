@@ -51,7 +51,7 @@ export const approvalResponseSchema = z.object({ approval: approvalSchema });
 
 export const resolveApprovalRequestSchema = z
   .object({
-    result: z.enum(['approved', 'rejected'], { error: 'Indica si se autoriza o se rechaza.' }),
+    result: z.enum(['approved', 'rejected'], { error: 'Indique si se autoriza o se rechaza.' }),
     reason: z
       .string()
       .trim()
@@ -61,7 +61,7 @@ export const resolveApprovalRequestSchema = z
   })
   .refine((body) => body.result === 'approved' || body.reason !== undefined, {
     path: ['reason'],
-    error: 'Escribe el motivo del rechazo.',
+    error: 'Escriba el motivo del rechazo.',
   });
 
 export type Approval = z.infer<typeof approvalSchema>;

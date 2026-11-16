@@ -271,7 +271,7 @@ describe.skipIf(!testDatabaseUrl)('/v1/accounts', () => {
 
     const missing = await call('POST', `/v1/accounts/${id}/lock`, 'admin', { reason: ' ' });
     expect(missing.body.error.details.issues).toEqual([
-      { path: 'body.reason', message: 'Escribe el motivo.' },
+      { path: 'body.reason', message: 'Escriba el motivo.' },
     ]);
 
     const locked = await call('POST', `/v1/accounts/${id}/lock`, 'admin', {
@@ -337,7 +337,7 @@ describe.skipIf(!testDatabaseUrl)('/v1/accounts', () => {
         body: {
           error: {
             code: 'FORBIDDEN',
-            message: 'No puedes bloquear ni desactivar tu propia cuenta.',
+            message: 'No puede bloquear ni desactivar su propia cuenta.',
             details: {},
           },
         },

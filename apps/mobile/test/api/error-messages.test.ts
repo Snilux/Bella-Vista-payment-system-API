@@ -29,7 +29,7 @@ describe('coverage', () => {
 
 describe('describeError', () => {
   it('uses the app text and action for known codes', () => {
-    const error = new ApiError('FORBIDDEN', 403, 'Tu cargo no tiene permiso para esta operación.');
+    const error = new ApiError('FORBIDDEN', 403, 'Su cargo no tiene permiso para esta operación.');
     expect(describeError(error)).toEqual({
       code: 'FORBIDDEN',
       message: 'No tiene permiso para esta acción.',
