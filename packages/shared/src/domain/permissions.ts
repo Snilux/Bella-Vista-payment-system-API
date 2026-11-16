@@ -32,6 +32,8 @@ export const PERMISSIONS = {
   // Rates, fees and opening balances (CU-12, D-20)
   'rates.view': COMMITTEE_AND_LEADERS,
   'rates.register': ['treasurer'],
+  // Payments by scope: a block leader only those of their block (RF-PAD-04)
+  'payments.view': COMMITTEE_AND_LEADERS,
   // Billing (CU-13 to CU-16); the president collects only as support (D-07)
   'billing.collect': ['treasurer', 'block_leader', 'president'],
   'receipts.replace': ['treasurer', 'block_leader'],

@@ -66,6 +66,12 @@ export const errors = {
    */
   invalidState: (message: string, status: string, action: string) =>
     new AppError('INVALID_STATE', 409, message, { status, action }),
+  periodClosed: () =>
+    new AppError(
+      'PERIOD_CLOSED',
+      409,
+      'El mes ya tiene un corte cerrado; el movimiento debe registrarse en el periodo abierto.',
+    ),
   databaseUnavailable: () =>
     new AppError('DATABASE_UNAVAILABLE', 503, 'La base de datos no responde. Intenta más tarde.'),
 };

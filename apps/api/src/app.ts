@@ -103,7 +103,7 @@ export async function buildApp(options: BuildAppOptions) {
   await registerRegistryModule(app, approvalRegistry);
   await registerConnectionsModule(app);
   await registerRatesModule(app, approvalRegistry);
-  await registerBillingModule(app);
+  await registerBillingModule(app, approvalRegistry);
 
   return app;
 }
