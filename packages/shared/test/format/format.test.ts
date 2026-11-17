@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatMoney, formatPeriod, parseMoney } from '../../src/format/index.js';
+import {
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  formatPeriod,
+  parseMoney,
+} from '../../src/format/index.js';
 
 describe('formatMoney', () => {
   it.each([
@@ -72,5 +78,35 @@ describe('parseMoney', () => {
 
   it('reads back what formatMoney writes', () => {
     expect(parseMoney(formatMoney(123_456))).toBe(123_456);
+  });
+});
+
+describe('formatDate', () => {
+  it.each([
+    ['2026-10-25', '25 oct 2026'],
+    ['2026-01-05', '5 ene 2026'],
+    ['2025-12-31', '31 dic 2025'],
+  ])('formats %s as %s', (date, text) => {
+    expect(formatDate(date)).toBe(text);
+  });
+
+  it('rejects an invalid date', () => {
+    expect(() => formatDate('2026-13-01')).toThrow(RangeError);
+  });
+});
+
+describe('formatDateTime', () => {
+  it.each([
+    // Mexico City is UTC-6 all year (no daylight saving time since 2022).
+    ['2026-10-25T18:30:00.000Z', '25 oct 2026, 12:30'],
+    // Past midnight in UTC is still the previous day in Mexico City.
+    ['2026-11-01T03:05:00.000Z', '31 oct 2026, 21:05'],
+    ['2026-01-01T06:00:00.000Z', '1 ene 2026, 00:00'],
+  ])('formats %s as %s', (instant, text) => {
+    expect(formatDateTime(instant)).toBe(text);
+  });
+
+  it('rejects an invalid instant', () => {
+    expect(() => formatDateTime('ayer')).toThrow(RangeError);
   });
 });
