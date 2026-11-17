@@ -179,10 +179,18 @@ Los reportes devuelven JSON; la app genera el PDF.
   "accessToken": "eyJ...",
   "accessTokenExpiresIn": 900,
   "refreshToken": "q3Vx...",
-  "account": { "username": "tesorero", "role": "treasurer", "blockId": null, "mustChangePassword": false }
+  "account": {
+    "username": "tesorero",
+    "role": "treasurer",
+    "blockId": null,
+    "blockCode": null,
+    "fullName": "Rosa María Salinas Vega",
+    "mustChangePassword": false
+  }
 }
 ```
 
+- `account` es lo que la app necesita de la cuenta (C-05 Perfil): `fullName` es el nombre completo de la persona del cargo y `blockCode` la clave visible de la manzana del jefe (`S1-M03`; `null` en los demás cargos). El refresco y el cambio de contraseña devuelven el mismo objeto.
 - El token de acceso dura 15 min y lleva la cuenta, el usuario, el cargo y la manzana. El de refresco dura 30 días y solo se guarda su hash (SHA-256).
 - Usuario inexistente o contraseña incorrecta → `INVALID_CREDENTIALS`. Al quinto intento fallido seguido la cuenta se bloquea 15 min (`ACCOUNT_LOCKED`, con `details.lockedUntil`). Mientras esté bloqueada no se revisa la contraseña.
 - Con la contraseña correcta: cuenta desactivada → `ACCOUNT_DISABLED`; asignación cerrada, pendiente o sin iniciar → `ROLE_NOT_ACTIVE`.

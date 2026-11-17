@@ -16,6 +16,7 @@ import { authErrors } from './auth.errors.js';
 import {
   type AccountAccess,
   findAccountAccess,
+  findSessionProfile,
   insertRefreshToken,
   lockAccountForCredentials,
   lockRefreshToken,
@@ -69,11 +70,13 @@ export function createAuthService(deps: AuthServiceDeps) {
     return { refreshToken: token, tokenId };
   }
 
-  function sessionResponse(
+  async function sessionResponse(
+    exec: Database | Transaction,
     account: AccountAccess,
     refreshToken: string,
     mustChangePassword: boolean,
-  ): SessionResponse {
+  ): Promise<SessionResponse> {
+    const profile = await findSessionProfile(exec, account.roleAssignmentId);
     const claims: AccessTokenClaims = {
       sub: String(account.userAccountId),
       username: account.username,
@@ -88,6 +91,8 @@ export function createAuthService(deps: AuthServiceDeps) {
         username: account.username,
         role: account.role,
         blockId: account.blockId,
+        blockCode: profile?.blockCode ?? null,
+        fullName: profile?.fullName ?? account.username,
         mustChangePassword,
       },
     };
@@ -161,7 +166,7 @@ export function createAuthService(deps: AuthServiceDeps) {
         },
       );
       const { account, refreshToken } = unwrap(outcome);
-      return sessionResponse(account, refreshToken, account.mustChangePassword);
+      return sessionResponse(db, account, refreshToken, account.mustChangePassword);
     },
 
     async refresh(input: RefreshRequest): Promise<SessionResponse> {
@@ -193,7 +198,7 @@ export function createAuthService(deps: AuthServiceDeps) {
         },
       );
       const { account, refreshToken } = unwrap(outcome);
-      return sessionResponse(account, refreshToken, account.mustChangePassword);
+      return sessionResponse(db, account, refreshToken, account.mustChangePassword);
     },
 
     async changePassword(
@@ -230,7 +235,7 @@ export function createAuthService(deps: AuthServiceDeps) {
           },
         );
         const session = await startSession(tx, account, now);
-        return sessionResponse(account, session.refreshToken, false);
+        return sessionResponse(tx, account, session.refreshToken, false);
       });
     },
 

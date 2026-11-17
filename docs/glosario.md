@@ -322,6 +322,7 @@ Los filtros de las listas (`?nombre=valor`) van en `camelCase` inglés, como los
 | `contrasenaActual`, `contrasenaNueva` | `currentPassword`, `newPassword` |
 | `tokenAcceso`, `tokenAccesoExpiraEn`, `tokenRefresco` | `accessToken`, `accessTokenExpiresIn`, `refreshToken` |
 | `cuenta`, `debeCambiarContrasena`, `manzanaId` | `account`, `mustChangePassword`, `blockId` |
+| nombre completo de la persona del cargo, clave visible de la manzana (S1-M03) | `fullName`, `blockCode` |
 | `asignacionId`, `contrasenaTemporal`, `motivo` | `roleAssignmentId`, `temporaryPassword`, `reason` |
 | `asignacionesSinCuenta` | `assignmentsWithoutAccount` |
 | `bloqueadaHasta` | `lockedUntil` |

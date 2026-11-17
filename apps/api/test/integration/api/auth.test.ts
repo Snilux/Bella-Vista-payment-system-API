@@ -64,7 +64,7 @@ describe.skipIf(!testDatabaseUrl)('POST /v1/auth/login', () => {
   const ctx = useApiTestApp();
   const api = client(ctx);
 
-  it('returns an access token with username, role and block, and a refresh token stored as a hash', async () => {
+  it('returns an access token with username, role and block, the name and block code, and a refresh token stored as a hash', async () => {
     const res = await api.login('jm.s1m01', DEV_PASSWORD);
     expect(res.status).toBe(200);
     expect(sessionResponseSchema.safeParse(res.body).success).toBe(true);
@@ -73,6 +73,8 @@ describe.skipIf(!testDatabaseUrl)('POST /v1/auth/login', () => {
       username: 'jm.s1m01',
       role: 'block_leader',
       blockId: expect.any(Number),
+      blockCode: 'S1-M01',
+      fullName: 'Laura Méndez Ruiz',
       mustChangePassword: false,
     });
     expect(res.body.accessTokenExpiresIn).toBe(15 * 60);
@@ -275,7 +277,11 @@ describe.skipIf(!testDatabaseUrl)('temporary password of the bootstrap superadmi
 
     const changed = await api.changePassword(accessToken, 'Temporal-1234', 'NuevaClave-2026');
     expect(changed.status).toBe(200);
-    expect(changed.body.account.mustChangePassword).toBe(false);
+    expect(changed.body.account).toMatchObject({
+      mustChangePassword: false,
+      fullName: first.body.account.fullName,
+      blockCode: null,
+    });
     expect((await api.get('/v1/test/protected', changed.body.accessToken)).status).toBe(200);
 
     // Every previous session is closed; the new one keeps working.
@@ -317,7 +323,12 @@ describe.skipIf(!testDatabaseUrl)('POST /v1/auth/refresh and /logout', () => {
     const second = await api.refresh(session.body.refreshToken);
     expect(second.status).toBe(200);
     expect(second.body.refreshToken).not.toBe(session.body.refreshToken);
-    expect(second.body.account).toMatchObject({ username: 'tesorero', role: 'treasurer' });
+    expect(second.body.account).toEqual(session.body.account);
+    expect(second.body.account).toMatchObject({
+      username: 'tesorero',
+      role: 'treasurer',
+      blockCode: null,
+    });
     const third = await api.refresh(second.body.refreshToken);
     expect(third.status).toBe(200);
 

@@ -18,7 +18,8 @@ GET {{host}}/health
 
 ### Login: superadmin
 # Expected: 200 { accessToken, accessTokenExpiresIn: 900, refreshToken,
-#   account: { username: "admin", role: "superadmin", blockId: null, mustChangePassword: false } }
+#   account: { username: "admin", role: "superadmin", blockId: null, blockCode: null,
+#     fullName: "<the name in arranque.json>", mustChangePassword: false } }
 # (the superadmin username is the "usuario" of arranque.json; "admin" in arranque.example.json)
 # @name loginSuperadmin
 POST {{baseUrl}}/auth/login
@@ -59,7 +60,8 @@ Content-Type: application/json
 { "username": "vocal", "password": "{{password}}" }
 
 ### Login: block leader of S1-M01
-# Expected: 200, account.role "block_leader", blockId 1
+# Expected: 200, account.role "block_leader", blockId 1, blockCode "S1-M01",
+#   fullName "Laura Méndez Ruiz"
 # @name loginLeader1
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
