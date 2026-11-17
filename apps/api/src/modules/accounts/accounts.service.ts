@@ -225,15 +225,18 @@ export function createAccountsService(deps: AccountsServiceDeps) {
       }
     },
 
-    /** New temporary password (RF-AUT-05): must be changed on login; every session ends. */
-    async resetPassword(actor: Actor, id: number) {
+    /**
+     * New temporary password (RF-AUT-05): must be changed on login; every session ends. The
+     * optional reason goes to the audit entry.
+     */
+    async resetPassword(actor: Actor, id: number, reason?: string) {
       const temporaryPassword = newPassword();
       const passwordHash = await hashPassword(temporaryPassword);
       const account = await changeAccount(
         actor,
         id,
         'reset_password',
-        null,
+        reason ?? null,
         async (tx, current, now) => {
           await updateAccount(tx, id, {
             passwordHash,

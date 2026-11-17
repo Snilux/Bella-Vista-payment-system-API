@@ -75,13 +75,20 @@ export const accountWithTemporaryPasswordSchema = z.object({
   temporaryPassword: z.string(),
 });
 
-export const accountReasonRequestSchema = z.object({
-  reason: z
-    .string({ error: 'Escriba el motivo.' })
-    .trim()
-    .min(1, { error: 'Escriba el motivo.' })
-    .max(500, { error: 'El motivo no puede tener más de 500 caracteres.' }),
-});
+const reasonSchema = z
+  .string({ error: 'Escriba el motivo.' })
+  .trim()
+  .min(1, { error: 'Escriba el motivo.' })
+  .max(500, { error: 'El motivo no puede tener más de 500 caracteres.' });
+
+/** Lock, unlock and deactivate: the reason is required. */
+export const accountReasonRequestSchema = z.object({ reason: reasonSchema });
+
+/**
+ * Reset password: the reason is optional (A-03 asks for it; older clients send no body). It
+ * goes to the technical audit log, never the password.
+ */
+export const resetPasswordRequestSchema = z.object({ reason: reasonSchema.optional() }).nullish();
 
 export const accountResponseSchema = z.object({ account: accountSummarySchema });
 
@@ -89,4 +96,6 @@ export type AccountSummary = z.infer<typeof accountSummarySchema>;
 export type AssignmentWithoutAccount = z.infer<typeof assignmentWithoutAccountSchema>;
 export type AccountListResponse = z.infer<typeof accountListResponseSchema>;
 export type CreateAccountRequest = z.infer<typeof createAccountRequestSchema>;
+export type AccountWithTemporaryPassword = z.infer<typeof accountWithTemporaryPasswordSchema>;
 export type AccountReasonRequest = z.infer<typeof accountReasonRequestSchema>;
+export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
