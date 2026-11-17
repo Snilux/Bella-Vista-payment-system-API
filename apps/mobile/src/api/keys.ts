@@ -4,4 +4,8 @@
 
 export const queryKeys = {
   health: ['health'] as const,
+  /** A-01 and A-03: accounts and current assignments without account (superadmin). */
+  accounts: ['accounts'] as const,
+  /** A-04 (and R-05 in M8): the audit log as the role sees it. */
+  auditLog: ['audit-log'] as const,
 };

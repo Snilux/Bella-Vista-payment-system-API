@@ -484,3 +484,10 @@ Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en espa�
 | motivo del cierre de sesión: vencida, cargo no vigente, cuenta desactivada, cuenta bloqueada | `SessionEndReason`: `expired`, `role-not-active`, `account-disabled`, `account-locked` (la contraseña temporal no cierra la sesión: lleva a C-02) |
 | Pestañas del cargo, menú «Más», pantalla «Próximamente» | `RoleTabs`, `MoreMenu`, `ComingSoon` (`src/features/session/`) |
 | Marco de pantalla (con barra inferior fija), grupo de filas de menú | `ScreenLayout`, `MenuGroup` |
+| Cuentas del superadministrador: lista, cuenta, crear, restablecer, bloquear/desbloquear/desactivar | `useAccountList`, `useManagedAccount`, `useCreateAccount`, `useResetPassword`, `useAccountAction` (`lock`, `unlock`, `deactivate`) (`src/api/useAccounts.ts`) |
+| Vista de la cuenta: estado en palabras, etiqueta, acciones permitidas | `accountView`, `AccountCommand` (`reset`, `lock`, `unlock`, `deactivate`) (`src/features/accounts/account-status.ts`) |
+| Tarjeta de contraseña temporal (se muestra una vez, Copiar), aviso antes de salir | `TemporaryPasswordCard`, `LeavePasswordSheet`, `useLeaveGuard` |
+| Confirmación con motivo | `ReasonSheet` |
+| Usuario propuesto («nombre.apellido») | `suggestUsername` |
+| Bitácora técnica: páginas, texto de cada acción | `useAuditLogPages` (`src/api/useAuditLog.ts`), `auditEntryView` |
+| Fecha y fecha con hora en es-MX («25 oct 2026», «25 oct 2026, 10:42») | `formatDate`, `formatDateTime` (`@bella-vista/shared`) |

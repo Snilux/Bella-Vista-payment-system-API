@@ -4,6 +4,7 @@ import path from 'node:path';
 import { ROLES, type Role, type SessionAccount } from '@bella-vista/shared';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { ROLE_MENU } from '../../src/session/role-menu.js';
+import { screenById } from '../../src/session/screen-catalog.js';
 import { sessionStore } from '../../src/session/session-store.js';
 import { largeTextProblems, setFontScale } from '../ui/render.js';
 
@@ -38,6 +39,19 @@ jest.mock('../../src/api/useAuth.js', () => ({
   restoreSession: () => Promise.resolve(),
 }));
 
+// Built tabs that read the API (A-01 since M3) get an empty answer: the screens themselves are
+// tested with a scripted API in their own files.
+jest.mock('../../src/api/useAccounts.js', () => ({
+  ...jest.requireActual('../../src/api/useAccounts.js'),
+  useAccountList: () => ({
+    status: 'success',
+    fetchStatus: 'idle',
+    error: null,
+    data: { accounts: [], assignmentsWithoutAccount: [] },
+    refetch: () => Promise.resolve(),
+  }),
+}));
+
 const APP = path.resolve(__dirname, '../../app');
 
 function account(role: Role, extra: Partial<SessionAccount> = {}): SessionAccount {
@@ -70,7 +84,9 @@ describe.each(ROLES.map((role) => [role] as const))('%s account', (role) => {
     expect(router.getPathname()).toBe(`/${role}/${home}`);
     expect(tabLabels()).toEqual(ROLE_MENU[role].tabs.map((tab) => tab.label));
     // Tabs of later phases say "Próximamente", never a blank screen or an error.
-    expect(screen.getByText('Próximamente')).toBeTruthy();
+    const entry = screenById(ROLE_MENU[role].tabs[0]?.screen ?? 'C-04');
+    if (entry.done) expect(screen.getByRole('header', { name: entry.title })).toBeTruthy();
+    else expect(screen.getByText('Próximamente')).toBeTruthy();
   });
 
   it('opens "Más" with its options', async () => {

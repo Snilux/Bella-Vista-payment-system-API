@@ -59,7 +59,7 @@ apps/mobile/
   src/api/             client.ts (fetch, token refresh, errors), error-messages.ts, query hooks (useAuth…)
   src/session/         tokens, session state, screen-catalog.ts (63 screens, `done` flag), role-menu.ts
                        (role → tabs → "Más"), permissions.ts
-  src/features/        screen pieces per module (session/: RoleTabs, MoreMenu, ComingSoon)
+  src/features/        screen pieces per module (session/: RoleTabs, MoreMenu, ComingSoon; accounts/: A-01 to A-04)
   test/                Jest (jest-expo): api/, session/ (navigation, catalog) and ui/ (140 % checks)
 packages/shared/src/   schemas/ (Zod), domain/ (pure rules), format/ (es-MX)
 docs/                  business context, data model, API contract, glossary
