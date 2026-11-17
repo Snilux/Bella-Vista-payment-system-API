@@ -1,5 +1,7 @@
-// es-MX formats for the texts users see (RNF-USA-02): amounts as $1,234.00 and periods as
-// "Junio 2026". Pure functions, used by the API messages and later by the app.
+import { BUSINESS_TIME_ZONE } from '../domain/periods.js';
+
+// es-MX formats for the texts users see (RNF-USA-02): amounts as $1,234.00, periods as
+// "Junio 2026" and dates as "25 oct 2026". Pure functions, used by the API messages and the app.
 
 const MONTHS = [
   'Enero',
@@ -49,4 +51,50 @@ export function formatPeriod(period: string): string {
   const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(period);
   if (!match) throw new RangeError(`invalid period ${period}`);
   return `${MONTHS[Number(match[2]) - 1]} ${match[1]}`;
+}
+
+const SHORT_MONTHS = [
+  'ene',
+  'feb',
+  'mar',
+  'abr',
+  'may',
+  'jun',
+  'jul',
+  'ago',
+  'sep',
+  'oct',
+  'nov',
+  'dic',
+] as const;
+
+const DATE = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** Calendar date YYYY-MM-DD → "25 oct 2026". */
+export function formatDate(date: string): string {
+  const match = DATE.exec(date);
+  if (!match) throw new RangeError(`invalid date ${date}`);
+  return `${Number(match[3])} ${SHORT_MONTHS[Number(match[2]) - 1]} ${match[1]}`;
+}
+
+/**
+ * Instant (ISO timestamp or Date) → "25 oct 2026, 10:42", on the clock of the business time zone
+ * (America/Mexico_City by default), 24-hour.
+ */
+export function formatDateTime(instant: string | Date, timeZone = BUSINESS_TIME_ZONE): string {
+  const value = typeof instant === 'string' ? new Date(instant) : instant;
+  if (Number.isNaN(value.getTime())) throw new RangeError(`invalid instant ${String(instant)}`);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(value);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value ?? '';
+  const date = formatDate(`${part('year')}-${part('month')}-${part('day')}`);
+  return `${date}, ${part('hour')}:${part('minute')}`;
 }

@@ -157,6 +157,8 @@ La app vive en `apps/mobile` y corre dentro del mismo contenedor que la API. Exp
 
 La sesión se queda en el teléfono: el token de refresco vive en el almacén seguro, así que al cerrar y volver a abrir Expo Go entra directo. **Más → Perfil → Cerrar sesión** la termina. Para probar la contraseña temporal (C-02), restablezca la del vocal con las dos últimas peticiones de `http/00-sesion.http` y entre con la contraseña que devuelve; en C-02 vuelva a poner `desarrollo-bella-vista`.
 
+Con `admin` entra a **Cuentas** (A-01). El cargo de vocal de Silvia aparece «sin cuenta»: al crear la cuenta, la contraseña temporal se ve una sola vez (con **Copiar**) y el teléfono no deja tomar capturas mientras está en pantalla (en Android; en iOS solo en parte). Desde el detalle de una cuenta (A-03) también puede restablecer su contraseña (o la del vocal, en lugar de usar `http/`), bloquearla, desbloquearla o desactivarla, siempre con motivo. Desactivar no se deshace: pruébelo al final, con la cuenta de Silvia. **Bitácora** (A-04) muestra cada acción.
+
 - Si el Wi-Fi no lo permite (red pública, aislamiento de clientes): `pnpm dev:mobile --tunnel`, más lento pero funciona en cualquier red.
 - Emulador de Android Studio en Windows: `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000`.
 - Probar con letra grande: en el teléfono, *Ajustes → Pantalla → Tamaño de fuente* al máximo; la app respeta hasta 1.4×.

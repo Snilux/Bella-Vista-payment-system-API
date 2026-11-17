@@ -100,10 +100,10 @@ export const SCREENS = [
   screen('R-05', 'Bitácora', '(app)/president/more/audit-log', 'M8'),
   screen('R-06', 'Mi caja de apoyo', '(app)/president/more/support-cashbox', 'M7'),
   screen('V-01', 'Inicio del vocal', '(app)/member/home', 'M8'),
-  screen('A-01', 'Cuentas', '(app)/superadmin/accounts', 'M3'),
-  screen('A-02', 'Crear cuenta', '(app)/superadmin/accounts/new', 'M3'),
-  screen('A-03', 'Detalle de cuenta', '(app)/superadmin/accounts/[id]', 'M3'),
-  screen('A-04', 'Bitácora técnica', '(app)/superadmin/audit-log', 'M3'),
+  screen('A-01', 'Cuentas', '(app)/superadmin/accounts', 'M3', true),
+  screen('A-02', 'Crear cuenta', '(app)/superadmin/accounts/new', 'M3', true),
+  screen('A-03', 'Detalle de cuenta', '(app)/superadmin/accounts/[id]', 'M3', true),
+  screen('A-04', 'Bitácora técnica', '(app)/superadmin/audit-log', 'M3', true),
 ] as const;
 
 export type ScreenId = (typeof SCREENS)[number]['id'];

@@ -5,6 +5,7 @@ import {
   accountResponseSchema,
   accountWithTemporaryPasswordSchema,
   createAccountRequestSchema,
+  resetPasswordRequestSchema,
 } from '@bella-vista/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { requireActor } from '../../plugins/audit-context.js';
@@ -41,10 +42,12 @@ export const accountsRoutes: FastifyPluginAsyncZod<{ service: AccountsService }>
       config,
       schema: {
         params: accountIdParamsSchema,
+        body: resetPasswordRequestSchema,
         response: { 200: accountWithTemporaryPasswordSchema },
       },
     },
-    async (request) => service.resetPassword(requireActor(request), request.params.id),
+    async (request) =>
+      service.resetPassword(requireActor(request), request.params.id, request.body?.reason),
   );
 
   for (const action of ['lock', 'unlock', 'deactivate'] as const) {

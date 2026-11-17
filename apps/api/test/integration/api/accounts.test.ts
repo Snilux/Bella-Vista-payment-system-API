@@ -261,7 +261,30 @@ describe.skipIf(!testDatabaseUrl)('/v1/accounts', () => {
     expect(after.body.account.mustChangePassword).toBe(true);
 
     const [entry] = await auditOf('reset_password', id);
-    expect(entry).toMatchObject({ isTechnical: true, after: { mustChangePassword: true } });
+    expect(entry).toMatchObject({
+      isTechnical: true,
+      reason: null,
+      after: { mustChangePassword: true },
+    });
+    expect(JSON.stringify(entry)).not.toContain(res.body.temporaryPassword);
+  });
+
+  it('keeps the optional reason of a reset in the audit log, never the password', async () => {
+    const id = await ctx.accountId('jm.s1m02');
+    const blank = await call('POST', `/v1/accounts/${id}/reset-password`, 'admin', {
+      reason: ' ',
+    });
+    expect(blank.body.error.details.issues).toEqual([
+      { path: 'body.reason', message: 'Escriba el motivo.' },
+    ]);
+
+    const res = await call('POST', `/v1/accounts/${id}/reset-password`, 'admin', {
+      reason: 'Olvidó su contraseña',
+    });
+    expect(res.status).toBe(200);
+    // The previous test already reset this account: take the newest entry.
+    const entry = (await auditOf('reset_password', id)).sort((a, b) => b.id - a.id)[0];
+    expect(entry).toMatchObject({ reason: 'Olvidó su contraseña' });
     expect(JSON.stringify(entry)).not.toContain(res.body.temporaryPassword);
   });
 

@@ -49,7 +49,7 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 | POST   | /v1/auth/logout                    | Revoca el token de refresco                                                                            | Todos             |
 | GET    | /v1/accounts                       | Cuentas y asignaciones vigentes sin cuenta                                                             | SA                |
 | POST   | /v1/accounts                       | Crea la cuenta de una asignación (el cargo sale de ella); devuelve la contraseña temporal una sola vez | SA                |
-| POST   | /v1/accounts/{id}/reset-password   | Contraseña temporal y cierre de sesiones                                                               | SA                |
+| POST   | /v1/accounts/{id}/reset-password   | Contraseña temporal y cierre de sesiones (motivo opcional)                                             | SA                |
 | POST   | /v1/accounts/{id}/lock             | Bloquea la cuenta (con motivo)                                                                         | SA                |
 | POST   | /v1/accounts/{id}/unlock           | Desbloquea la cuenta (con motivo)                                                                      | SA                |
 | POST   | /v1/accounts/{id}/deactivate       | Desactiva la cuenta (con motivo)                                                                       | SA                |
@@ -203,7 +203,7 @@ Los reportes devuelven JSON; la app genera el PDF.
 
 **Salir** `POST /v1/auth/logout` con `{ "refreshToken" }`: revoca ese token; responde 204.
 
-**Cuentas (solo SA).** `GET /v1/accounts` devuelve `accounts` (usuario, cargo, persona, manzana y `status`: `active`, `locked`, `disabled`, `must_change_password`, `role_not_active`) y `assignmentsWithoutAccount`. `POST /v1/accounts` con `{ roleAssignmentId, username }` devuelve `temporaryPassword` **una sola vez**. Restablecer genera otra contraseña temporal y cierra las sesiones; bloquear (indefinido hasta desbloquear), desbloquear y desactivar piden `reason`. Todo queda en la bitácora técnica. El SA no puede bloquear ni desactivar su propia cuenta.
+**Cuentas (solo SA).** `GET /v1/accounts` devuelve `accounts` (usuario, cargo, persona, manzana y `status`: `active`, `locked`, `disabled`, `must_change_password`, `role_not_active`) y `assignmentsWithoutAccount`. `POST /v1/accounts` con `{ roleAssignmentId, username }` devuelve `temporaryPassword` **una sola vez**. Restablecer genera otra contraseña temporal y cierra las sesiones; acepta `{ reason }` opcional (la app lo pide) y también funciona sin cuerpo. Bloquear (indefinido hasta desbloquear), desbloquear y desactivar piden `reason`. Todo queda en la bitácora técnica. El SA no puede bloquear ni desactivar su propia cuenta.
 
 ## Detalle: estado de cuenta
 
