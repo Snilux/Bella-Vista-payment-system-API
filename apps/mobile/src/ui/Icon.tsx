@@ -30,6 +30,18 @@ export const ICONS = {
   lock: 'lock-closed-outline',
   info: 'information-circle-outline',
   close: 'close',
+  // Tabs and "Más" options of the roles (M2, role-menu.ts)
+  profile: 'person-outline',
+  accounts: 'id-card-outline',
+  auditLog: 'time-outline',
+  rate: 'pricetag-outline',
+  fees: 'receipt-outline',
+  plumber: 'construct-outline',
+  agreement: 'reader-outline',
+  suspension: 'pause-circle-outline',
+  key: 'key-outline',
+  logout: 'log-out-outline',
+  soon: 'hourglass-outline',
 } as const satisfies Record<string, keyof typeof Ionicons.glyphMap>;
 
 export type IconName = keyof typeof ICONS;

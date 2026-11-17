@@ -1,73 +1,45 @@
-import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { getApiClient } from '../src/api/api.js';
-import { describeError } from '../src/api/error-messages.js';
-import { useHealth } from '../src/api/useHealth.js';
-import {
-  AppText,
-  Button,
-  colors,
-  Header,
-  layout,
-  Notice,
-  OfflineNotice,
-  StatusTag,
-  spacing,
-} from '../src/ui/index.js';
+import { Redirect } from 'expo-router';
+import { isNetworkError } from '../src/api/errors.js';
+import { restoreSession } from '../src/api/useAuth.js';
+import { homeHref } from '../src/session/role-menu.js';
+import { useSession } from '../src/session/session-store.js';
+import { Header, ScreenLayout, ScreenState } from '../src/ui/index.js';
 
-// Temporary start screen of M1: shows that the app reaches the API (/health) and, in
-// development, opens the component gallery. M2 replaces it with the redirect to C-01 or to
-// the role's home.
+// Start of the app: decides where the person goes from the session (3.2 §3.2, 2.5 §3.1).
+// Restoring → wait; no session → C-01; temporary password → C-02; otherwise the home of the
+// role. If the stored session could not be checked (no connection), it offers to retry
+// instead of asking for the password again.
 
-export default function StartScreen() {
-  const configured = getApiClient() !== null;
-  const health = useHealth();
+export default function Start() {
+  const session = useSession();
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <OfflineNotice />
-        <Header title="Comité de Agua Bella Vista" subtitle="Versión en construcción" />
-        <View style={styles.status}>
-          <AppText variant="label">Conexión con el servidor</AppText>
-          {!configured ? (
-            <Notice
-              title="Falta la dirección del servidor"
-              detail="Defina EXPO_PUBLIC_API_URL (sin /v1) y vuelva a iniciar Expo."
-            />
-          ) : health.isSuccess ? (
-            <StatusTag tone="paid" label="Conectado" />
-          ) : health.isPending ? (
-            <StatusTag tone="pending" label="Comprobando..." />
-          ) : (
-            <>
-              <StatusTag tone="overdue" label="Sin respuesta" />
-              <AppText variant="caption" color={colors.textSecondary}>
-                {describeError(health.error).message}
-              </AppText>
-            </>
-          )}
-        </View>
-        {configured ? (
-          <Button
-            label="Comprobar de nuevo"
-            variant="secondary"
-            onPress={() => void health.refetch()}
-            loading={health.isFetching}
-            loadingLabel="Comprobando..."
+  switch (session.status) {
+    case 'signed-out':
+      return <Redirect href="/sign-in" />;
+    case 'signed-in':
+      return (
+        <Redirect
+          href={
+            session.account.mustChangePassword ? '/new-password' : homeHref(session.account.role)
+          }
+        />
+      );
+    case 'restoring':
+      return (
+        <ScreenLayout>
+          <ScreenState status="loading" />
+        </ScreenLayout>
+      );
+    case 'unreachable':
+      return (
+        <ScreenLayout>
+          <Header title="Comité de Agua Bella Vista" />
+          <ScreenState
+            status={isNetworkError(session.error) ? 'offline' : 'error'}
+            error={session.error}
+            onRetry={() => void restoreSession()}
           />
-        ) : null}
-        {__DEV__ ? (
-          <Button label="Ver galería de componentes" onPress={() => router.push('/dev/gallery')} />
-        ) : null}
-      </ScrollView>
-    </SafeAreaView>
-  );
+        </ScreenLayout>
+      );
+  }
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: layout.screenMargin, gap: spacing.xl },
-  status: { gap: spacing.sm },
-});

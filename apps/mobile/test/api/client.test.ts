@@ -134,13 +134,32 @@ describe('API errors', () => {
     ['ROLE_NOT_ACTIVE', 403, 'role-not-active'],
     ['ACCOUNT_DISABLED', 401, 'account-disabled'],
     ['ACCOUNT_LOCKED', 401, 'account-locked'],
-    ['PASSWORD_CHANGE_REQUIRED', 403, 'password-change-required'],
     ['UNAUTHENTICATED', 401, 'expired'],
   ])('%s ends the session (%s)', async (code, status, reason) => {
     const { client, ended, state } = setup(() => apiError(status, code));
     expect((await rejection(client.request(get))).code).toBe(code);
     expect(ended).toEqual([reason]);
     expect(state.refresh).toBeNull();
+  });
+
+  it('PASSWORD_CHANGE_REQUIRED keeps the session and asks for the new password (C-02)', async () => {
+    const { fetchFn } = scriptedFetch(() => apiError(403, 'PASSWORD_CHANGE_REQUIRED'));
+    const { store, state } = memoryTokens({ access: 'access-0', refresh: 'refresh-0' });
+    const ended: SessionEndReason[] = [];
+    let asked = 0;
+    const client = createApiClient({
+      baseUrl: BASE,
+      tokens: store,
+      onSessionEnded: (reason) => ended.push(reason),
+      onPasswordChangeRequired: () => {
+        asked += 1;
+      },
+      fetchFn,
+    });
+    expect((await rejection(client.request(get))).code).toBe('PASSWORD_CHANGE_REQUIRED');
+    expect(asked).toBe(1);
+    expect(ended).toEqual([]);
+    expect(state.refresh).toBe('refresh-0');
   });
 
   it('login errors do not end a session (unauthenticated request)', async () => {

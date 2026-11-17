@@ -55,7 +55,14 @@ export function session(n: number): SessionResponse {
     accessToken: `access-${n}`,
     accessTokenExpiresIn: 900,
     refreshToken: `refresh-${n}`,
-    account: { username: 'jefe1', role: 'block_leader', blockId: 3, mustChangePassword: false },
+    account: {
+      username: 'jefe1',
+      role: 'block_leader',
+      blockId: 3,
+      blockCode: 'S1-M03',
+      fullName: 'María López Hernández',
+      mustChangePassword: false,
+    },
   };
 }
 

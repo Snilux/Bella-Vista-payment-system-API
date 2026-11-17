@@ -42,6 +42,10 @@ export const sessionAccountSchema = z.object({
   username: z.string(),
   role: z.enum(ROLES),
   blockId: z.int().nullable(),
+  /** Visible block code (S1-M03) of a block leader; null for the other roles. */
+  blockCode: z.string().nullable(),
+  /** Full name of the person who holds the role (C-05 Perfil). */
+  fullName: z.string(),
   mustChangePassword: z.boolean(),
 });
 

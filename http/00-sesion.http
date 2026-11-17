@@ -18,7 +18,8 @@ GET {{host}}/health
 
 ### Login: superadmin
 # Expected: 200 { accessToken, accessTokenExpiresIn: 900, refreshToken,
-#   account: { username: "admin", role: "superadmin", blockId: null, mustChangePassword: false } }
+#   account: { username: "admin", role: "superadmin", blockId: null, blockCode: null,
+#     fullName: "<the name in arranque.json>", mustChangePassword: false } }
 # (the superadmin username is the "usuario" of arranque.json; "admin" in arranque.example.json)
 # @name loginSuperadmin
 POST {{baseUrl}}/auth/login
@@ -59,7 +60,8 @@ Content-Type: application/json
 { "username": "vocal", "password": "{{password}}" }
 
 ### Login: block leader of S1-M01
-# Expected: 200, account.role "block_leader", blockId 1
+# Expected: 200, account.role "block_leader", blockId 1, blockCode "S1-M01",
+#   fullName "Laura Méndez Ruiz"
 # @name loginLeader1
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -142,3 +144,17 @@ Content-Type: application/json
 ### Without a token
 # Expected: 401 UNAUTHENTICATED "Inicie sesión para continuar."
 GET {{baseUrl}}/cashboxes/mine
+
+### Temporary password for the app (M2, C-02): list the accounts to find the vocal
+# Expected: 200 { accounts: [...], assignmentsWithoutAccount: [...] }
+# @name accounts
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{loginSuperadmin.response.body.$.accessToken}}
+
+### Reset the password of the vocal
+# Expected: 200 with temporaryPassword, shown only this once. Sign in with it in the app as
+# "vocal": the app opens C-02 and nothing else until the password changes. In C-02 set it back
+# to the development password (desarrollo-bella-vista): pnpm db:seed:dev only resets the
+# superadmin's. If the superadmin's access token expired (15 min), send its login again.
+POST {{baseUrl}}/accounts/{{accounts.response.body.$.accounts[?(@.username=='vocal')].id}}/reset-password
+Authorization: Bearer {{loginSuperadmin.response.body.$.accessToken}}

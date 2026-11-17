@@ -1,5 +1,6 @@
 import { formatMoney, formatPeriod, validationIssueSchema } from '@bella-vista/shared';
 import { z } from 'zod';
+import type { SessionEndReason } from './client.js';
 import { type ApiErrorCode, isApiError } from './errors.js';
 
 // Mensajes de error (3.2 §11.1 and §11.3): API code → Spanish message (formal "usted", 2.4 §7)
@@ -18,6 +19,8 @@ export type ErrorAction =
   | 'reload'
   /** The session ended: back to C-01. */
   | 'login'
+  /** The account must change its temporary password: C-02. */
+  | 'change-password'
   /** Show the message next to the field. */
   | 'fix-field'
   /** Back to F-02 with the new summary. */
@@ -153,7 +156,7 @@ export const ERROR_MESSAGES: Record<ApiErrorCode, ErrorInfo> = {
   },
   PASSWORD_CHANGE_REQUIRED: {
     message: 'Debe cambiar su contraseña para continuar.',
-    action: 'login',
+    action: 'change-password',
   },
   FORBIDDEN: { message: 'No tiene permiso para esta acción.', action: 'none' },
   NOT_FOUND: { message: 'No se encontró lo que busca.', action: 'none' },
@@ -218,4 +221,16 @@ export function fieldErrors(error: unknown): Record<string, string> {
     result[field] ??= issue.message;
   }
   return result;
+}
+
+const SESSION_END_CODES: Record<SessionEndReason, ApiErrorCode> = {
+  expired: 'UNAUTHENTICATED',
+  'role-not-active': 'ROLE_NOT_ACTIVE',
+  'account-disabled': 'ACCOUNT_DISABLED',
+  'account-locked': 'ACCOUNT_LOCKED',
+};
+
+/** What C-01 says when the app ended the session by itself (3.2 §3.2). */
+export function sessionEndMessage(reason: SessionEndReason): string {
+  return resolve(SESSION_END_CODES[reason], {}, '').message;
 }

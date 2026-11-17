@@ -1,6 +1,13 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Database, Transaction } from '../../db/client.js';
-import { approval, refreshToken, roleAssignment, userAccount } from '../../db/schema/index.js';
+import {
+  approval,
+  person,
+  refreshToken,
+  roleAssignment,
+  userAccount,
+  vBlock,
+} from '../../db/schema/index.js';
 
 // Queries of the auth module. They receive the executor (pool or transaction); the service
 // decides the transaction and the locks.
@@ -37,6 +44,24 @@ export async function findAccountAccess(db: Executor, userAccountId: number) {
 }
 
 export type AccountAccess = NonNullable<Awaited<ReturnType<typeof findAccountAccess>>>;
+
+/**
+ * What the app shows of the signed-in account (C-05): the person's full name and, for a block
+ * leader, the visible block code (S1-M03). Read only when a session starts or rotates.
+ */
+export async function findSessionProfile(db: Executor, roleAssignmentId: number) {
+  const [row] = await db
+    .select({
+      fullName: sql<string>`concat_ws(' ', ${person.givenNames}, ${person.paternalSurname}, ${person.maternalSurname})`,
+      blockCode: vBlock.code,
+    })
+    .from(roleAssignment)
+    .innerJoin(person, eq(person.id, roleAssignment.personId))
+    .leftJoin(vBlock, eq(vBlock.id, roleAssignment.blockId))
+    .where(eq(roleAssignment.id, roleAssignmentId))
+    .limit(1);
+  return row ?? null;
+}
 
 /**
  * Account for a login or password change, with its hash, locking the user_account row so

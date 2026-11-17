@@ -53,11 +53,14 @@ apps/api/src/
   modules/<module>/    one module per domain (see docs/estructura.md)
 apps/api/test/         unit/ and integration/ (integration uses DATABASE_URL_TEST)
 apps/mobile/
-  app/                 Expo Router routes (dev/gallery: component gallery, development only)
+  app/                 Expo Router routes: (auth)/ C-01 and C-02; (app)/<role>/ tabs per role (the ROLES
+                       value); (app)/common/ shared screens; dev/gallery (development only)
   src/ui/              design-system components (2.4 and Figma), one file each; theme/ holds the tokens
-  src/api/             client.ts (fetch, token refresh, errors), error-messages.ts, query hooks
-  src/session/         tokens (access in memory, refresh in SecureStore); M2 adds the session context
-  test/                Jest (jest-expo): api/ and ui/ (including the 140 % text checks)
+  src/api/             client.ts (fetch, token refresh, errors), error-messages.ts, query hooks (useAuth…)
+  src/session/         tokens, session state, screen-catalog.ts (63 screens, `done` flag), role-menu.ts
+                       (role → tabs → "Más"), permissions.ts
+  src/features/        screen pieces per module (session/: RoleTabs, MoreMenu, ComingSoon)
+  test/                Jest (jest-expo): api/, session/ (navigation, catalog) and ui/ (140 % checks)
 packages/shared/src/   schemas/ (Zod), domain/ (pure rules), format/ (es-MX)
 docs/                  business context, data model, API contract, glossary
 ```
@@ -85,7 +88,7 @@ Workspace package names (use them as dependencies and imports, e.g. in `apps/mob
 - No scheduled jobs, queues or file uploads (D-25, D-26).
 - Errors use the shape `{ error: { code, message, details } }`: `code` in English `UPPER_SNAKE_CASE`, `message` in Spanish (see `docs/api.md` and `docs/glosario.md`).
 - Relative imports with the `.js` extension (NodeNext). No `any` and no `console.log` (use the Fastify logger).
-- Mobile app: screens never call `fetch` (always a hook of `src/api`); no loose colors or sizes (tokens of `src/ui/theme`); every text through `AppText` (Inter, up to 1.4×, never cut); user texts in Spanish with "usted" and "familia" instead of "unidad"; every screen file carries its Figma/2.5 ID (e.g. `// F-02 · Elegir meses`) in a comment at the top.
+- Mobile app: screens never call `fetch` (always a hook of `src/api`); no loose colors or sizes (tokens of `src/ui/theme`); every text through `AppText` (Inter, up to 1.4×, never cut); user texts in Spanish with "usted" and "familia" instead of "unidad"; every screen file carries its Figma/2.5 ID (e.g. `// F-02 · Elegir meses`) in a comment at the top. When a screen is built, set `done: true` in `src/session/screen-catalog.ts` (a test checks the file and its ID comment).
 - Constraints Drizzle cannot express (CHECK, triggers, partial indexes on expressions, grants) go in hand-written SQL migrations (`pnpm db:generate --custom`).
 
 ## Commits
