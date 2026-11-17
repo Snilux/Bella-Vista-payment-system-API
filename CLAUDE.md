@@ -13,8 +13,9 @@ The Figma captures are in `docs/diseno/` (not versioned). Use them to compare th
 ## Language
 
 - Code, comments, identifiers, commit messages and this file: **English**.
-- `docs/` and every text the end user sees (API error messages, formatted amounts and dates): **Spanish (es-MX)**.
-- `docs/` describes tables, columns, endpoints and error codes in Spanish. Translate them with `docs/glosario.md`; when a term is missing, add it to the glossary in the same commit.
+- **Contracts use the code's English identifiers**: routes, query parameters, JSON fields, enum values and error codes, the same in the code, in `docs/api.md` and in Notion 2.3 and 3.2. `apps/api/test/unit/routes-contract.test.ts` fails if the routes Fastify registers and the endpoint tables of `docs/api.md` differ. Screen routes of the app (`apps/mobile/app`) are in English too.
+- Everything the end user sees (API messages, app texts, formatted amounts and dates) and the prose of `docs/`: **Spanish (es-MX)**, addressing the user as **usted**.
+- The database stays documented in Spanish: `docs/modelo-datos.md` names tables, columns and enums in Spanish. Translate them with `docs/glosario.md`; when a term is missing, add it to the glossary in the same commit.
 
 ## Stack
 
@@ -84,7 +85,7 @@ Workspace package names (use them as dependencies and imports, e.g. in `apps/mob
 - No scheduled jobs, queues or file uploads (D-25, D-26).
 - Errors use the shape `{ error: { code, message, details } }`: `code` in English `UPPER_SNAKE_CASE`, `message` in Spanish (see `docs/api.md` and `docs/glosario.md`).
 - Relative imports with the `.js` extension (NodeNext). No `any` and no `console.log` (use the Fastify logger).
-- Mobile app: screens never call `fetch` (always a hook of `src/api`); no loose colors or sizes (tokens of `src/ui/theme`); every text through `AppText` (Inter, up to 1.4×, never cut); user texts in Spanish with "usted" and "familia" instead of "unidad"; each screen names its 2.5 ID in the file name or a comment.
+- Mobile app: screens never call `fetch` (always a hook of `src/api`); no loose colors or sizes (tokens of `src/ui/theme`); every text through `AppText` (Inter, up to 1.4×, never cut); user texts in Spanish with "usted" and "familia" instead of "unidad"; every screen file carries its Figma/2.5 ID (e.g. `// F-02 · Elegir meses`) in a comment at the top.
 - Constraints Drizzle cannot express (CHECK, triggers, partial indexes on expressions, grants) go in hand-written SQL migrations (`pnpm db:generate --custom`).
 
 ## Commits

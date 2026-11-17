@@ -3,7 +3,8 @@
 ## Language
 
 - **Code, comments, identifiers, commit messages, `CONTRIBUTING.md` and `CLAUDE.md`: English.**
-- **Business documentation (`docs/`) and every text the end user sees** (API error messages, receipts, formatted dates and amounts): **Spanish (es-MX)**. The committee members read them.
+- **The prose of `docs/` and every text the end user sees** (API error messages, app texts, receipts, formatted dates and amounts): **Spanish (es-MX)**, addressing the user as "usted". The committee members read them.
+- **Contracts** (routes, query parameters, JSON fields, enum values, error codes) use the code's English names everywhere, `docs/api.md` included; `docs/modelo-datos.md` keeps describing the database in Spanish.
 - Domain names in code come from [`docs/glosario.md`](docs/glosario.md) (Spanish → English). When a new term appears, add it there in the same commit.
 
 ## Commits

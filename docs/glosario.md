@@ -1,6 +1,6 @@
 # Glosario español → inglés para el código
 
-La documentación de negocio está en español; el código, los identificadores y los commits, en inglés. Este archivo fija la traducción para que todos usen los mismos nombres. Si al programar aparece un término que no está aquí, se agrega en el mismo commit.
+La redacción de la documentación de negocio está en español; el código, los identificadores y los commits, en inglés. Los contratos (rutas, parámetros, campos JSON, valores de enum y códigos de error) usan el nombre real en inglés también en `docs/api.md` y en Notion 2.3 y 3.2. La base de datos se sigue describiendo en español en `modelo-datos.md`. Este archivo fija la traducción para que todos usen los mismos nombres. Si al programar aparece un término que no está aquí, se agrega en el mismo commit.
 
 Lo que ve el usuario final (mensajes de error, recibos, fechas y montos con formato) **sigue en español**.
 
@@ -238,7 +238,7 @@ Lo llena quien ejecuta `pnpm db:seed`, así que sus claves quedan en español (v
 
 ## Códigos de error
 
-`docs/api.md` los describe en español; en el código y en la respuesta (`error.code`) van en inglés. El `message` sigue en español.
+El código, la respuesta (`error.code`), `docs/api.md` y Notion 2.3 usan el nombre en inglés; la columna en español es el nombre de negocio. El `message` sigue en español.
 
 | Español | Inglés |
 | --- | --- |
