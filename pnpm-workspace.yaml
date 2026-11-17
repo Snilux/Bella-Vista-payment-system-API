@@ -4,6 +4,8 @@ packages:
 
 # Dependencies allowed to run install scripts
 # (argon2 builds/downloads its native binary; esbuild is used by tsx, vitest and drizzle-kit).
+# @parcel/watcher (from Jest) ships prebuilt binaries; its fallback build is not needed.
 allowBuilds:
   argon2: true
   esbuild: true
+  "@parcel/watcher": false

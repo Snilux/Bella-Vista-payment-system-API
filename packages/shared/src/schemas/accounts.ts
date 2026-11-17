@@ -65,7 +65,7 @@ export const accountListResponseSchema = z.object({
 export const accountIdParamsSchema = z.object({ id: z.coerce.number().int().positive() });
 
 export const createAccountRequestSchema = z.object({
-  roleAssignmentId: z.int({ error: 'Elige la asignación de cargo.' }).positive(),
+  roleAssignmentId: z.int({ error: 'Elija la asignación de cargo.' }).positive(),
   username: usernameSchema,
 });
 
@@ -77,9 +77,9 @@ export const accountWithTemporaryPasswordSchema = z.object({
 
 export const accountReasonRequestSchema = z.object({
   reason: z
-    .string({ error: 'Escribe el motivo.' })
+    .string({ error: 'Escriba el motivo.' })
     .trim()
-    .min(1, { error: 'Escribe el motivo.' })
+    .min(1, { error: 'Escriba el motivo.' })
     .max(500, { error: 'El motivo no puede tener más de 500 caracteres.' }),
 });
 

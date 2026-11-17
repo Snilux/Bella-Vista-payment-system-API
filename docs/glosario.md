@@ -1,6 +1,6 @@
 # Glosario español → inglés para el código
 
-La documentación de negocio está en español; el código, los identificadores y los commits, en inglés. Este archivo fija la traducción para que todos usen los mismos nombres. Si al programar aparece un término que no está aquí, se agrega en el mismo commit.
+La redacción de la documentación de negocio está en español; el código, los identificadores y los commits, en inglés. Los contratos (rutas, parámetros, campos JSON, valores de enum y códigos de error) usan el nombre real en inglés también en `docs/api.md` y en Notion 2.3 y 3.2. La base de datos se sigue describiendo en español en `modelo-datos.md`. Este archivo fija la traducción para que todos usen los mismos nombres. Si al programar aparece un término que no está aquí, se agrega en el mismo commit.
 
 Lo que ve el usuario final (mensajes de error, recibos, fechas y montos con formato) **sigue en español**.
 
@@ -238,7 +238,7 @@ Lo llena quien ejecuta `pnpm db:seed`, así que sus claves quedan en español (v
 
 ## Códigos de error
 
-`docs/api.md` los describe en español; en el código y en la respuesta (`error.code`) van en inglés. El `message` sigue en español.
+El código, la respuesta (`error.code`), `docs/api.md` y Notion 2.3 usan el nombre en inglés; la columna en español es el nombre de negocio. El `message` sigue en español.
 
 | Español | Inglés |
 | --- | --- |
@@ -279,6 +279,13 @@ Lo llena quien ejecuta `pnpm db:seed`, así que sus claves quedan en español (v
 | `DEMASIADAS_SOLICITUDES` | `TOO_MANY_REQUESTS` |
 | `ERROR_INTERNO` | `INTERNAL_ERROR` |
 | `BASE_DE_DATOS_NO_DISPONIBLE` | `DATABASE_UNAVAILABLE` |
+
+Códigos que genera la app móvil (cliente HTTP), no la API; tienen mensaje en `apps/mobile/src/api/error-messages.ts` como los demás:
+
+| Español | Inglés | Cuándo |
+| --- | --- | --- |
+| `SIN_CONEXION` | `NETWORK_ERROR` | La petición no tuvo respuesta: sin red o sin respuesta en 15 s |
+| `RESPUESTA_INVALIDA` | `INVALID_RESPONSE` | La respuesta no coincide con el esquema de `packages/shared` (la API cambió y la app no) |
 
 Campos de `detalles` (`details`): `problemas` → `issues`, cada uno con `ruta` → `path` y `mensaje` → `message`.
 
@@ -439,3 +446,36 @@ Los filtros de las listas (`?nombre=valor`) van en `camelCase` inglés, como los
 | efectivo con el jefe, en apoyo, fondos comunitarios esperados, diferencias de cortes | `cashWithLeader`, `cashInSupport`, `expectedCommunityFunds`, `closingDifferences` |
 | `/bitacora` | `/v1/audit-log` |
 | `usuario`, `tabla`, `registro`, `accion`, `esTecnica` (filtros y campos de bitácora) | `userAccountId`, `tableName`, `recordId`, `action`, `isTechnical` |
+
+## App móvil (`apps/mobile`)
+
+Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en español.
+
+| Español | Inglés |
+| --- | --- |
+| Botón (primario, secundario, texto, peligro) | `Button` (`primary`, `secondary`, `text`, `danger`) |
+| Campo | `TextField` |
+| Campo de importe (`CampoImporte`) | `AmountField` |
+| Selector | `Select` |
+| Opción (opción única) | `Radio` |
+| Casilla | `Checkbox` |
+| Etiqueta de estado: pagado, pendiente, vencido, recargo, anticipo, cancelado | `StatusTag` (`paid`, `pending`, `overdue`, `surcharge`, `advance`, `cancelled`) |
+| Fila de mes | `MonthRow` |
+| Fila de menú | `MenuRow` |
+| Fila de lista | `ListRow` |
+| Tarjeta de registro | `RecordCard` |
+| Dato (par etiqueta-valor) | `DataRow` |
+| Encabezado | `Header` |
+| Barra de pestañas, pestaña | `TabBar`, `TabItem` |
+| Chip | `Chip` |
+| Buscador | `SearchField` |
+| Aviso (en página) | `Notice` |
+| Hoja inferior, hoja de confirmación | `BottomSheet`, `ConfirmSheet` |
+| Pantalla de éxito | `SuccessScreen` |
+| Envoltura de estados (`EstadoPantalla`): cargando, vacío, error, sin conexión, sin permiso | `ScreenState` (`loading`, `empty`, `error`, `offline`, `forbidden`) |
+| Lista paginada (`ListaPaginada`) | `PaginatedList` |
+| Mensajes de error (`mensajes-error.ts`) | `src/api/error-messages.ts` |
+| Galería de componentes | `ComponentGallery` (ruta `/dev/gallery`, solo en desarrollo) |
+| Hook de operación de dinero (`useOperacionDinero`) | `useMoneyOperation` (M6) |
+| Menú por cargo (`menu-por-cargo.ts`), permisos de la interfaz (`permisos.ts`) | `src/session/role-menu.ts`, `src/session/permissions.ts` (M2) |
+| motivo del cierre de sesión: vencida, cargo no vigente, cuenta desactivada, cuenta bloqueada, cambio de contraseña obligatorio | `SessionEndReason`: `expired`, `role-not-active`, `account-disabled`, `account-locked`, `password-change-required` |

@@ -114,7 +114,7 @@ describe.skipIf(!testDatabaseUrl)('error format', () => {
     expect(res.json()).toEqual({
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Ocurrió un error inesperado. Intenta de nuevo.',
+        message: 'Ocurrió un error inesperado. Intente de nuevo.',
         details: {},
       },
     });
@@ -166,7 +166,7 @@ describe.skipIf(!testDatabaseUrl)('GET /health', () => {
       expect(res.json()).toEqual({
         error: {
           code: 'DATABASE_UNAVAILABLE',
-          message: 'La base de datos no responde. Intenta más tarde.',
+          message: 'La base de datos no responde. Intente más tarde.',
           details: {},
         },
       });

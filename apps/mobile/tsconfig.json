@@ -1,0 +1,17 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    // "development" resolves @bella-vista/shared to its TypeScript sources (as in the API).
+    "customConditions": ["react-native", "development"],
+    "types": ["jest"]
+  },
+  "include": ["app", "src", "test"]
+}

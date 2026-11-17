@@ -108,7 +108,7 @@ GET {{baseUrl}}/connection-requests?status=requested
 Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
 
 ### Cancel without a reason
-# Expected: 400 VALIDATION_ERROR, details.issues[0]: { path: "body.reason", message: "Escribe el motivo." }
+# Expected: 400 VALIDATION_ERROR, details.issues[0]: { path: "body.reason", message: "Escriba el motivo." }
 POST {{baseUrl}}/connection-requests/{{requestId}}/cancel
 Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
 Content-Type: application/json

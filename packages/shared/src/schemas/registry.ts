@@ -13,9 +13,9 @@ export const CONNECTION_STATUSES = ['active', 'suspended', 'deactivated'] as con
 
 export const searchQuerySchema = z.object({
   q: z
-    .string({ error: 'Escribe qué buscar.' })
+    .string({ error: 'Escriba qué buscar.' })
     .trim()
-    .min(2, { error: 'Escribe al menos 2 caracteres.' })
+    .min(2, { error: 'Escriba al menos 2 caracteres.' })
     .max(100, { error: 'La búsqueda es demasiado larga.' }),
 });
 
@@ -51,8 +51,8 @@ export const searchResponseSchema = z.object({
 // --- People ---------------------------------------------------------------------------------
 
 const personName = {
-  givenNames: requiredText(80, 'Escribe el nombre o los nombres.'),
-  paternalSurname: requiredText(80, 'Escribe el apellido paterno.'),
+  givenNames: requiredText(80, 'Escriba el nombre o los nombres.'),
+  paternalSurname: requiredText(80, 'Escriba el apellido paterno.'),
   maternalSurname: optionalText(80),
 };
 
@@ -119,8 +119,8 @@ export const personResponseSchema = z.object({ person: personDetailSchema });
 // --- Units ----------------------------------------------------------------------------------
 
 export const createUnitRequestSchema = z.object({
-  connectionId: z.int({ error: 'Elige la toma.' }).positive(),
-  holderPersonId: z.int({ error: 'Elige al titular.' }).positive(),
+  connectionId: z.int({ error: 'Elija la toma.' }).positive(),
+  holderPersonId: z.int({ error: 'Elija al titular.' }).positive(),
   reference: optionalText(80),
   registeredOn: z.iso.date().optional(),
   /** First month to bill: the registration month, or the first pending month of the paper
@@ -178,12 +178,12 @@ export const unitResponseSchema = z.object({ unit: unitDetailSchema });
 
 // --- Deactivation and holder change (approved by the president) --------------------------
 
-const reason = requiredText(500, 'Escribe el motivo.');
+const reason = requiredText(500, 'Escriba el motivo.');
 
 export const unitDeactivationRequestSchema = z.object({ reason });
 
 export const unitHolderChangeRequestSchema = z.object({
-  newHolderId: z.int({ error: 'Elige al nuevo titular.' }).positive(),
+  newHolderId: z.int({ error: 'Elija al nuevo titular.' }).positive(),
   reason,
 });
 
@@ -205,11 +205,11 @@ export const createSuspensionRequestSchema = z
     unitId: z.int().positive().optional(),
     periodFrom: periodSchema,
     reason,
-    agreementId: z.int({ error: 'Indica el acuerdo de junta.' }).positive(),
+    agreementId: z.int({ error: 'Indique el acuerdo de junta.' }).positive(),
   })
   .refine((body) => (body.connectionId === undefined) !== (body.unitId === undefined), {
     path: ['connectionId'],
-    error: 'Suspende una toma o una unidad, no ambas ni ninguna.',
+    error: 'Suspenda una toma o una unidad, no ambas ni ninguna.',
   });
 
 export const endSuspensionRequestSchema = z.object({ periodTo: periodSchema });

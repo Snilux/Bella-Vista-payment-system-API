@@ -281,7 +281,7 @@ export async function runDevSeed(db: Database, options: DevSeedOptions): Promise
     const sa = officers.find((o) => o.role === 'superadmin');
     if (!sa?.userAccountId) {
       throw new DevSeedRefusedError(
-        'La base no ha sido arrancada: ejecuta primero pnpm db:seed (D-27).',
+        'La base no ha sido arrancada: ejecute primero pnpm db:seed (D-27).',
       );
     }
     const [anySection] = await tx.select({ id: section.id }).from(section).limit(1);
@@ -323,7 +323,7 @@ export async function runDevSeed(db: Database, options: DevSeedOptions): Promise
       const officer = officers.find((o) => o.role === role);
       if (!officer) {
         throw new DevSeedRefusedError(
-          `Falta la asignación vigente de ${role}; revisa el arranque.`,
+          `Falta la asignación vigente de ${role}; revise el arranque.`,
         );
       }
       if (officer.userAccountId) return { userAccountId: officer.userAccountId, role } as Actor;
@@ -656,7 +656,7 @@ export async function applyDevSuperadminPassword(
       .limit(1);
     if (!sa) {
       throw new DevSeedRefusedError(
-        'La base no ha sido arrancada: ejecuta primero pnpm db:seed (D-27).',
+        'La base no ha sido arrancada: ejecute primero pnpm db:seed (D-27).',
       );
     }
     if (!sa.mustChangePassword && (await verifyPassword(sa.passwordHash, DEV_PASSWORD))) {

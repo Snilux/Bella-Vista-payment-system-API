@@ -55,7 +55,7 @@ describe.skipIf(!testDatabaseUrl)('logs without secrets or personal data', () =>
     expect(res.json()).toEqual({
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Ocurrió un error inesperado. Intenta de nuevo.',
+        message: 'Ocurrió un error inesperado. Intente de nuevo.',
         details: {},
       },
     });

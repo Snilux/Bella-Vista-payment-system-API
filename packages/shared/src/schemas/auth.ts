@@ -19,7 +19,7 @@ export const newPasswordSchema = z
 /** Any password as typed (login, current password); never trimmed. */
 const enteredPassword = z
   .string()
-  .min(1, { error: 'Escribe la contraseña.' })
+  .min(1, { error: 'Escriba la contraseña.' })
   .max(256, { error: 'La contraseña es demasiado larga.' });
 
 const refreshTokenField = z
@@ -32,7 +32,7 @@ export const loginRequestSchema = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .min(1, { error: 'Escribe tu usuario.' })
+    .min(1, { error: 'Escriba su usuario.' })
     .max(64, { error: 'El usuario es demasiado largo.' }),
   password: enteredPassword,
 });

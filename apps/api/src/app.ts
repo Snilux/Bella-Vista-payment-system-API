@@ -1,6 +1,6 @@
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import Fastify, { type FastifyServerOptions } from 'fastify';
+import Fastify, { type FastifyServerOptions, type RouteOptions } from 'fastify';
 import {
   serializerCompiler,
   validatorCompiler,
@@ -58,6 +58,11 @@ export interface BuildAppOptions {
    * (RNF-SEG-07); tests raise it.
    */
   loginRateLimit?: { max: number; timeWindow: number | string };
+  /**
+   * Called for every route as it is registered. Tests use it to compare the registered routes
+   * with docs/api.md (test/unit/routes-contract.test.ts).
+   */
+  onRoute?: (route: RouteOptions) => void;
 }
 
 export const DEFAULT_LOGIN_RATE_LIMIT = { max: 10, timeWindow: '1 minute' };
@@ -78,6 +83,7 @@ export async function buildApp(options: BuildAppOptions) {
     trustProxy: typeof hops === 'number' ? (_address: string, hop: number) => hop < hops : hops,
   }).withTypeProvider<ZodTypeProvider>();
 
+  if (options.onRoute) app.addHook('onRoute', options.onRoute);
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   app.decorate('db', db);

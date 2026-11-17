@@ -33,7 +33,7 @@ export const createRateRequestSchema = z.object({
   amount: amountSchema,
   /** Date of the meeting agreement that approved it. */
   approvedOn: z.iso.date({ error: 'La fecha de aprobación debe tener el formato AAAA-MM-DD.' }),
-  agreementId: z.int({ error: 'Indica el acuerdo de junta.' }).positive(),
+  agreementId: z.int({ error: 'Indique el acuerdo de junta.' }).positive(),
   /** Shown to the president in the approvals inbox. */
   reason: optionalText(500),
 });
@@ -61,8 +61,8 @@ export const feeListResponseSchema = z.object({ fees: z.array(feeSchema) });
 export const feeResponseSchema = z.object({ fee: feeSchema });
 
 export const createFeeRequestSchema = z.object({
-  type: z.enum(FEE_TYPES, { error: 'Indica el tipo de concepto.' }),
-  name: requiredText(100, 'Escribe el nombre del concepto.'),
+  type: z.enum(FEE_TYPES, { error: 'Indique el tipo de concepto.' }),
+  name: requiredText(100, 'Escriba el nombre del concepto.'),
 });
 
 export const createFeeAmountRequestSchema = z.object({

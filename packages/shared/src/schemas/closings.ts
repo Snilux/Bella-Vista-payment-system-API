@@ -60,7 +60,7 @@ export const closingResponseSchema = z.object({ closing: closingSchema });
 
 export const openClosingRequestSchema = z
   .object({
-    type: z.enum(CLOSING_TYPES, { error: 'Indica si el corte es mensual o extraordinario.' }),
+    type: z.enum(CLOSING_TYPES, { error: 'Indique si el corte es mensual o extraordinario.' }),
     /** The custodian's cashbox when omitted (the committee one for the treasurer). */
     cashboxId: z.int().positive().optional(),
     /** Month of a monthly closing (already finished). */
@@ -68,7 +68,7 @@ export const openClosingRequestSchema = z
   })
   .refine((body) => body.type !== 'monthly' || body.period !== undefined, {
     path: ['period'],
-    error: 'Indica el mes del corte.',
+    error: 'Indique el mes del corte.',
   });
 
 export const countClosingRequestSchema = z.object({

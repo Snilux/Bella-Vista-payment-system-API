@@ -66,7 +66,11 @@ describe.skipIf(!testDatabaseUrl)('audit log', () => {
       'presidente',
     );
     expect(one.body.data.map((e: { id: number }) => e.id)).toContain(first.id);
-    const day = first.createdAt.slice(0, 10);
+    // `from` filters by business date (America/Mexico_City), not by the UTC day of createdAt:
+    // between 00:00 and 06:00 UTC they differ.
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(
+      new Date(first.createdAt),
+    );
     expect(
       (await get(`/v1/audit-log?from=2000-01-01&to=2000-01-31`, 'presidente')).body.data,
     ).toEqual([]);

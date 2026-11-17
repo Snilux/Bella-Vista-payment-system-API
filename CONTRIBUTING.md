@@ -3,7 +3,8 @@
 ## Language
 
 - **Code, comments, identifiers, commit messages, `CONTRIBUTING.md` and `CLAUDE.md`: English.**
-- **Business documentation (`docs/`) and every text the end user sees** (API error messages, receipts, formatted dates and amounts): **Spanish (es-MX)**. The committee members read them.
+- **The prose of `docs/` and every text the end user sees** (API error messages, app texts, receipts, formatted dates and amounts): **Spanish (es-MX)**, addressing the user as "usted". The committee members read them.
+- **Contracts** (routes, query parameters, JSON fields, enum values, error codes) use the code's English names everywhere, `docs/api.md` included; `docs/modelo-datos.md` keeps describing the database in Spanish.
 - Domain names in code come from [`docs/glosario.md`](docs/glosario.md) (Spanish → English). When a new term appears, add it there in the same commit.
 
 ## Commits
@@ -51,10 +52,13 @@ First-line rules:
 | Group          | Scopes                                                                                                                                         |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Infrastructure | `api`, `shared`, `db`, `docker`, `deps`, `config`                                                                                              |
+| Mobile app     | `mobile` (configuration, navigation, session, screens), `ui` (design-system components and tokens)                                              |
 | API modules    | `auth`, `accounts`, `organization`, `registry`, `connections`, `rates`, `billing`, `cashboxes`, `committee`, `closings`, `reports`, `approvals`, `audit` |
 
 - Schema changes and migrations use the `db` scope.
 - Pure rules in `packages/shared` use the `shared` scope, unless they clearly belong to a module (e.g. the account statement calculation is `billing`).
+- In `apps/mobile`, the components and tokens of `src/ui` use `ui`; everything else uses `mobile`.
+- In `apps/mobile`, components and tokens of `src/ui` use `ui`; everything else uses `mobile`.
 
 ### Footer
 

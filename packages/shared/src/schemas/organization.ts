@@ -21,7 +21,7 @@ const name = z
 
 const atLeastOneField = (body: Record<string, unknown>) =>
   Object.values(body).some((value) => value !== undefined);
-const nothingToChange = { error: 'Indica al menos un dato que cambiar.' };
+const nothingToChange = { error: 'Indique al menos un dato que cambiar.' };
 
 export const idParamsSchema = z.object({ id: z.coerce.number().int().positive() });
 
@@ -70,7 +70,7 @@ export const blockListQuerySchema = z.object({
 });
 
 export const createBlockRequestSchema = z.object({
-  sectionId: z.int({ error: 'Elige la sección.' }).positive(),
+  sectionId: z.int({ error: 'Elija la sección.' }).positive(),
   code: code('La clave', 'M03'),
   name: name.nullish().transform((value) => value ?? null),
 });
@@ -134,9 +134,9 @@ export const roleAssignmentResponseSchema = z.object({ assignment: roleAssignmen
 export const closeRoleAssignmentRequestSchema = z.object({
   endDate: z.iso.date({ error: 'La fecha de fin debe tener el formato AAAA-MM-DD.' }),
   reason: z
-    .string({ error: 'Escribe el motivo.' })
+    .string({ error: 'Escriba el motivo.' })
     .trim()
-    .min(1, { error: 'Escribe el motivo.' })
+    .min(1, { error: 'Escriba el motivo.' })
     .max(500, { error: 'El motivo no puede tener más de 500 caracteres.' }),
 });
 
@@ -145,18 +145,18 @@ export const closeRoleAssignmentRequestSchema = z.object({
  * closing of the block cashbox is the handover record; the new leader starts on startDate.
  */
 export const leaderSubstitutionRequestSchema = z.object({
-  closingId: z.int({ error: 'Indica el corte extraordinario (acta de entrega).' }).positive(),
-  personId: z.int({ error: 'Elige al nuevo jefe de manzana.' }).positive(),
+  closingId: z.int({ error: 'Indique el corte extraordinario (acta de entrega).' }).positive(),
+  personId: z.int({ error: 'Elija al nuevo jefe de manzana.' }).positive(),
   contactPhone: z
-    .string({ error: 'Escribe el teléfono del nuevo jefe.' })
+    .string({ error: 'Escriba el teléfono del nuevo jefe.' })
     .trim()
-    .min(1, { error: 'Escribe el teléfono del nuevo jefe.' })
+    .min(1, { error: 'Escriba el teléfono del nuevo jefe.' })
     .max(20),
   startDate: z.iso.date({ error: 'La fecha debe tener el formato AAAA-MM-DD.' }),
   reason: z
-    .string({ error: 'Escribe el motivo.' })
+    .string({ error: 'Escriba el motivo.' })
     .trim()
-    .min(1, { error: 'Escribe el motivo.' })
+    .min(1, { error: 'Escriba el motivo.' })
     .max(500, { error: 'El motivo no puede tener más de 500 caracteres.' }),
 });
 

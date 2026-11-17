@@ -32,7 +32,7 @@ export const organizationErrors = {
     new AppError(
       'ROLE_ALREADY_ASSIGNED',
       409,
-      `Ya hay un ${roleLabel} vigente o una solicitud pendiente. Cierra primero la asignación actual.`,
+      `Ya hay un ${roleLabel} vigente o una solicitud pendiente. Cierre primero la asignación actual.`,
     ),
   /** Business rules reported on a field, in the VALIDATION_ERROR format. */
   invalidField: (path: string, message: string) =>

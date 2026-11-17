@@ -68,7 +68,7 @@ GET {{baseUrl}}/approvals?status=pending
 Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
 
 ### The leader cannot resolve it
-# Expected: 403 FORBIDDEN "Tu cargo no tiene permiso para esta operación."
+# Expected: 403 FORBIDDEN "Su cargo no tiene permiso para esta operación."
 POST {{baseUrl}}/approvals/{{approvalId}}/resolve
 Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
 Content-Type: application/json
@@ -76,7 +76,7 @@ Content-Type: application/json
 { "result": "approved" }
 
 ### Reject without a reason
-# Expected: 400 VALIDATION_ERROR, details.issues[0]: { path: "body.reason", message: "Escribe el motivo del rechazo." }
+# Expected: 400 VALIDATION_ERROR, details.issues[0]: { path: "body.reason", message: "Escriba el motivo del rechazo." }
 POST {{baseUrl}}/approvals/{{approvalId}}/resolve
 Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
 Content-Type: application/json

@@ -1,18 +1,21 @@
 # Bella Vista water payment system
 
-Mobile app and API for the Bella Vista community water committee: resident registry, monthly fee collection, cash boxes, expenses and closings. This repository currently holds the **API** and the **shared** package; the app (Expo / React Native) will be added later in `apps/mobile`.
+Mobile app and API for the Bella Vista community water committee: resident registry, monthly fee collection, cash boxes, expenses and closings. This repository holds the **API**, the **mobile app** (Expo / React Native, `apps/mobile`) and the **shared** package.
 
 Read `docs/README.md` first. The business rules in `docs/decisiones.md` override any assumption.
 
 **Before each block, review "3.1 Plan de implementación" in Notion (https://app.notion.com/p/417088c27ae0815b89bcf1c5577b1755); if it differs from `docs/`, Notion wins** and `docs/` is updated in a separate `docs` commit. The block order and status live in `docs/estructura.md` ("Plan de implementación").
+
+For the mobile app, the plan is "3.2 Plan de implementación de la app móvil" in Notion (https://app.notion.com/p/41a088c27ae081e69d52fdb008c5746a): phases M1 to M9, screen routes and acceptance criteria. Where it names packages `@agua/*`, routes or error codes in Spanish, the code's names win (`@bella-vista/*`, `docs/glosario.md`).
 
 The Figma captures are in `docs/diseno/` (not versioned). Use them to compare the look; the structure and the texts come from 2.5 and 2.6 in Notion.
 
 ## Language
 
 - Code, comments, identifiers, commit messages and this file: **English**.
-- `docs/` and every text the end user sees (API error messages, formatted amounts and dates): **Spanish (es-MX)**.
-- `docs/` describes tables, columns, endpoints and error codes in Spanish. Translate them with `docs/glosario.md`; when a term is missing, add it to the glossary in the same commit.
+- **Contracts use the code's English identifiers**: routes, query parameters, JSON fields, enum values and error codes, the same in the code, in `docs/api.md` and in Notion 2.3 and 3.2. `apps/api/test/unit/routes-contract.test.ts` fails if the routes Fastify registers and the endpoint tables of `docs/api.md` differ. Screen routes of the app (`apps/mobile/app`) are in English too.
+- Everything the end user sees (API messages, app texts, formatted amounts and dates) and the prose of `docs/`: **Spanish (es-MX)**, addressing the user as **usted**.
+- The database stays documented in Spanish: `docs/modelo-datos.md` names tables, columns and enums in Spanish. Translate them with `docs/glosario.md`; when a term is missing, add it to the glossary in the same commit.
 
 ## Stack
 
@@ -28,6 +31,7 @@ You normally work **inside the Dev Container** (`api` service of docker-compose)
 | Command | What it does |
 |---|---|
 | `pnpm dev` | API with hot reload at http://localhost:3000 |
+| `pnpm dev:mobile` | Expo (Metro on port 8081) for the mobile app; open it with Expo Go (README) |
 | `pnpm check` | Lint + types + tests. Must pass before every commit |
 | `pnpm db:generate` | Generates a migration from `apps/api/src/db/schema` |
 | `pnpm db:migrate` | Applies pending migrations, then sets agua_api's password from `DATABASE_URL` |
@@ -48,6 +52,12 @@ apps/api/src/
   lib/                 domain-free utilities (money, dates, errors)
   modules/<module>/    one module per domain (see docs/estructura.md)
 apps/api/test/         unit/ and integration/ (integration uses DATABASE_URL_TEST)
+apps/mobile/
+  app/                 Expo Router routes (dev/gallery: component gallery, development only)
+  src/ui/              design-system components (2.4 and Figma), one file each; theme/ holds the tokens
+  src/api/             client.ts (fetch, token refresh, errors), error-messages.ts, query hooks
+  src/session/         tokens (access in memory, refresh in SecureStore); M2 adds the session context
+  test/                Jest (jest-expo): api/ and ui/ (including the 140 % text checks)
 packages/shared/src/   schemas/ (Zod), domain/ (pure rules), format/ (es-MX)
 docs/                  business context, data model, API contract, glossary
 ```
@@ -60,9 +70,8 @@ Workspace package names (use them as dependencies and imports, e.g. in `apps/mob
 |---|---|---|
 | `@bella-vista/shared` | `packages/shared` | Zod schemas, pure domain rules, es-MX formats. Import from the package root: `import { loginRequestSchema, can } from '@bella-vista/shared'`. Exports `src/` under the `development` condition and `dist/` otherwise |
 | `@bella-vista/api` | `apps/api` | The API; nothing imports it |
+| `@bella-vista/mobile` | `apps/mobile` | The Expo app; nothing imports it. Metro and Jest resolve `@bella-vista/shared` to its sources |
 | `bella-vista-payment-system-api` | repository root | Private workspace root (scripts only) |
-
-The mobile app should be named `@bella-vista/mobile` and depend on `"@bella-vista/shared": "workspace:*"`.
 
 ## Coding rules
 
@@ -76,6 +85,7 @@ The mobile app should be named `@bella-vista/mobile` and depend on `"@bella-vist
 - No scheduled jobs, queues or file uploads (D-25, D-26).
 - Errors use the shape `{ error: { code, message, details } }`: `code` in English `UPPER_SNAKE_CASE`, `message` in Spanish (see `docs/api.md` and `docs/glosario.md`).
 - Relative imports with the `.js` extension (NodeNext). No `any` and no `console.log` (use the Fastify logger).
+- Mobile app: screens never call `fetch` (always a hook of `src/api`); no loose colors or sizes (tokens of `src/ui/theme`); every text through `AppText` (Inter, up to 1.4×, never cut); user texts in Spanish with "usted" and "familia" instead of "unidad"; every screen file carries its Figma/2.5 ID (e.g. `// F-02 · Elegir meses`) in a comment at the top.
 - Constraints Drizzle cannot express (CHECK, triggers, partial indexes on expressions, grants) go in hand-written SQL migrations (`pnpm db:generate --custom`).
 
 ## Commits

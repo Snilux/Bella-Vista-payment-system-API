@@ -48,6 +48,9 @@ services:
       DATABASE_URL_TEST: ${DATABASE_URL_TEST:-postgres://${POSTGRES_USER:-agua}:${POSTGRES_PASSWORD:-agua_local}@db:5432/${POSTGRES_DB:-agua}_test}
     ports:
       - "${API_PORT:-3000}:3000"
+      # Metro (Expo, pnpm dev:mobile): the phone loads the app from http://<Windows IP>:8081.
+      # Put REACT_NATIVE_PACKAGER_HOSTNAME=<Windows IP> in .env so the QR code points there.
+      - "8081:8081"
     depends_on:
       db:
         condition: service_healthy
@@ -58,6 +61,7 @@ services:
       - /app/node_modules
       - /app/apps/api/node_modules
       - /app/packages/shared/node_modules
+      - /app/apps/mobile/node_modules
 
 volumes:
   pgdata:

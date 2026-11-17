@@ -224,7 +224,7 @@ describe.skipIf(!testDatabaseUrl)('payments', () => {
         error: {
           code: 'TOTAL_CHANGED',
           message:
-            'El total cambió: ahora es $100.00 (antes $50.00). Revisa el resumen y confirma de nuevo.',
+            'El total cambió: ahora es $100.00 (antes $50.00). Revise el resumen y confirme de nuevo.',
           details: {
             expectedTotal: 5_000,
             total: 10_000,
@@ -299,7 +299,7 @@ describe.skipIf(!testDatabaseUrl)('payments', () => {
     });
     expect(noUnit.body.error.details.issues).toContainEqual({
       path: 'body.unitId',
-      message: 'Elige la unidad a la que corresponden los meses.',
+      message: 'Elija la unidad a la que corresponden los meses.',
     });
     const notBillable = await preview('tesorero', { unitId: example.id, periods: ['2026-05'] });
     expect(notBillable).toMatchObject({

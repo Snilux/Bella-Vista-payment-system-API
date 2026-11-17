@@ -18,3 +18,7 @@ arranque.json
 
 # Figma captures: local reference only; the design lives in Figma
 docs/diseno/
+
+# Expo (apps/mobile): local cache and the type reference the CLI generates
+.expo/
+expo-env.d.ts

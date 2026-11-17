@@ -27,12 +27,12 @@ export type ConnectionRequestStatus = (typeof CONNECTION_REQUEST_STATUSES)[numbe
 // --- Connections ----------------------------------------------------------------------------
 
 export const createPreexistingConnectionRequestSchema = z.object({
-  address: requiredText(200, 'Escribe la dirección de la toma.'),
-  blockId: z.int({ error: 'Elige la manzana.' }).positive(),
+  address: requiredText(200, 'Escriba la dirección de la toma.'),
+  blockId: z.int({ error: 'Elija la manzana.' }).positive(),
   activatedOn: z.iso.date().optional(),
   /** Its first unit (D-18): holder and first pending month of the paper ledger. */
   unit: z.object({
-    holderPersonId: z.int({ error: 'Elige al titular.' }).positive(),
+    holderPersonId: z.int({ error: 'Elija al titular.' }).positive(),
     reference: optionalText(80),
     registeredOn: z.iso.date().optional(),
     billingStartPeriod: periodSchema,
@@ -90,9 +90,9 @@ export const agreementSchema = z.object({
 
 export const createAgreementRequestSchema = z.object({
   meetingDate: z.iso.date({ error: 'La fecha de la junta debe tener el formato AAAA-MM-DD.' }),
-  topic: requiredText(300, 'Escribe el tema del acuerdo.'),
+  topic: requiredText(300, 'Escriba el tema del acuerdo.'),
   result: z.enum(['approved_by_majority', 'rejected'], {
-    error: 'Indica si se aprobó por mayoría o se rechazó.',
+    error: 'Indique si se aprobó por mayoría o se rechazó.',
   }),
   votesFor: votes,
   votesAgainst: votes,
@@ -148,14 +148,14 @@ export const connectionRequestListQuerySchema = paginationQuerySchema.extend({
 });
 
 export const createConnectionRequestRequestSchema = z.object({
-  applicantId: z.int({ error: 'Elige al solicitante.' }).positive(),
-  address: requiredText(200, 'Escribe la dirección solicitada.'),
-  blockId: z.int({ error: 'Elige la manzana.' }).positive(),
+  applicantId: z.int({ error: 'Elija al solicitante.' }).positive(),
+  address: requiredText(200, 'Escriba la dirección solicitada.'),
+  blockId: z.int({ error: 'Elija la manzana.' }).positive(),
   requestedOn: z.iso.date().optional(),
 });
 
 export const resolveConnectionRequestRequestSchema = z.object({
-  agreementId: z.int({ error: 'Indica el acuerdo de junta.' }).positive(),
+  agreementId: z.int({ error: 'Indique el acuerdo de junta.' }).positive(),
   resolutionReason: optionalText(500),
 });
 
@@ -167,7 +167,7 @@ export const activateConnectionRequestRequestSchema = z.object({
 });
 
 export const cancelConnectionRequestRequestSchema = z.object({
-  reason: requiredText(500, 'Escribe el motivo.'),
+  reason: requiredText(500, 'Escriba el motivo.'),
 });
 
 export const connectionRequestPageSchema = page(connectionRequestSchema);

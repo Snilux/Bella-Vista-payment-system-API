@@ -336,7 +336,7 @@ describe.skipIf(!testDatabaseUrl)('connections', () => {
       agreementId: rejectedAgreement,
     });
     expect(noReason.body.error.details.issues).toEqual([
-      { path: 'body.resolutionReason', message: 'Escribe el motivo del rechazo.' },
+      { path: 'body.resolutionReason', message: 'Escriba el motivo del rechazo.' },
     ]);
     const rejected = await call('POST', `/v1/connection-requests/${id}/resolve`, 'secretario', {
       agreementId: rejectedAgreement,

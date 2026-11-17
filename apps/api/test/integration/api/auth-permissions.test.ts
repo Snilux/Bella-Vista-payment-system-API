@@ -302,7 +302,7 @@ describe.skipIf(!testDatabaseUrl)('permissions', () => {
     expect(res.status).toBe(403);
     expect(res.body.error).toMatchObject({
       code: 'FORBIDDEN',
-      message: 'Tu cargo no tiene permiso para esta operación.',
+      message: 'Su cargo no tiene permiso para esta operación.',
     });
   });
 

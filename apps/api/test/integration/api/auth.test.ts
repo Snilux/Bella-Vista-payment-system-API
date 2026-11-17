@@ -141,7 +141,7 @@ describe.skipIf(!testDatabaseUrl)('POST /v1/auth/login', () => {
         body: {
           error: {
             code: 'ACCOUNT_LOCKED',
-            message: 'Tu cuenta está bloqueada temporalmente.',
+            message: 'Su cuenta está bloqueada temporalmente.',
             details: { lockedUntil },
           },
         },
@@ -342,7 +342,7 @@ describe.skipIf(!testDatabaseUrl)('POST /v1/auth/refresh and /logout', () => {
       body: {
         error: {
           code: 'UNAUTHENTICATED',
-          message: 'Tu sesión ya no es válida. Inicia sesión de nuevo.',
+          message: 'Su sesión ya no es válida. Inicie sesión de nuevo.',
           details: {},
         },
       },
@@ -436,7 +436,7 @@ describe.skipIf(!testDatabaseUrl)('login rate limit', () => {
       body: {
         error: {
           code: 'TOO_MANY_REQUESTS',
-          message: 'Demasiadas solicitudes. Espera un momento.',
+          message: 'Demasiadas solicitudes. Espere un momento.',
           details: {},
         },
       },

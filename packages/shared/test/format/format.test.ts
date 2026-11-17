@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatMoney, formatPeriod } from '../../src/format/index.js';
+import { formatMoney, formatPeriod, parseMoney } from '../../src/format/index.js';
 
 describe('formatMoney', () => {
   it.each([
@@ -29,5 +29,48 @@ describe('formatPeriod', () => {
 
   it('rejects an invalid period', () => {
     expect(() => formatPeriod('2026-13')).toThrow(RangeError);
+  });
+});
+
+describe('parseMoney', () => {
+  it.each([
+    ['0', 0],
+    ['50', 5_000],
+    ['1234', 123_400],
+    ['1,234', 123_400],
+    ['1,234.5', 123_450],
+    ['1,234.56', 123_456],
+    ['$1,234.56', 123_456],
+    [' $ 1,234.56 ', 123_456],
+    ['1,000,000.00', 100_000_000],
+    ['.5', 50],
+    ['0.1', 10],
+    ['0.29', 29],
+    ['12.', 1_200],
+  ])('reads %j as %i cents', (text, cents) => {
+    expect(parseMoney(text)).toBe(cents);
+  });
+
+  it.each([
+    [''],
+    ['   '],
+    ['.'],
+    ['$'],
+    ['-50'],
+    ['1.234'],
+    ['12,34'],
+    ['1,2345'],
+    [',123'],
+    ['1.2.3'],
+    ['abc'],
+    ['50 pesos'],
+    ['1e3'],
+    ['99999999999999999999'],
+  ])('rejects %j', (text) => {
+    expect(parseMoney(text)).toBeNull();
+  });
+
+  it('reads back what formatMoney writes', () => {
+    expect(parseMoney(formatMoney(123_456))).toBe(123_456);
   });
 });

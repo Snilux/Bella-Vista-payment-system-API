@@ -142,7 +142,7 @@ describe.skipIf(!testDatabaseUrl)('block leader substitution', () => {
     );
     expect(paid.status).toBe(201);
     expect((await substitute({ closingId: stale.id })).body.error.message).toBe(
-      'La caja tuvo movimientos después del corte; haz un corte extraordinario nuevo.',
+      'La caja tuvo movimientos después del corte; haga un corte extraordinario nuevo.',
     );
   });
 

@@ -44,6 +44,16 @@
   },
   "overrides": [
     {
+      "includes": ["apps/mobile/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noReactNativeRawText": { "level": "error", "options": { "skip": ["AppText"] } }
+          }
+        }
+      }
+    },
+    {
       "includes": [".devcontainer/**", "**/tsconfig*.json", ".vscode/**"],
       "json": {
         "parser": {

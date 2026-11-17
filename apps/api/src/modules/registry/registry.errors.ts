@@ -11,7 +11,7 @@ export const registryErrors = {
     new AppError(
       'HOMONYM_WITHOUT_NOTE',
       422,
-      'Ya existe una persona con ese nombre. Si es otra persona, agrega un distintivo (por ejemplo, la clave de su manzana).',
+      'Ya existe una persona con ese nombre. Si es otra persona, agregue un distintivo (por ejemplo, la clave de su manzana).',
       { matches },
     ),
   duplicateNote: () =>

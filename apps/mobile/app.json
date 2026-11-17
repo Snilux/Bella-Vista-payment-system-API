@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Agua Bella Vista",
+    "slug": "agua-bella-vista",
+    "scheme": "agua-bella-vista",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F8F8F8",
+    "plugins": ["expo-router", "expo-font", "expo-secure-store"],
+    "ios": { "supportsTablet": false },
+    "android": { "softwareKeyboardLayoutMode": "pan" }
+  }
+}

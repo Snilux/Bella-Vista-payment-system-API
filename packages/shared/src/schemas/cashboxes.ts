@@ -78,7 +78,7 @@ export const openingBalanceRequestSchema = z.object({
   amount: amountSchema,
   /** Date the cash was counted when the system started (D-18); today or earlier. */
   date: z.iso.date({ error: 'La fecha debe tener el formato AAAA-MM-DD.' }),
-  reason: requiredText(500, 'Escribe el motivo o la referencia del conteo.'),
+  reason: requiredText(500, 'Escriba el motivo o la referencia del conteo.'),
 });
 
 export const openingBalanceResponseSchema = z.object({ openingBalance: openingBalanceSchema });
@@ -155,11 +155,11 @@ export const createAdjustmentRequestSchema = z
     amount: z
       .int({ error: 'El importe debe ser un número entero de centavos.' })
       .refine((value) => value !== 0, { error: 'El importe no puede ser cero.' }),
-    reason: requiredText(500, 'Escribe el motivo de la aclaración.'),
+    reason: requiredText(500, 'Escriba el motivo de la aclaración.'),
   })
   .refine((body) => (body.handoverId === undefined) !== (body.closingId === undefined), {
     path: ['handoverId'],
-    error: 'Elige la entrega o el corte que se aclara (solo uno).',
+    error: 'Elija la entrega o el corte que se aclara (solo uno).',
   });
 
 export const adjustmentResponseSchema = z.object({ adjustment: adjustmentSchema });
