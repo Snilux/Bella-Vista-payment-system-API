@@ -1,5 +1,6 @@
 import {
   errorResponseSchema,
+  type SessionAccount,
   type SessionResponse,
   sessionResponseSchema,
 } from '@bella-vista/shared';
@@ -31,8 +32,7 @@ export type SessionEndReason =
   | 'expired'
   | 'role-not-active'
   | 'account-disabled'
-  | 'account-locked'
-  | 'password-change-required';
+  | 'account-locked';
 
 /** Codes that end the session when an authenticated request (or the refresh) gets them. */
 const SESSION_ENDING: Partial<Record<ApiErrorCode, SessionEndReason>> = {
@@ -41,8 +41,6 @@ const SESSION_ENDING: Partial<Record<ApiErrorCode, SessionEndReason>> = {
   ROLE_NOT_ACTIVE: 'role-not-active',
   ACCOUNT_DISABLED: 'account-disabled',
   ACCOUNT_LOCKED: 'account-locked',
-  // Until C-02 exists (M2) a temporary password also closes the session.
-  PASSWORD_CHANGE_REQUIRED: 'password-change-required',
 };
 
 export type QueryValue = string | number | boolean | null | undefined;
@@ -70,6 +68,11 @@ export type ApiClientOptions = {
   baseUrl: string;
   tokens: TokenStore;
   onSessionEnded: (reason: SessionEndReason) => void;
+  /**
+   * 403 PASSWORD_CHANGE_REQUIRED: the session stays, but the app only allows C-02 until the
+   * password changes (the account is marked as mustChangePassword).
+   */
+  onPasswordChangeRequired?: () => void;
   fetchFn?: typeof fetch;
   timeoutMs?: number;
 };
@@ -80,11 +83,12 @@ export function createApiClient({
   baseUrl,
   tokens,
   onSessionEnded,
+  onPasswordChangeRequired,
   fetchFn = (input, init) => fetch(input, init),
   timeoutMs = REQUEST_TIMEOUT_MS,
 }: ApiClientOptions) {
   const root = baseUrl.replace(/\/+$/, '');
-  let refreshing: Promise<void> | null = null;
+  let refreshing: Promise<SessionAccount> | null = null;
 
   async function endSession(reason: SessionEndReason) {
     await tokens.clear();
@@ -177,8 +181,11 @@ export function createApiClient({
     return parsed.data as Result<S>;
   }
 
-  /** Rotates the refresh token. Concurrent callers share the same refresh. */
-  function refreshSession(): Promise<void> {
+  /**
+   * Rotates the refresh token and returns the account as the API sees it now. Concurrent
+   * callers share the same refresh.
+   */
+  function refreshSession(): Promise<SessionAccount> {
     refreshing ??= (async () => {
       const refreshToken = await tokens.getRefreshToken();
       if (!refreshToken) {
@@ -196,6 +203,7 @@ export function createApiClient({
           null,
         );
         await tokens.save(session);
+        return session.account;
       } catch (error) {
         // Without connection the session stays: the person can retry when the signal returns.
         const reason = error instanceof ApiError ? refreshFailureReason(error) : null;
@@ -235,6 +243,7 @@ export function createApiClient({
   async function endIfNeeded(error: ApiError): Promise<never> {
     const reason = SESSION_ENDING[error.code];
     if (reason) await endSession(reason);
+    else if (error.code === 'PASSWORD_CHANGE_REQUIRED') onPasswordChangeRequired?.();
     throw error;
   }
 

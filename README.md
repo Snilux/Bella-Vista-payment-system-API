@@ -153,7 +153,9 @@ La app vive en `apps/mobile` y corre dentro del mismo contenedor que la API. Exp
 4. Firewall de Windows: permita Docker Desktop en **redes privadas** y marque su Wi-Fi como red privada.
 5. Instale **Expo Go** en el teléfono, conectado al mismo Wi-Fi que la PC.
 
-**Cada vez:** en una terminal `pnpm dev` (API) y en otra `pnpm dev:mobile`. Escanee el QR con Expo Go (en iOS, con la cámara). La pantalla de inicio dice si la app llega a `/health` de la API; **Ver galería de componentes** abre la galería (solo existe en desarrollo).
+**Cada vez:** en una terminal `pnpm dev` (API) y en otra `pnpm dev:mobile`. Escanee el QR con Expo Go (en iOS, con la cámara). La app abre en **Iniciar sesión** (C-01): entre con cualquiera de las [cuentas de desarrollo](#cuentas-de-desarrollo) y llegará al inicio de su cargo, con solo sus pestañas. Las pantallas de fases posteriores dicen «Próximamente». Al pie de C-01, **Galería de componentes (desarrollo)** abre la galería (solo existe en desarrollo).
+
+La sesión se queda en el teléfono: el token de refresco vive en el almacén seguro, así que al cerrar y volver a abrir Expo Go entra directo. **Más → Perfil → Cerrar sesión** la termina. Para probar la contraseña temporal (C-02), restablezca la del vocal con las dos últimas peticiones de `http/00-sesion.http` y entre con la contraseña que devuelve; en C-02 vuelva a poner `desarrollo-bella-vista`.
 
 - Si el Wi-Fi no lo permite (red pública, aislamiento de clientes): `pnpm dev:mobile --tunnel`, más lento pero funciona en cualquier red.
 - Emulador de Android Studio en Windows: `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000`.

@@ -478,5 +478,9 @@ Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en espa�
 | Mensajes de error (`mensajes-error.ts`) | `src/api/error-messages.ts` |
 | Galería de componentes | `ComponentGallery` (ruta `/dev/gallery`, solo en desarrollo) |
 | Hook de operación de dinero (`useOperacionDinero`) | `useMoneyOperation` (M6) |
-| Menú por cargo (`menu-por-cargo.ts`), permisos de la interfaz (`permisos.ts`) | `src/session/role-menu.ts`, `src/session/permissions.ts` (M2) |
-| motivo del cierre de sesión: vencida, cargo no vigente, cuenta desactivada, cuenta bloqueada, cambio de contraseña obligatorio | `SessionEndReason`: `expired`, `role-not-active`, `account-disabled`, `account-locked`, `password-change-required` |
+| Menú por cargo (`menu-por-cargo.ts`), permisos de la interfaz (`permisos.ts`) | `src/session/role-menu.ts` (`ROLE_MENU`), `src/session/permissions.ts` (`useCan`) |
+| Catálogo de pantallas (ID, ruta, título, hecha) | `src/session/screen-catalog.ts` (`SCREENS`) |
+| Estado de la sesión: restaurando, sin respuesta, sin sesión, con sesión | `sessionStore` (`restoring`, `unreachable`, `signed-out`, `signed-in`), `useSession`, `useAccount` |
+| motivo del cierre de sesión: vencida, cargo no vigente, cuenta desactivada, cuenta bloqueada | `SessionEndReason`: `expired`, `role-not-active`, `account-disabled`, `account-locked` (la contraseña temporal no cierra la sesión: lleva a C-02) |
+| Pestañas del cargo, menú «Más», pantalla «Próximamente» | `RoleTabs`, `MoreMenu`, `ComingSoon` (`src/features/session/`) |
+| Marco de pantalla (con barra inferior fija), grupo de filas de menú | `ScreenLayout`, `MenuGroup` |
