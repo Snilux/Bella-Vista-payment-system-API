@@ -25,6 +25,8 @@ import {
   AppText,
   Button,
   colors,
+  DATE_FORMAT_MESSAGE,
+  DateField,
   Header,
   Notice,
   ScreenLayout,
@@ -109,7 +111,7 @@ export default function AssignRole() {
           field === 'personId'
             ? 'Elija a la persona.'
             : field === 'startDate'
-              ? 'Escriba la fecha como AAAA-MM-DD.'
+              ? DATE_FORMAT_MESSAGE
               : issue.message;
       }
       setErrors(next);
@@ -182,15 +184,13 @@ export default function AssignRole() {
         error={errorOf('contactPhone')}
         maxLength={20}
       />
-      <TextField
+      <DateField
         label="Fecha de inicio"
         required
         value={startDate}
-        onChangeText={setStartDate}
-        example="2026-11-18"
-        help="AAAA-MM-DD. Si es posterior a hoy, el cargo queda programado."
+        onChange={setStartDate}
+        help="Si es posterior a hoy, el cargo queda programado."
         error={errorOf('startDate')}
-        maxLength={10}
       />
       <TextField
         label="Motivo o acuerdo"

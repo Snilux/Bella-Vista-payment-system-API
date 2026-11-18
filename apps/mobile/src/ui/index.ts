@@ -7,6 +7,7 @@ export * from './Checkbox.js';
 export * from './Chip.js';
 export * from './ConfirmSheet.js';
 export * from './DataRow.js';
+export * from './DateField.js';
 export * from './FieldMessage.js';
 export * from './Header.js';
 export * from './Icon.js';

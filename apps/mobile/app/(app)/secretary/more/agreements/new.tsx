@@ -18,6 +18,7 @@ import {
   AppText,
   Button,
   colors,
+  DateField,
   FieldMessage,
   Header,
   Notice,
@@ -95,14 +96,12 @@ export default function NewAgreement() {
       footer={<Button label="Guardar acuerdo" onPress={submit} loading={create.isPending} />}
     >
       <Header title="Registrar acuerdo" onBack={() => router.back()} />
-      <TextField
+      <DateField
         label="Fecha de la junta"
         required
         value={meetingDate}
-        onChangeText={setMeetingDate}
-        help="AAAA-MM-DD."
+        onChange={setMeetingDate}
         error={errorOf('meetingDate')}
-        maxLength={10}
       />
       <TextField
         label="Tema"

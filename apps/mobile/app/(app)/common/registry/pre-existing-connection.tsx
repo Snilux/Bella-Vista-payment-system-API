@@ -30,6 +30,8 @@ import {
   AppText,
   Button,
   colors,
+  DATE_FORMAT_MESSAGE,
+  DateField,
   Header,
   Notice,
   ScreenLayout,
@@ -106,7 +108,7 @@ export default function PreexistingConnection() {
           field === 'billingStartPeriod'
             ? 'Elija el primer mes pendiente.'
             : field === 'activatedOn'
-              ? 'Escriba la fecha como AAAA-MM-DD.'
+              ? DATE_FORMAT_MESSAGE
               : issue.message;
       }
       setErrors(next);
@@ -155,14 +157,12 @@ export default function PreexistingConnection() {
         error={errorOf('reference')}
         maxLength={80}
       />
-      <TextField
+      <DateField
         label="Fecha de activación"
         value={activatedOn}
-        onChangeText={setActivatedOn}
-        example="2019-01-15"
-        help="AAAA-MM-DD. Opcional: si no la sabe, déjela vacía."
+        onChange={setActivatedOn}
+        help="Opcional: si no la sabe, déjela vacía."
         error={errorOf('activatedOn')}
-        maxLength={10}
       />
       <Select
         label="Primer mes pendiente según la libreta"

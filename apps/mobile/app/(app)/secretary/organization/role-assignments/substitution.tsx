@@ -24,7 +24,9 @@ import {
   AppText,
   Button,
   colors,
+  DATE_FORMAT_MESSAGE,
   DataRow,
+  DateField,
   Header,
   Notice,
   ScreenLayout,
@@ -117,7 +119,7 @@ export default function SubstituteLeader() {
       const next: Partial<Record<Field, string>> = {};
       for (const issue of parsed.error.issues) {
         const field = String(issue.path[0]) as Field;
-        next[field] ??= field === 'startDate' ? 'Escriba la fecha como AAAA-MM-DD.' : issue.message;
+        next[field] ??= field === 'startDate' ? DATE_FORMAT_MESSAGE : issue.message;
       }
       setErrors(next);
       return;
@@ -223,15 +225,13 @@ export default function SubstituteLeader() {
             error={errorOf('contactPhone')}
             maxLength={20}
           />
-          <TextField
+          <DateField
             label="Fecha de inicio"
             required
             value={startDate}
-            onChangeText={setStartDate}
-            example="2026-11-18"
-            help="AAAA-MM-DD. No antes del acta de entrega ni después de hoy."
+            onChange={setStartDate}
+            help="No antes del acta de entrega ni después de hoy."
             error={errorOf('startDate')}
-            maxLength={10}
           />
           <TextField
             label="Motivo"
