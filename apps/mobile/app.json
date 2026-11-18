@@ -7,8 +7,12 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "backgroundColor": "#F8F8F8",
-    "plugins": ["expo-router", "expo-font", "expo-secure-store"],
-    "ios": { "supportsTablet": false },
-    "android": { "softwareKeyboardLayoutMode": "pan" }
+    "plugins": ["expo-router", "expo-font", "expo-secure-store", "expo-sharing"],
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "softwareKeyboardLayoutMode": "pan"
+    }
   }
 }
