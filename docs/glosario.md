@@ -477,7 +477,7 @@ Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en espa�
 | Lista paginada (`ListaPaginada`) | `PaginatedList` |
 | Mensajes de error (`mensajes-error.ts`) | `src/api/error-messages.ts` |
 | Galería de componentes | `ComponentGallery` (ruta `/dev/gallery`, solo en desarrollo) |
-| Hook de operación de dinero (`useOperacionDinero`) | `useMoneyOperation` (M6) |
+| Hook de operación de dinero (`useOperacionDinero`): intento sin respuesta, almacén del intento | `useMoneyOperation` (desde M4), `MoneyAttempt`, `MoneyAttemptStore` (`attemptStore`, `onFailure`) |
 | Menú por cargo (`menu-por-cargo.ts`), permisos de la interfaz (`permisos.ts`) | `src/session/role-menu.ts` (`ROLE_MENU`), `src/session/permissions.ts` (`useCan`) |
 | Catálogo de pantallas (ID, ruta, título, hecha) | `src/session/screen-catalog.ts` (`SCREENS`) |
 | Estado de la sesión: restaurando, sin respuesta, sin sesión, con sesión | `sessionStore` (`restoring`, `unreachable`, `signed-out`, `signed-in`), `useSession`, `useAccount` |
@@ -491,3 +491,17 @@ Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en espa�
 | Usuario propuesto («nombre.apellido») | `suggestUsername` |
 | Bitácora técnica: páginas, texto de cada acción | `useAuditLogPages` (`src/api/useAuditLog.ts`), `auditEntryView` |
 | Fecha y fecha con hora en es-MX («25 oct 2026», «25 oct 2026, 10:42») | `formatDate`, `formatDateTime` (`@bella-vista/shared`) |
+| Tarjeta de resumen (cálida o blanca), con encabezado de importe y total | `SummaryCard` (`tone`: `warm`, `plain`; `heading`, `total`) |
+| Campo de fecha (AAAA-MM-DD) | `DateField` (`isCalendarDate`, `dateError`) |
+| Salir con cambios («¿Salir sin enviar?»), salir después de guardar | `useDiscardGuard` (`leave`), `DiscardChangesSheet` (`src/features/forms/`) |
+| Confirmación con motivo (rechazar, cancelar solicitud) | `ReasonSheet` (`src/features/forms/`; la de cuentas vive en `src/features/accounts/`), `RejectSheet` |
+| Buscador de persona | `PersonPicker` (`src/features/people/`) |
+| Organización: secciones, manzanas y jefes pendientes; cargos y jefes | `organizationView`, `blockView`, `assignmentGroups` (`src/features/organization/`) |
+| Autorizaciones: tipo en palabras, efecto de autorizar, registro de la autorización | `APPROVAL_TYPE_TEXTS`, `ApprovalSubjectDetail` (`src/features/approvals/`) |
+| Solicitud con motivo (G-11): tipos que la usan | `REQUEST_TYPES`, `REQUEST_CONFIGS` |
+| Padrón de la manzana y sus filtros: todos, con atraso, con recargo, suspendidas | `RegistryRoster`, `rosterRows`, `filterRoster` (`all`, `debt`, `surcharge`, `suspended`) (`src/features/registry/`) |
+| Estimación del adeudo de una familia que ya existía (P-03) | `estimateDebt` |
+| Flujo de cobro (familia, meses, conceptos, folio, intento sin respuesta) | `PaymentFlowProvider`, `usePaymentFlow` (`src/features/billing/PaymentFlow.tsx`) |
+| Meses del pago en palabras («Junio y julio 2026») | `monthsSummary` (`src/features/billing/billing-view.ts`) |
+| Selección cronológica de meses: meses que se ofrecen, marcar o desmarcar, adelantar, total | `selectableMonths`, `toggleMonth`, `canAdvance`, `selectionTotal` (`@bella-vista/shared`, `domain/month-selection.ts`) |
+| Cliente HTTP de la app para otros paquetes (pruebas de la API) | `@bella-vista/mobile/api-client` (`src/api/api-client.ts`) |
