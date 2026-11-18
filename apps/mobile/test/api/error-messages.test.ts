@@ -1,5 +1,10 @@
 import { ERROR_CODES } from '@bella-vista/shared';
-import { describeError, ERROR_MESSAGES, fieldErrors } from '../../src/api/error-messages.js';
+import {
+  describeError,
+  ERROR_MESSAGES,
+  fieldErrors,
+  SUBSTITUTION_MESSAGES,
+} from '../../src/api/error-messages.js';
 import { ApiError, CLIENT_ERROR_CODES } from '../../src/api/errors.js';
 
 // Mensajes de error (3.2 §11.3): every code the API can return has a Spanish message.
@@ -89,5 +94,39 @@ describe('fieldErrors', () => {
 
   it('is empty for other errors', () => {
     expect(fieldErrors(new ApiError('FORBIDDEN', 403, ''))).toEqual({});
+  });
+});
+
+describe('leader substitution (S-07, D-08)', () => {
+  const refusal = (status: string) =>
+    describeError(
+      new ApiError('INVALID_STATE', 409, 'Mensaje de la API', {
+        status,
+        action: 'substitute_leader',
+      }),
+    ).message;
+
+  it.each([
+    ['monthly', SUBSTITUTION_MESSAGES.noClosing],
+    ['extraordinary', SUBSTITUTION_MESSAGES.noClosing],
+    ['draft', SUBSTITUTION_MESSAGES.notCounted],
+    ['stale_closing', SUBSTITUTION_MESSAGES.staleClosing],
+    ['no_leader', SUBSTITUTION_MESSAGES.noLeader],
+  ])('INVALID_STATE with status %s says what is missing', (status, message) => {
+    expect(refusal(status)).toBe(message);
+  });
+
+  it('asks for the extraordinary closing in the words of the committee', () => {
+    expect(SUBSTITUTION_MESSAGES.noClosing).toMatch(
+      /^Antes de sustituir al jefe, el tesorero debe hacer el corte extraordinario de la caja de esta manzana/,
+    );
+  });
+
+  it('keeps the generic text for other operations', () => {
+    expect(
+      describeError(
+        new ApiError('INVALID_STATE', 409, '', { status: 'draft', action: 'close_closing' }),
+      ).message,
+    ).toBe('Esto ya cambió. Se actualizó la pantalla.');
   });
 });
