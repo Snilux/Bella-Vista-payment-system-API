@@ -2,7 +2,9 @@
 import { formatDateTime, formatMoney, formatPeriod } from '@bella-vista/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAccountStatement, useUnit } from '../../../../src/api/useBilling.js';
+import { useUnitCharges } from '../../../../src/api/useExtraCharges.js';
 import { monthTag } from '../../../../src/features/billing/billing-view.js';
+import { ExtraChargesSection } from '../../../../src/features/billing/ExtraCharges.js';
 import { openMonths } from '../../../../src/features/billing/FamilySearch.js';
 import { useCan } from '../../../../src/session/permissions.js';
 import {
@@ -22,7 +24,8 @@ import {
 
 // A family and what it owes (Figma G-04; 3.2 §10.2; D-01, D-02, D-06, D-11). The months, their
 // status and surcharge come from the API's account statement. "Cobrar" opens F-02 directly (F-01
-// is skipped). A suspended or deactivated family says so and offers no "Cobrar". "Solicitar
+// is skipped). A suspended or deactivated family says so and offers "Cobrar" only for its
+// pending extra charges (M7, D-28), which the treasurer adds and cancels here. "Solicitar
 // baja" and "Cambiar titular" open G-11, unless a request is already waiting for the president.
 
 export default function FamilyFile() {
@@ -32,6 +35,7 @@ export default function FamilyFile() {
   const statement = useAccountStatement(unitId);
   const canCollect = useCan('billing.collect');
   const canRequest = useCan('unitChanges.request');
+  const charges = useUnitCharges(unitId);
 
   const status = unit.isError
     ? screenStatusOf(unit)
@@ -110,7 +114,7 @@ export default function FamilyFile() {
         ) : null}
       </SummaryCard>
 
-      {canCollect && active ? (
+      {canCollect && (active || (charges.data?.length ?? 0) > 0) ? (
         <Button label="Cobrar" onPress={() => openMonths(family.id)} />
       ) : null}
 
@@ -144,6 +148,12 @@ export default function FamilyFile() {
           })}
         </MenuGroup>
       )}
+
+      <ExtraChargesSection
+        unitId={family.id}
+        connectionId={family.connection.id}
+        canCharge={family.status !== 'deactivated'}
+      />
 
       {family.payments.length > 0 ? (
         <>

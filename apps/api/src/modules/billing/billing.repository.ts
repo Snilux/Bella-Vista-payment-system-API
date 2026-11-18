@@ -404,3 +404,133 @@ export async function insertCharge(tx: Transaction, values: typeof extraCharge.$
   if (!row) throw new Error('extra charge not inserted');
   return row.id;
 }
+
+// --- Extra charges created by the treasurer (D-28) ------------------------------------------
+
+/** The valid (not cancelled) payment that settled a charge, if any. */
+const settledBy = sql<number | null>`(
+  SELECT pc.payment_id FROM payment_charge pc
+  JOIN v_payment_amount pa ON pa.id = pc.payment_id
+  WHERE pc.extra_charge_id = ${extraCharge.id} AND NOT pa.cancelled
+  LIMIT 1)`.mapWith((value) => (value === null ? null : Number(value)));
+
+function extraChargeQuery(db: Executor) {
+  return db
+    .select({
+      id: extraCharge.id,
+      feeId: fee.id,
+      feeType: fee.type,
+      feeName: fee.name,
+      amount: chargeAmount,
+      chargedOn: extraCharge.chargedOn,
+      unitId: extraCharge.unitId,
+      connectionId: extraCharge.connectionId,
+      connectionRequestId: extraCharge.connectionRequestId,
+      cancelledOn: extraCharge.cancelledOn,
+      cancellationReason: extraCharge.cancellationReason,
+      paymentId: settledBy,
+    })
+    .from(extraCharge)
+    .innerJoin(fee, eq(fee.id, extraCharge.feeId));
+}
+
+export type ExtraChargeRow = NonNullable<Awaited<ReturnType<typeof findExtraCharge>>>;
+
+export async function findExtraCharge(db: Executor, id: number) {
+  const [row] = await extraChargeQuery(db).where(eq(extraCharge.id, id)).limit(1);
+  return row ?? null;
+}
+
+/**
+ * The charges a unit can pay (the same rule as a payment): its own and its connection's, never
+ * an opening (it belongs to a request). `pending` leaves out the cancelled and the paid ones.
+ */
+export async function extraChargesOfUnit(
+  db: Executor,
+  target: { unitId: number; connectionId: number },
+  status: 'pending' | 'all',
+) {
+  const rows = await extraChargeQuery(db)
+    .where(
+      and(
+        or(
+          eq(extraCharge.unitId, target.unitId),
+          eq(extraCharge.connectionId, target.connectionId),
+        ),
+        ...(status === 'pending' ? [sql`${extraCharge.cancelledOn} IS NULL`] : []),
+      ),
+    )
+    .orderBy(asc(extraCharge.chargedOn), asc(extraCharge.id));
+  return status === 'pending' ? rows.filter((row) => row.paymentId === null) : rows;
+}
+
+/** A unit or a connection to charge: its block and whether it is deactivated. */
+export async function chargeTarget(
+  db: Executor,
+  target: { unitId?: number | undefined; connectionId?: number | undefined },
+) {
+  if (target.unitId !== undefined) {
+    const [row] = await db
+      .select({
+        status: vUnit.status,
+        connectionId: vUnit.connectionId,
+        blockId: vConnection.blockId,
+      })
+      .from(vUnit)
+      .innerJoin(vConnection, eq(vConnection.id, vUnit.connectionId))
+      .where(eq(vUnit.id, target.unitId))
+      .limit(1);
+    return row ?? null;
+  }
+  const [row] = await db
+    .select({
+      status: vConnection.status,
+      connectionId: vConnection.id,
+      blockId: vConnection.blockId,
+    })
+    .from(vConnection)
+    .where(eq(vConnection.id, target.connectionId ?? 0))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function feeWithAmountOn(db: Executor, feeId: number, on: string) {
+  const [row] = await db
+    .select({
+      id: fee.id,
+      type: fee.type,
+      name: fee.name,
+      amount: sql<number | null>`(
+        SELECT fa.amount FROM fee_amount fa
+        WHERE fa.fee_id = ${fee.id} AND fa.effective_from <= ${on}::date
+        ORDER BY fa.effective_from DESC LIMIT 1)`.mapWith((value) =>
+        value === null ? null : Number(value),
+      ),
+    })
+    .from(fee)
+    .where(eq(fee.id, feeId))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function insertExtraCharge(
+  tx: Transaction,
+  values: {
+    feeId: number;
+    unitId: number | null;
+    connectionId: number | null;
+    chargedOn: string;
+    createdBy: number;
+  },
+) {
+  const [row] = await tx.insert(extraCharge).values(values).returning({ id: extraCharge.id });
+  if (!row) throw new Error('extra charge not inserted');
+  return row.id;
+}
+
+export async function cancelExtraCharge(tx: Transaction, id: number, on: string, reason: string) {
+  await tx
+    .update(extraCharge)
+    .set({ cancelledOn: on, cancellationReason: reason })
+    .where(eq(extraCharge.id, id));
+}

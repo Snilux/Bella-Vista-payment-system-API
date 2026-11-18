@@ -1,6 +1,10 @@
 import {
   type AccountStatementResponse,
+  type CreateExtraChargeRequest,
   type CreatePaymentRequest,
+  EXTRA_CHARGE_FEE_TYPES,
+  type ExtraCharge,
+  type ExtraChargeListQuery,
   formatMoney,
   type PaidCharge,
   type Payment,
@@ -22,6 +26,7 @@ import {
   idempotentTransaction,
 } from '../../db/idempotency.js';
 import { lockRecord } from '../../db/locks.js';
+import { businessDate } from '../../lib/dates.js';
 import { AppError, errors } from '../../lib/errors.js';
 import { dateToPeriod, periodToDate } from '../../lib/periods.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
@@ -257,7 +262,154 @@ export function createBillingService(deps: BillingServiceDeps) {
     return row;
   }
 
+  const today = () => businessDate(deps.now(), deps.timeZone);
+
+  /** A unit the viewer may see (a block leader only in their block). */
+  async function visibleUnit(viewer: AuthenticatedAccount, unitId: number) {
+    const target = await repo.chargeTarget(db, { unitId });
+    if (!target) throw new AppError('NOT_FOUND', 404, 'No existe esa unidad.');
+    assertInScope(viewer, target.blockId);
+    return target;
+  }
+
   return {
+    /** The extra charges a unit can pay: its own and its connection's (F-02, G-04). */
+    async listExtraCharges(
+      viewer: AuthenticatedAccount,
+      unitId: number,
+      query: ExtraChargeListQuery,
+    ) {
+      const target = await visibleUnit(viewer, unitId);
+      const rows = await repo.extraChargesOfUnit(
+        db,
+        { unitId, connectionId: target.connectionId },
+        query.status,
+      );
+      return { charges: rows.map(toExtraCharge) };
+    },
+
+    /**
+     * D-28: the treasurer charges a connection or a unit a fee other than the opening, with the
+     * amount in force on its date (D-13). A deactivated target is not charged; a suspended one
+     * is (reconnection exists for that).
+     */
+    async createExtraCharge(actor: Actor, input: CreateExtraChargeRequest) {
+      const on = input.chargedOn ?? today();
+      if (on > today()) {
+        throw errors.validation({
+          issues: [
+            { path: 'body.chargedOn', message: 'La fecha del cargo no puede ser posterior a hoy.' },
+          ],
+        });
+      }
+      return db.transaction(async (tx) => {
+        const chosen = await repo.feeWithAmountOn(tx, input.feeId, on);
+        if (!chosen) throw new AppError('NOT_FOUND', 404, 'No existe ese concepto.');
+        if (!(EXTRA_CHARGE_FEE_TYPES as readonly string[]).includes(chosen.type)) {
+          throw errors.validation({
+            issues: [
+              {
+                path: 'body.feeId',
+                message:
+                  'La apertura se cobra con su solicitud de toma, no como cargo extraordinario.',
+              },
+            ],
+          });
+        }
+        if (chosen.amount === null) {
+          throw new AppError(
+            'FEE_WITHOUT_AMOUNT',
+            422,
+            `${chosen.name} no tiene importe vigente al ${on}. El tesorero debe registrarlo primero.`,
+            { feeId: chosen.id, date: on },
+          );
+        }
+        const target = await repo.chargeTarget(tx, input);
+        if (!target) {
+          throw new AppError(
+            'NOT_FOUND',
+            404,
+            input.unitId !== undefined ? 'No existe esa unidad.' : 'No existe esa toma.',
+          );
+        }
+        if (target.status === 'deactivated') {
+          throw errors.invalidState(
+            input.unitId !== undefined
+              ? 'La unidad está dada de baja.'
+              : 'La toma está dada de baja.',
+            target.status,
+            'charge',
+          );
+        }
+        await lockRecord(
+          tx,
+          input.unitId !== undefined ? 'unit' : 'connection',
+          input.unitId ?? input.connectionId ?? 0,
+        );
+        const id = await repo.insertExtraCharge(tx, {
+          feeId: chosen.id,
+          unitId: input.unitId ?? null,
+          connectionId: input.connectionId ?? null,
+          chargedOn: on,
+          createdBy: actor.userAccountId,
+        });
+        await writeAudit(tx, actor, {
+          action: 'create',
+          table: 'extra_charge',
+          recordId: id,
+          after: {
+            feeId: chosen.id,
+            unitId: input.unitId ?? null,
+            connectionId: input.connectionId ?? null,
+            chargedOn: on,
+            amount: chosen.amount,
+          },
+        });
+        const row = await repo.findExtraCharge(tx, id);
+        if (!row) throw errors.internal();
+        return { charge: toExtraCharge(row) };
+      });
+    },
+
+    /** D-28: the treasurer cancels an unpaid charge with its reason; nothing is deleted. */
+    async cancelExtraCharge(actor: Actor, id: number, reason: string) {
+      return db.transaction(async (tx) => {
+        await lockRecord(tx, 'extra_charge', id);
+        const current = await repo.findExtraCharge(tx, id);
+        if (!current) throw new AppError('NOT_FOUND', 404, 'No existe ese cargo.');
+        if (current.connectionRequestId !== null) {
+          throw errors.invalidState(
+            'La apertura se cancela con su solicitud de toma.',
+            'opening',
+            'cancel_charge',
+          );
+        }
+        if (current.cancelledOn !== null) {
+          throw errors.invalidState('El cargo ya está cancelado.', 'cancelled', 'cancel_charge');
+        }
+        if (current.paymentId !== null) {
+          throw errors.invalidState(
+            'El cargo ya está pagado; se corrige cancelando el pago.',
+            'paid',
+            'cancel_charge',
+          );
+        }
+        const on = today();
+        await repo.cancelExtraCharge(tx, id, on, reason);
+        await writeAudit(tx, actor, {
+          action: 'cancel',
+          table: 'extra_charge',
+          recordId: id,
+          before: { cancelledOn: null },
+          after: { cancelledOn: on },
+          reason,
+        });
+        const row = await repo.findExtraCharge(tx, id);
+        if (!row) throw errors.internal();
+        return { charge: toExtraCharge(row) };
+      });
+    },
+
     async getStatement(
       viewer: AuthenticatedAccount,
       unitId: number,
@@ -520,6 +672,22 @@ export function createBillingService(deps: BillingServiceDeps) {
 }
 
 export type BillingService = ReturnType<typeof createBillingService>;
+
+function toExtraCharge(row: repo.ExtraChargeRow): ExtraCharge {
+  return {
+    id: row.id,
+    fee: { id: row.feeId, type: row.feeType, name: row.feeName },
+    amount: row.amount,
+    chargedOn: row.chargedOn,
+    target: row.unitId !== null ? 'unit' : 'connection',
+    unitId: row.unitId,
+    connectionId: row.connectionId,
+    status: row.cancelledOn !== null ? 'cancelled' : row.paymentId !== null ? 'paid' : 'pending',
+    paymentId: row.paymentId,
+    cancelledOn: row.cancelledOn,
+    cancellationReason: row.cancellationReason,
+  };
+}
 
 /**
  * payment_cancellation (D-15): approving it frees the payment's months (deletes its

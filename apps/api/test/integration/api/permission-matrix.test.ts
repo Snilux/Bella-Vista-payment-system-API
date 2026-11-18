@@ -78,6 +78,7 @@ const MATRIX: Record<string, R[]> = {
   'POST /v1/units': [JM, SEC],
   'GET /v1/units/:id': COMMITTEE_AND_JM,
   'GET /v1/units/:id/account-statement': COMMITTEE_AND_JM,
+  'GET /v1/units/:id/extra-charges': COMMITTEE_AND_JM,
   'POST /v1/units/:id/request-deactivation': [JM, SEC],
   'POST /v1/units/:id/request-holder-change': [JM, SEC],
   'GET /v1/suspensions': COMMITTEE,
@@ -104,6 +105,9 @@ const MATRIX: Record<string, R[]> = {
   'GET /v1/payments/:id': COMMITTEE_AND_JM,
   'POST /v1/payments/:id/replacements': [JM, TES],
   'POST /v1/payments/:id/request-cancellation': [JM, TES],
+  // Extra charges (D-28): only the treasurer creates and cancels them
+  'POST /v1/extra-charges': [TES],
+  'POST /v1/extra-charges/:id/cancel': [TES],
   // 2.6 Cajas (SEC and VOC do not hold cash: /cashboxes/mine answers FORBIDDEN from the service)
   'GET /v1/cashboxes/mine': [JM, TES, PRE],
   'GET /v1/cashboxes': COMMITTEE,
@@ -358,6 +362,7 @@ describe.skipIf(!testDatabaseUrl)('permission matrix and block isolation', () =>
     it('rejects direct reads of records of another block', async () => {
       await outOfScope('GET', `/v1/units/${other.unitId}`);
       await outOfScope('GET', `/v1/units/${other.unitId}/account-statement`);
+      await outOfScope('GET', `/v1/units/${other.unitId}/extra-charges`);
       await outOfScope('GET', `/v1/connections/${other.connectionId}`);
       await outOfScope('GET', `/v1/connection-requests/${other.requestId}`);
       await outOfScope('GET', `/v1/payments/${other.paymentIds[0]}`);

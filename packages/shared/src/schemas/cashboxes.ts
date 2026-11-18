@@ -42,7 +42,14 @@ export const myCashboxSchema = z.object({
 export const myCashboxResponseSchema = z.object({ cashbox: myCashboxSchema });
 
 export const cashboxListResponseSchema = z.object({
-  cashboxes: z.array(cashboxRefSchema.extend({ id: z.int(), balance: z.int() })),
+  cashboxes: z.array(
+    cashboxRefSchema.extend({
+      id: z.int(),
+      balance: z.int(),
+      /** Its opening balance (T-12): approved, else pending, else the latest rejected; null if never captured. */
+      openingBalance: openingBalanceSchema.nullable(),
+    }),
+  ),
 });
 
 export const CASHBOX_MOVEMENT_KINDS = [
@@ -65,6 +72,13 @@ export const cashboxMovementSchema = z.object({
   /** Table and id of the record behind the movement. */
   tableName: z.string(),
   recordId: z.int(),
+  /** Folio of that record (PG, EN, IN, GA; for an adjustment, its handover or closing). */
+  folio: z.string().nullable(),
+  /**
+   * Short description: the family of a payment or cancellation, the source cashbox of a
+   * handover, the concept of an income, the description of an expense or refund.
+   */
+  detail: z.string().nullable(),
 });
 
 export const cashboxMovementQuerySchema = paginationQuerySchema.extend({
@@ -109,7 +123,8 @@ export const handoverSchema = z.object({
   adjustedAmount: z.int().nullable(),
   notes: z.string().nullable(),
   status: z.enum(HANDOVER_STATUSES),
-  preparedBy: accountRef,
+  /** fullName: the person of the account (T-02 "S1-M03 · María López"). */
+  preparedBy: accountRef.extend({ fullName: z.string() }),
   withdrawnAt: z.iso.datetime().nullable(),
   confirmedAt: z.iso.datetime().nullable(),
   confirmedBy: accountRef.nullable(),
@@ -167,7 +182,9 @@ export const adjustmentResponseSchema = z.object({ adjustment: adjustmentSchema 
 export type MyCashbox = z.infer<typeof myCashboxSchema>;
 export type OpeningBalance = z.infer<typeof openingBalanceSchema>;
 export type OpeningBalanceRequest = z.infer<typeof openingBalanceRequestSchema>;
+export type CashboxMovement = z.infer<typeof cashboxMovementSchema>;
 export type CashboxMovementQuery = z.infer<typeof cashboxMovementQuerySchema>;
+export type CashboxListItem = z.infer<typeof cashboxListResponseSchema>['cashboxes'][number];
 export type Handover = z.infer<typeof handoverSchema>;
 export type HandoverListQuery = z.infer<typeof handoverListQuerySchema>;
 export type PrepareHandoverRequest = z.infer<typeof prepareHandoverRequestSchema>;

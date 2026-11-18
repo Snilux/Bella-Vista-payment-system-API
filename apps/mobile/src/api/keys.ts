@@ -50,9 +50,27 @@ export const queryKeys = {
   /** G-05, G-10 and the payment flow (F-03 preview). */
   payments: ['payments'] as const,
   payment: (id: number) => ['payments', id] as const,
-  /** J-01 (Mi caja in M7). */
+  /** J-01, J-02, T-01, T-04 and R-06: the custodian's cashbox. */
   myCashbox: ['cashboxes', 'mine'] as const,
+  /** Every cashbox key (T-12 list, G-09 movements): invalidated by any cash movement. */
+  cashboxes: ['cashboxes'] as const,
+  cashboxList: ['cashboxes', 'list'] as const,
+  movements: (cashboxId: number, month: string) =>
+    ['cashboxes', cashboxId, 'movements', month] as const,
+  /** J-04, T-02, T-03 and R-03: handovers (list by filter, and one). */
   handovers: ['handovers'] as const,
+  handover: (id: number) => ['handovers', 'detail', id] as const,
+  /** F-02 and G-04: the extra charges of a family ('pending' or 'all'). */
+  unitCharges: (unitId: number, status: 'pending' | 'all') =>
+    ['units', unitId, 'extra-charges', status] as const,
+  /** T-04, T-06 and T-07: expenses (list by status, and one), categories and incomes. */
+  expenses: ['expenses'] as const,
+  expense: (id: number) => ['expenses', 'detail', id] as const,
+  expenseCategories: ['expense-categories'] as const,
+  incomes: ['incomes'] as const,
+  /** T-08 and T-09: the plumbers and one with its salaries and payments. */
+  plumbers: ['plumbers'] as const,
+  plumber: (id: number) => ['plumbers', id] as const,
   /** R-03: one approval with its subject. */
   approval: (id: number) => ['approvals', 'detail', id] as const,
 };

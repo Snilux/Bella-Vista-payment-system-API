@@ -178,7 +178,11 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
         adjustedAmount: row.adjustedAmount,
         notes: row.notes,
         status: row.status,
-        preparedBy: { userAccountId: row.preparedById, username: row.preparedByUsername },
+        preparedBy: {
+          userAccountId: row.preparedById,
+          username: row.preparedByUsername,
+          fullName: row.preparedByName,
+        },
         withdrawnAt: row.withdrawnAt?.toISOString() ?? null,
         confirmedAt: row.confirmedAt?.toISOString() ?? null,
         confirmedBy:
@@ -199,14 +203,17 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
 
   /**
    * A handover the viewer may see: block leaders and the president (support) only the ones of
-   * their own cashbox; the treasurer and members all of them.
+   * their own cashbox; the treasurer and members all of them. The president also sees a handover
+   * with an adjustment request, which they resolve from R-03.
    */
   async function visibleHandover(exec: Executor, viewer: AuthenticatedAccount, id: number) {
     const row = await repo.findHandover(exec, id);
     if (!row) throw cashboxErrors.handoverNotFound();
     if (viewer.role === 'block_leader' || viewer.role === 'president') {
       const own = await custodianCashbox(exec, viewer, null);
-      if (own.id !== row.cashboxId) {
+      const resolves =
+        viewer.role === 'president' && (await repo.hasAdjustment(exec, { handoverId: id }));
+      if (own.id !== row.cashboxId && !resolves) {
         throw viewer.role === 'block_leader'
           ? errors.outOfScope()
           : cashboxErrors.handoverNotFound();
@@ -224,7 +231,10 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
     return box;
   }
 
-  /** A handover with a difference and no pending adjustment (RF-CAJ-06). */
+  /**
+   * A handover with a difference and no pending adjustment (RF-CAJ-06). Once one is approved the
+   * handover is adjusted, so it has a single adjustment; a rejected one leaves it open.
+   */
   async function handoverOrigin(tx: Transaction, handoverId: number) {
     if (!(await repo.lockHandover(tx, handoverId))) throw cashboxErrors.handoverNotFound();
     const row = await repo.findHandover(tx, handoverId);
@@ -245,7 +255,7 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
         'propose_adjustment',
       );
     }
-    return { cashboxId: row.cashboxId };
+    return { cashboxId: row.cashboxId, difference: row.difference ?? 0 };
   }
 
   /**
@@ -317,7 +327,13 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
     },
 
     async list() {
-      return { cashboxes: await repo.listCashboxes(db) };
+      const rows = await repo.listCashboxes(db);
+      return {
+        cashboxes: rows.map(({ opening, ...row }) => ({
+          ...row,
+          openingBalance: opening && toOpeningBalance(opening),
+        })),
+      };
     },
 
     async movements(viewer: AuthenticatedAccount, id: number, query: CashboxMovementQuery) {
@@ -550,10 +566,20 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
       const now = deps.now();
       const on = today();
       return idempotentTransaction(db, idempotency, async (tx) => {
-        const origin =
-          input.handoverId !== undefined
-            ? await handoverOrigin(tx, input.handoverId)
-            : await closingOrigin(tx, input.closingId ?? 0);
+        // A handover shortfall is written off whole: the amount is fixed at -difference (D-16).
+        const handover =
+          input.handoverId !== undefined ? await handoverOrigin(tx, input.handoverId) : null;
+        if (handover && input.amount !== -handover.difference) {
+          throw errors.validation({
+            issues: [
+              {
+                path: 'body.amount',
+                message: `La aclaración de una entrega es por su diferencia completa: ${formatMoney(-handover.difference)}.`,
+              },
+            ],
+          });
+        }
+        const origin = handover ?? (await closingOrigin(tx, input.closingId ?? 0));
         const approvalId = await repo.insertApproval(tx, {
           type: 'adjustment',
           reason: input.reason,

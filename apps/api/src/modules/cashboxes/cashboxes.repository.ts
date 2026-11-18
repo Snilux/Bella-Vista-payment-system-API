@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lt, lte, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { Database, Transaction } from '../../db/client.js';
 import {
@@ -100,6 +100,7 @@ export async function listCashboxes(db: Executor) {
     db,
     rows.map((r) => r.id),
   );
+  const openings = await currentOpeningBalances(db);
   return rows.map((r) => {
     const label = labels.find((l) => l.id === r.id);
     return {
@@ -107,6 +108,7 @@ export async function listCashboxes(db: Executor) {
       type: label?.type ?? 'block',
       label: label?.label ?? '',
       balance: r.balance,
+      opening: openings.get(r.id) ?? null,
     };
   });
 }
@@ -142,6 +144,56 @@ export function totalsByKind(db: Executor, cashboxId: number) {
 }
 
 /** Movements of a cashbox, newest first; `offset` pages through them. */
+// What G-09 shows of each movement (read only): the folio of the record behind it and a short
+// description. A page holds at most 100 rows, so the correlated subqueries stay cheap.
+const ref = vCashboxMovement.recordId;
+const nameOf = (alias: string) =>
+  sql.raw(
+    `concat_ws(' ', ${alias}.given_names, ${alias}.paternal_surname, ${alias}.maternal_surname)`,
+  );
+
+/** The family of a payment: the holder of its unit, or the applicant of an opening. */
+const payerOf = (paymentId: SQL) => sql`coalesce(
+  (SELECT ${nameOf('hp')} FROM payment p
+     JOIN unit_holder uh ON uh.unit_id = p.unit_id AND uh.valid_to IS NULL
+     JOIN person hp ON hp.id = uh.person_id
+   WHERE p.id = ${paymentId} LIMIT 1),
+  (SELECT ${nameOf('ap')} FROM payment_charge pc
+     JOIN extra_charge ec ON ec.id = pc.extra_charge_id
+     JOIN connection_request cr ON cr.id = ec.connection_request_id
+     JOIN person ap ON ap.id = cr.applicant_id
+   WHERE pc.payment_id = ${paymentId} LIMIT 1))`;
+
+const movementFolio = sql<string | null>`CASE ${vCashboxMovement.tableName}
+  WHEN 'payment' THEN (SELECT folio FROM payment WHERE id = ${ref})
+  WHEN 'payment_cancellation' THEN (SELECT p.folio FROM payment_cancellation pca
+    JOIN payment p ON p.id = pca.payment_id WHERE pca.id = ${ref})
+  WHEN 'handover' THEN (SELECT folio FROM handover WHERE id = ${ref})
+  WHEN 'income' THEN (SELECT folio FROM income WHERE id = ${ref})
+  WHEN 'expense' THEN (SELECT folio FROM expense WHERE id = ${ref})
+  WHEN 'expense_refund' THEN (SELECT e.folio FROM expense_refund er
+    JOIN expense e ON e.id = er.expense_id WHERE er.id = ${ref})
+  WHEN 'adjustment' THEN (SELECT coalesce(h.folio, c.folio) FROM adjustment adj
+    LEFT JOIN handover h ON h.id = adj.handover_id
+    LEFT JOIN closing c ON c.id = adj.closing_id WHERE adj.id = ${ref})
+  END`;
+
+const movementDetail = sql<string | null>`CASE ${vCashboxMovement.tableName}
+  WHEN 'payment' THEN ${payerOf(sql`${ref}`)}
+  WHEN 'payment_cancellation' THEN ${payerOf(
+    sql`(SELECT payment_id FROM payment_cancellation WHERE id = ${ref})`,
+  )}
+  WHEN 'handover' THEN (SELECT CASE cb.type WHEN 'block' THEN b.code
+      WHEN 'committee' THEN 'Comité' ELSE 'Apoyo · ' || ${nameOf('cp')} END
+    FROM handover h JOIN cashbox cb ON cb.id = h.source_cashbox_id
+    LEFT JOIN v_block b ON b.id = cb.block_id
+    LEFT JOIN person cp ON cp.id = cb.custodian_person_id WHERE h.id = ${ref})
+  WHEN 'income' THEN (SELECT concept FROM income WHERE id = ${ref})
+  WHEN 'expense' THEN (SELECT description FROM expense WHERE id = ${ref})
+  WHEN 'expense_refund' THEN (SELECT e.description FROM expense_refund er
+    JOIN expense e ON e.id = er.expense_id WHERE er.id = ${ref})
+  END`;
+
 export function movementsOf(
   db: Executor,
   cashboxId: number,
@@ -154,6 +206,8 @@ export function movementsOf(
       amount: vCashboxMovement.amount,
       tableName: vCashboxMovement.tableName,
       recordId: vCashboxMovement.recordId,
+      folio: movementFolio,
+      detail: movementDetail,
     })
     .from(vCashboxMovement)
     .where(
@@ -182,6 +236,20 @@ const openingBalanceColumns = {
   approvalId: openingBalance.approvalId,
   result: approval.result,
 };
+
+/** The current request of every cashbox, in one query (same order as openingBalanceOf). */
+async function currentOpeningBalances(db: Executor) {
+  const rows = await db
+    .selectDistinctOn([openingBalance.cashboxId], openingBalanceColumns)
+    .from(openingBalance)
+    .innerJoin(approval, eq(approval.id, openingBalance.approvalId))
+    .orderBy(
+      openingBalance.cashboxId,
+      sql`CASE WHEN ${approval.result} = 'approved' THEN 0 WHEN ${approval.result} IS NULL THEN 1 ELSE 2 END`,
+      desc(openingBalance.id),
+    );
+  return new Map(rows.map((row) => [row.cashboxId, row]));
+}
 
 /** The current request of a cashbox: approved, else pending, else the latest rejected one. */
 export async function openingBalanceOf(db: Executor, cashboxId: number) {
@@ -281,6 +349,9 @@ function handoverQuery(db: Executor) {
       notes: handover.notes,
       preparedById: handover.createdBy,
       preparedByUsername: preparer.username,
+      preparedByName: sql<string>`(SELECT concat_ws(' ', p.given_names, p.paternal_surname, p.maternal_surname)
+        FROM role_assignment ra JOIN person p ON p.id = ra.person_id
+        WHERE ra.id = ${preparer.roleAssignmentId})`,
       confirmedById: handover.confirmedBy,
       confirmedByUsername: userAccount.username,
     })
@@ -383,6 +454,16 @@ export async function findAdjustment(db: Executor, id: number) {
     .innerJoin(approval, eq(approval.id, adjustment.approvalId))
     .where(eq(adjustment.id, id));
   return row ?? null;
+}
+
+/** Whether any adjustment (pending or resolved) was requested for the origin. */
+export async function hasAdjustment(db: Executor, origin: { handoverId: number }) {
+  const [row] = await db
+    .select({ id: adjustment.id })
+    .from(adjustment)
+    .where(eq(adjustment.handoverId, origin.handoverId))
+    .limit(1);
+  return row !== undefined;
 }
 
 export async function hasPendingAdjustment(

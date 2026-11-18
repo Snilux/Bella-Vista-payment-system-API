@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
+  cashboxListResponseSchema,
   cashboxMovementPageSchema,
   handoverResponseSchema,
   myCashboxResponseSchema,
@@ -127,6 +128,9 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
     expect(cashboxMovementPageSchema.safeParse(res.body).success).toBe(true);
     expect(res.body.data).toHaveLength(2);
     expect(res.body.data[0]).toMatchObject({ kind: 'payment', tableName: 'payment' });
+    // Read-only aggregates of G-09: the folio and the family of each payment.
+    expect(res.body.data[0].folio).toMatch(/^PG-/);
+    expect(res.body.data[0].detail).toEqual(expect.stringMatching(/\S/));
     expect(res.body.next).toBe('2');
     const second = await call('GET', `/v1/cashboxes/${own}/movements?limit=2&cursor=2`, 'jm.s1m01');
     expect(second.body.data[0]).not.toEqual(res.body.data[0]);
@@ -150,6 +154,11 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
       expect.objectContaining({ type: 'committee', label: 'Comité', balance: 0 }),
     );
     expect((await call('GET', '/v1/cashboxes', 'jm.s1m01')).body.error.code).toBe('FORBIDDEN');
+    // T-12: no cashbox has an opening balance yet.
+    expect(cashboxListResponseSchema.safeParse(res.body).success).toBe(true);
+    expect(
+      res.body.cashboxes.every((c: { openingBalance: unknown }) => c.openingBalance === null),
+    ).toBe(true);
   });
 
   it('a block created through the API has its cashbox from the start', async () => {
@@ -208,6 +217,23 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
       balance: 350_000,
       openingBalance: { amount: 350_000, status: 'approved' },
     });
+  });
+
+  it('lists each cashbox with its current opening balance (T-12)', async () => {
+    const block = await blockBox('S1-M02');
+    const pending = await post(`/v1/cashboxes/${block}/opening-balance`, 'tesorero', {
+      amount: 50_000,
+      date: '2026-11-01',
+      reason: 'Conteo de la manzana',
+    });
+    expect(pending.status).toBe(201);
+    const list = (await call('GET', '/v1/cashboxes', 'tesorero')).body.cashboxes;
+    const of = (id: number) => list.find((c: { id: number }) => c.id === id)?.openingBalance;
+    // The approved one wins over the rejected one of the committee.
+    expect(of(await committeeBox())).toMatchObject({ amount: 350_000, status: 'approved' });
+    expect(of(block)).toMatchObject({ amount: 50_000, status: 'pending' });
+    expect(of(await blockBox('S2-M01'))).toBeNull();
+    await resolve(pending.body.openingBalance.approvalId, 'rejected');
   });
 
   it('validates the opening balance', async () => {
@@ -301,6 +327,21 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
       difference: 5_000,
       confirmedBy: { username: 'tesorero' },
     });
+    // T-02: who prepared it, by name.
+    expect(confirmed.body.handover.preparedBy).toMatchObject({
+      username: 'jm.s1m01',
+      fullName: expect.stringMatching(/\S+ \S+/),
+    });
+    // G-09 of the committee: the handover with its folio and the source block.
+    const moves = await call('GET', `/v1/cashboxes/${committee}/movements`, 'tesorero');
+    expect(moves.body.data).toContainEqual(
+      expect.objectContaining({
+        kind: 'handover_in',
+        amount: 15_000,
+        folio: prepared.body.handover.folio,
+        detail: 'S1-M01',
+      }),
+    );
     expect(await balanceOf(source)).toBe(sourceBefore - 15_000);
     expect(await balanceOf(committee)).toBe(committeeBefore + 15_000);
     expect((await mine('jm.s1m01')).handedOver).toBe(15_000);
@@ -318,9 +359,24 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
     expect((await call('GET', `/v1/handovers/${shortfall.id}`, 'jm.s1m02')).body.error.code).toBe(
       'OUT_OF_SCOPE',
     );
+    // The president sees another cashbox's handover only once an adjustment is requested.
+    expect((await call('GET', `/v1/handovers/${shortfall.id}`, 'presidente')).status).toBe(404);
     const all = await call('GET', '/v1/handovers?status=with_difference', 'vocal');
     expect(all.body.data.map((h: { id: number }) => h.id)).toEqual([shortfall.id]);
     expect((await call('GET', '/v1/handovers', 'secretario')).body.error.code).toBe('FORBIDDEN');
+  });
+
+  it('a block leader never receives names, folios or balances of another block', async () => {
+    const own = await blockBox('S1-M01');
+    const other = await blockBox('S1-M02');
+    // Handovers: only those of its own cashbox.
+    const handovers = (await call('GET', '/v1/handovers', 'jm.s1m01')).body.data;
+    expect(handovers.every((h: { cashbox: { id: number } }) => h.cashbox.id === own)).toBe(true);
+    // Movements (with their folios and families): only its own cashbox.
+    const otherMoves = await call('GET', `/v1/cashboxes/${other}/movements`, 'jm.s1m01');
+    expect(otherMoves.body.error.code).toBe('OUT_OF_SCOPE');
+    // The list of every cashbox, with balances and opening balances: committee only.
+    expect((await call('GET', '/v1/cashboxes', 'jm.s1m01')).status).toBe(403);
   });
 
   // --- Adjustments ----------------------------------------------------------------------------
@@ -328,6 +384,18 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
   it('an approved adjustment settles the shortfall of a handover (RF-CAJ-06)', async () => {
     const source = await blockBox('S1-M01');
     const before = await balanceOf(source);
+    // The amount is the whole difference with the sign of the model (it takes cash out).
+    for (const amount of [-4_000, 5_000]) {
+      const wrong = await post('/v1/adjustments', 'tesorero', {
+        handoverId: shortfall.id,
+        amount,
+        reason: 'x',
+      });
+      expect(wrong.body.error).toMatchObject({
+        code: 'VALIDATION_ERROR',
+        details: { issues: [{ path: 'body.amount', message: expect.stringContaining('-$50.00') }] },
+      });
+    }
     const res = await post('/v1/adjustments', 'tesorero', {
       handoverId: shortfall.id,
       amount: -5_000,
@@ -348,6 +416,9 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
       inbox.body.approvals.find((a: { id: number }) => a.id === res.body.adjustment.approvalId)
         ?.description,
     ).toMatch(/^Aclaración de -\$50\.00 en la entrega EN-\d{6}-\d{6}$/);
+    // R-03: the president opens the handover the adjustment is about (not of their cashbox).
+    const seen = await call('GET', `/v1/handovers/${shortfall.id}`, 'presidente');
+    expect(seen.body.handover).toMatchObject({ id: shortfall.id, difference: 5_000 });
 
     await resolve(res.body.adjustment.approvalId, 'approved');
     expect(await balanceOf(source)).toBe(before - 5_000);

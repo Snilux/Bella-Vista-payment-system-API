@@ -34,6 +34,7 @@ const expected: Record<Action, string> = {
   'rates.register': 'TES',
   'payments.view': 'PRE TES SEC VOC JM',
   'billing.collect': 'PRE TES JM',
+  'charges.manage': 'TES',
   'receipts.replace': 'TES JM',
   'payments.requestCancellation': 'TES JM',
   'cashboxes.view': 'PRE TES SEC VOC JM',

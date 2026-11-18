@@ -2,6 +2,7 @@ import type {
   AccountStatementResponse,
   Approval,
   ConnectionRequest,
+  ExtraCharge,
   Fee,
   Payment,
   Rate,
@@ -211,6 +212,8 @@ export function fakeM6Api() {
     usedFolios: new Set<string>(['001234']),
     rates: RATES,
     fees: FEES,
+    /** The family's pending extra charges (GET /units/45/extra-charges; M7). */
+    charges: [] as ExtraCharge[],
     nextId: 1000,
   };
   const calls: Call[] = [];
@@ -235,6 +238,13 @@ export function fakeM6Api() {
     if (get && path === '/units/45') return json(200, { unit: state.unit });
     if (get && path === '/units/45/account-statement')
       return json(200, { statement: state.statement });
+    if (get && path === '/units/45/extra-charges') {
+      return json(200, {
+        charges: state.charges.filter(
+          (charge) => url.searchParams.get('status') === 'all' || charge.status === 'pending',
+        ),
+      });
+    }
     if (get && path === '/rates') return json(200, { rates: state.rates });
     if (get && path === '/fees') return json(200, { fees: state.fees });
     if (get && path === '/connection-requests/5') return json(200, { request: state.request });
@@ -272,17 +282,29 @@ export function fakeM6Api() {
         total: m.total ?? 0,
         kind: m.status === 'overdue' ? ('overdue' as const) : ('pending' as const),
       }));
-      const charges = chargeIds.includes(9)
+      const opening = chargeIds.includes(9)
         ? [
             {
               id: 9,
               feeName: 'Apertura de toma',
-              feeType: 'opening' as const,
+              feeType: 'opening' as ExtraCharge['fee']['type'],
               amount: 150_000,
-              connectionRequestId: 5,
+              connectionRequestId: 5 as number | null,
             },
           ]
         : [];
+      const charges = [
+        ...opening,
+        ...state.charges
+          .filter((charge) => chargeIds.includes(charge.id))
+          .map((charge) => ({
+            id: charge.id,
+            feeName: charge.fee.name,
+            feeType: charge.fee.type,
+            amount: charge.amount,
+            connectionRequestId: null,
+          })),
+      ];
       const total =
         months.reduce((sum, m) => sum + m.total, 0) + charges.reduce((s, c) => s + c.amount, 0);
       const unit = body.unitId ? { id: 45, folio: 'U-000045', holder: 'Juan Pérez López' } : null;

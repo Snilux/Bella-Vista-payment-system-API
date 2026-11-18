@@ -12,6 +12,7 @@ import { useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useAccountStatement, useUnit } from '../../../../src/api/useBilling.js';
 import { useConnectionRequest } from '../../../../src/api/useConnectionRequests.js';
+import { useUnitCharges } from '../../../../src/api/useExtraCharges.js';
 import { useApprovedRates } from '../../../../src/api/useRegistry.js';
 import {
   overdueNotice,
@@ -25,6 +26,7 @@ import {
 import {
   AppText,
   Button,
+  Checkbox,
   colors,
   DataRow,
   Header,
@@ -40,8 +42,11 @@ import {
 // Choose what to collect (Figma F-02; 3.2 §10.3; D-02, D-03, D-05, D-06). For a family: its
 // unpaid months from the account statement (the API says which are overdue and their
 // surcharge) and up to 12 advance months priced with the approved rates; the chronological
-// selection is the shared domain's (toggleMonth): this screen only paints it. For the opening of
-// a request (from P-06): its opening charge. The fixed bar shows the total and "Continuar".
+// selection is the shared domain's (toggleMonth): this screen only paints it. Under the months,
+// the family's pending extra charges (reconnection, repair, other; D-28), each one chosen on its
+// own and paid in the same payment as the months; a suspended family can still pay them. For the
+// opening of a request (from P-06): its opening charge. The fixed bar shows the total and
+// "Continuar".
 
 const ADVANCE_MONTHS = 12;
 
@@ -81,6 +86,7 @@ function UnitMonths({ unitId }: { unitId: number }) {
   const unit = useUnit(unitId);
   const statement = useAccountStatement(unitId);
   const rates = useApprovedRates();
+  const charges = useUnitCharges(unitId);
 
   const offer = useMemo(() => {
     if (!statement.data || !rates.data || !unit.data) return null;
@@ -100,10 +106,12 @@ function UnitMonths({ unitId }: { unitId: number }) {
       ? screenStatusOf(statement)
       : rates.isError
         ? screenStatusOf(rates)
-        : offer
-          ? 'ready'
-          : 'loading';
-  const failedError = unit.error ?? statement.error ?? rates.error;
+        : charges.isError
+          ? screenStatusOf(charges)
+          : offer && charges.data
+            ? 'ready'
+            : 'loading';
+  const failedError = unit.error ?? statement.error ?? rates.error ?? charges.error;
   const header = (
     <Header
       title="Elegir meses"
@@ -119,7 +127,7 @@ function UnitMonths({ unitId }: { unitId: number }) {
     />
   );
 
-  if (status !== 'ready' || !offer || !unit.data || !statement.data) {
+  if (status !== 'ready' || !offer || !unit.data || !statement.data || !charges.data) {
     return (
       <ScreenLayout>
         {header}
@@ -130,15 +138,67 @@ function UnitMonths({ unitId }: { unitId: number }) {
             void unit.refetch();
             void statement.refetch();
             void rates.refetch();
+            void charges.refetch();
           }}
         />
       </ScreenLayout>
     );
   }
 
+  const pending = charges.data;
+  const chosenCharges = pending.filter((charge) => flow.chargeIds.includes(charge.id));
+  const chargesTotal = chosenCharges.reduce((sum, charge) => sum + charge.amount, 0);
+  const locked = flow.hasUnansweredAttempt;
+  const toggleCharge = (id: number) => {
+    if (locked) return;
+    flow.setChargeIds(
+      flow.chargeIds.includes(id)
+        ? flow.chargeIds.filter((item) => item !== id)
+        : [...flow.chargeIds, id],
+    );
+  };
+  const chargeList =
+    pending.length > 0 ? (
+      <View style={styles.list}>
+        <AppText variant="heading">Conceptos pendientes</AppText>
+        {pending.map((charge) => (
+          <Checkbox
+            key={charge.id}
+            label={`${charge.fee.name} · ${formatMoney(charge.amount)}`}
+            description={`Cargado el ${charge.chargedOn}${charge.target === 'connection' ? ' · a la toma' : ''}`}
+            checked={flow.chargeIds.includes(charge.id)}
+            onChange={() => toggleCharge(charge.id)}
+          />
+        ))}
+      </View>
+    ) : null;
+  const totalBar = (monthsTotal: number, monthCount: number) => (
+    <>
+      <View style={styles.totalRow}>
+        <AppText variant="body" color={colors.textSecondary} style={styles.flex}>
+          {totalLabel(monthCount, chosenCharges.length)}
+        </AppText>
+        <AppText variant="title" amount>
+          {formatMoney(monthsTotal + chargesTotal)}
+        </AppText>
+      </View>
+      <Button
+        label="Continuar"
+        onPress={() => router.push('/common/new-payment/review')}
+        disabledReason={
+          monthCount === 0 && chosenCharges.length === 0 && !locked
+            ? pending.length > 0
+              ? 'Elija al menos un mes o un concepto.'
+              : 'Elija al menos un mes.'
+            : null
+        }
+      />
+    </>
+  );
+
   if (unit.data.status !== 'active') {
     return (
-      <ScreenLayout>
+      <ScreenLayout {...(pending.length > 0 ? { footer: totalBar(0, 0) } : {})}>
         {header}
         <Notice
           title={
@@ -148,7 +208,9 @@ function UnitMonths({ unitId }: { unitId: number }) {
                 ? 'Familia dada de baja: ya no se le cobra; su adeudo se conserva.'
                 : 'La familia todavía no está activa.'
           }
+          {...(pending.length > 0 ? { detail: 'Puede cobrarle sus conceptos pendientes.' } : {})}
         />
+        {chargeList}
       </ScreenLayout>
     );
   }
@@ -158,32 +220,13 @@ function UnitMonths({ unitId }: { unitId: number }) {
   const advances = months.filter((month) => month.kind === 'advance');
   const advancing = canAdvance(months, flow.periods);
   const total = selectionTotal(months, flow.periods);
-  const locked = flow.hasUnansweredAttempt;
   const notice = overdueNotice(statement.data.summary);
   const toggle = (period: string) => {
     if (!locked) flow.setPeriods(toggleMonth(months, flow.periods, period));
   };
 
   return (
-    <ScreenLayout
-      footer={
-        <>
-          <View style={styles.totalRow}>
-            <AppText variant="body" color={colors.textSecondary} style={styles.flex}>
-              {totalLabel(flow.periods.length, 0)}
-            </AppText>
-            <AppText variant="title" amount>
-              {formatMoney(total)}
-            </AppText>
-          </View>
-          <Button
-            label="Continuar"
-            onPress={() => router.push('/common/new-payment/review')}
-            disabledReason={flow.periods.length === 0 && !locked ? 'Elija al menos un mes.' : null}
-          />
-        </>
-      }
-    >
+    <ScreenLayout footer={totalBar(total, flow.periods.length)}>
       {header}
       {flow.notice ? <Notice title={flow.notice} /> : null}
       {locked ? (
@@ -248,6 +291,8 @@ function UnitMonths({ unitId }: { unitId: number }) {
           ))}
         </View>
       ) : null}
+
+      {chargeList}
     </ScreenLayout>
   );
 }

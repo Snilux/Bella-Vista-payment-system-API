@@ -200,6 +200,59 @@ export const paymentCancellationRequestSchema = z.object({
   reason: requiredText(500, 'Escriba el motivo de la cancelación.'),
 });
 
+// --- Extra charges (/v1/extra-charges, /v1/units/{id}/extra-charges; D-13, D-28) -------------
+
+/** Charges created from the app; the opening is created and cancelled with its request. */
+export const EXTRA_CHARGE_FEE_TYPES = ['reconnection', 'repair', 'other'] as const;
+export const EXTRA_CHARGE_STATUSES = ['pending', 'paid', 'cancelled'] as const;
+
+export const extraChargeSchema = z.object({
+  id: z.int(),
+  fee: z.object({
+    id: z.int(),
+    type: z.enum(['opening', 'reconnection', 'repair', 'other']),
+    name: z.string(),
+  }),
+  /** The fee amount in force on chargedOn (D-13); fixed for the charge. */
+  amount: z.int(),
+  chargedOn: z.iso.date(),
+  target: z.enum(['unit', 'connection']),
+  unitId: z.int().nullable(),
+  connectionId: z.int().nullable(),
+  status: z.enum(EXTRA_CHARGE_STATUSES),
+  /** The valid payment that settled it. */
+  paymentId: z.int().nullable(),
+  cancelledOn: z.iso.date().nullable(),
+  cancellationReason: z.string().nullable(),
+});
+
+export const createExtraChargeRequestSchema = z
+  .object({
+    feeId: z.int({ error: 'Elija el concepto.' }).positive(),
+    unitId: z.int().positive().optional(),
+    connectionId: z.int().positive().optional(),
+    /** Today when omitted; never a future date. */
+    chargedOn: z.iso.date({ error: 'La fecha debe tener el formato AAAA-MM-DD.' }).optional(),
+  })
+  .refine((body) => (body.unitId === undefined) !== (body.connectionId === undefined), {
+    path: ['unitId'],
+    error: 'Elija la familia o la toma del cargo (solo una).',
+  });
+
+export const extraChargeListQuerySchema = z.object({
+  status: z.enum(['pending', 'all']).default('pending'),
+});
+
+export const cancelExtraChargeRequestSchema = z.object({
+  reason: requiredText(500, 'Escriba el motivo de la cancelación.'),
+});
+
+export const extraChargeResponseSchema = z.object({ charge: extraChargeSchema });
+export const extraChargeListResponseSchema = z.object({ charges: z.array(extraChargeSchema) });
+
+export type ExtraCharge = z.infer<typeof extraChargeSchema>;
+export type CreateExtraChargeRequest = z.infer<typeof createExtraChargeRequestSchema>;
+export type ExtraChargeListQuery = z.infer<typeof extraChargeListQuerySchema>;
 export type PaymentPreviewRequest = z.infer<typeof paymentPreviewRequestSchema>;
 export type CreatePaymentRequest = z.infer<typeof createPaymentRequestSchema>;
 export type CashboxRef = z.infer<typeof cashboxRefSchema>;

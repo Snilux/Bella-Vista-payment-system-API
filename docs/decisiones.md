@@ -19,7 +19,7 @@ Fuente: documento 1.1 de Notion, sección 2. Todas están confirmadas por el com
 | D-13 | Cuota de apertura        | Catálogo con historial; el importe se fija al aprobar la solicitud.                                                                                                                                                     |
 | D-14 | Periodo cerrado          | Un mes con corte cerrado no admite movimientos con fecha en ese mes; las correcciones van al periodo abierto con referencia al original.                                                                                |
 | D-15 | Cancelar pago            | Contramovimiento en la caja receptora y meses de vuelta a pendiente o vencido. Lo autoriza PRE con motivo.                                                                                                              |
-| D-16 | Faltante en entrega      | La caja del jefe solo baja por el importe recibido; el faltante queda en su caja hasta una aclaración autorizada.                                                                                                       |
+| D-16 | Faltante en entrega      | La caja del jefe solo baja por el importe recibido; el faltante queda en su caja hasta una aclaración autorizada. La aclaración es una por entrega, por la diferencia completa (no editable), con motivo y autorización del presidente; si después aparece el dinero, entra como una entrega nueva.                                                                                                       |
 | D-17 | Gastos                   | Todo gasto requiere acuerdo de junta. El salario del fontanero queda cubierto por el acuerdo que lo fijó.                                                                                                               |
 | D-18 | Arranque                 | Captura manual: por cada unidad existente se registra su primer mes pendiente según la libreta; la deuda se calcula con tarifas históricas. TES captura tarifas pasadas y el saldo inicial de cada caja (PRE confirma). |
 | D-19 | Cuentas                  | **Sin registro público.** Solo el SA crea cuentas, para asignaciones de cargo vigentes (SEC registra, PRE confirma), y entrega usuario y contraseña temporal en persona. El SA nunca asigna cargos.                     |
@@ -31,6 +31,7 @@ Fuente: documento 1.1 de Notion, sección 2. Todas están confirmadas por el com
 | D-25 | Sin procesos programados | Mensualidades, vencimientos y recargos **se calculan al consultar**. Al pagar, la tarifa y el recargo quedan fijos en el pago.                                                                                          |
 | D-26 | Sin archivos             | No se suben fotos ni documentos; comprobantes y actas son referencias de texto.                                                                                                                                         |
 | D-27 | Arranque inicial         | El sistema se inicializa **una sola vez** con un script técnico (`pnpm db:seed`) que crea la cuenta del SA (contraseña temporal), registra a PRE, TES y SEC elegidos en junta con su acuerdo como **autorizados por arranque**, y crea la caja del comité, las categorías de gasto y los conceptos sin importe. Después todo entra por los flujos normales de la app. Detalle en 3.1 ([estructura.md](estructura.md#plan-de-implementación)). |
+| D-28 | Cargos extraordinarios   | Solo el **tesorero** crea un cargo extraordinario (reinstalación, reparación, otro) para una toma o una familia, con el importe vigente del concepto en la fecha del cargo; quien cobra no genera cargos de su propia manzana. El jefe los ve y los cobra con los meses. Un cargo no pagado lo cancela solo el tesorero, con motivo obligatorio y en la bitácora, sin autorización del presidente; nada se borra. La apertura se cobra y se cancela con su solicitud. |
 
 ## Cálculo del estado de cuenta (D-01, D-02, D-06, D-25)
 
@@ -90,6 +91,7 @@ Precisiones acordadas al implementarlo:
 | Baja / cambio de titular    | —       | autoriza         | —        | solicita | —               | solicita   |
 | Suspender / reactivar       | —       | sí               | —        | sí       | —               | —          |
 | Tarifas y saldos iniciales  | —       | confirma         | registra | ver      | ver             | ver        |
+| Cargos extraordinarios      | —       | ver              | crea y cancela | ver | ver             | ver y cobra en su manzana |
 | Cobrar                      | —       | en apoyo         | sí       | —        | —               | su manzana |
 | Consultar pagos             | —       | sí               | sí       | sí       | sí              | su manzana |
 | Reposición de recibo        | —       | —                | sí       | —        | —               | su manzana |

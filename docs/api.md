@@ -109,14 +109,17 @@ Fuente: documento 2.3 de Notion. Los esquemas de entrada y salida se definen con
 
 ### Cobranza
 
-| Método | Ruta                                       | Descripción                  | Roles                |
-| ------ | ------------------------------------------ | ---------------------------- | -------------------- |
-| POST   | /v1/payments/preview                       | Calcula el total sin guardar | JM, TES, PRE         |
-| POST   | /v1/payments                               | Registra pago                | JM, TES, PRE         |
-| GET    | /v1/payments?unitId=&blockId=&from=&to=    | Lista                        | Según alcance        |
-| GET    | /v1/payments/{id}                          | Detalle con recibos de papel | Según alcance        |
-| POST   | /v1/payments/{id}/replacements             | Reposición de recibo         | JM (su manzana), TES |
-| POST   | /v1/payments/{id}/request-cancellation     | Crea autorización            | JM, TES              |
+| Método | Ruta                                    | Descripción                    | Roles                |
+| ------ | --------------------------------------- | ------------------------------ | -------------------- |
+| POST   | /v1/payments/preview                    | Calcula el total sin guardar   | JM, TES, PRE         |
+| POST   | /v1/payments                            | Registra pago                  | JM, TES, PRE         |
+| GET    | /v1/payments?unitId=&blockId=&from=&to= | Lista                          | Según alcance        |
+| GET    | /v1/payments/{id}                       | Detalle con recibos de papel   | Según alcance        |
+| POST   | /v1/payments/{id}/replacements          | Reposición de recibo           | JM (su manzana), TES |
+| POST   | /v1/payments/{id}/request-cancellation  | Crea autorización              | JM, TES              |
+| GET    | /v1/units/{id}/extra-charges?status=    | Cargos de la familia y su toma | Según alcance        |
+| POST   | /v1/extra-charges                       | Crea cargo extraordinario      | TES                  |
+| POST   | /v1/extra-charges/{id}/cancel           | Cancela cargo no pagado        | TES                  |
 
 ### Cajas
 
@@ -235,10 +238,11 @@ La búsqueda, la ficha de persona y la ficha de toma incluyen el adeudo de cada 
 ## Detalle: cajas
 
 - **Mi caja** (`/v1/cashboxes/mine`, RF-CAJ-07): la del cargo de la cuenta (JM → su manzana, TES → comité, PRE → apoyo) con `balance` esperado, `collected` (pagos menos cancelaciones), `handedOver` (lo recibido por TES), `pendingHandover`, `available` (saldo − pendiente) y su `openingBalance`. La caja de apoyo puede no existir aún (se crea con el primer cobro): se devuelve sin id y en ceros. SEC y VOC no custodian efectivo (`FORBIDDEN`). Cada manzana nueva nace con su caja.
-- **Movimientos** (`/v1/cashboxes/{id}/movements?from=&to=`): de `v_cashbox_movement`, del más reciente al más antiguo, paginados. Comité: todas; JM: solo la de su manzana (`OUT_OF_SCOPE`).
+- **Movimientos** (`/v1/cashboxes/{id}/movements?from=&to=`): de `v_cashbox_movement`, del más reciente al más antiguo, paginados. Comité: todas; JM: solo la de su manzana (`OUT_OF_SCOPE`). Cada movimiento trae `occurredOn`, `kind`, `amount` (con signo), `tableName`, `recordId` y dos datos de solo lectura para G-09: `folio` (el del registro: `PG-` del pago o de su cancelación, `EN-` de la entrega, `IN-` del ingreso, `GA-` del gasto o su reintegro; en una aclaración, el de su entrega o corte; `null` en el saldo inicial) y `detail` (la familia del pago o de su cancelación —titular de la unidad o solicitante de la apertura—, la caja de origen de la entrega, el concepto del ingreso, la descripción del gasto o del reintegro; `null` en saldo inicial y aclaración).
+- **Todas las cajas** (`GET /v1/cashboxes`, solo comité): cada caja con `type`, `label`, `balance` y su `openingBalance` actual (`{ id, cashboxId, amount, date, status, approvalId }`: la autorizada, si no la pendiente, si no la última rechazada; `null` si nunca se capturó). Es lo que muestra T-12.
 - **Saldo inicial** (`/v1/cashboxes/{id}/opening-balance`, D-18): TES con `{ amount, date, reason }` (fecha no futura) e `Idempotency-Key`; crea una autorización para PRE. Una sola solicitud pendiente o autorizada por caja (`INVALID_STATE`); una rechazada la libera.
-- **Entregas** (D-16): JM o PRE preparan `{ declaredAmount, notes? }` desde su caja, nunca más que el disponible (saldo − entregas pendientes, `INSUFFICIENT_BALANCE`). Quien la preparó la retira mientras esté pendiente. TES confirma `{ receivedAmount }` (0 a lo declarado): la caja de origen baja solo lo recibido y la caja del comité sube lo mismo; el faltante se queda en la caja de origen. El folio `EN-` es el de la constancia. JM y PRE ven las de su caja; TES y VOC todas.
-- **Aclaraciones** (`/v1/adjustments`, RF-CAJ-06): TES propone `{ handoverId, amount (con signo), reason }` sobre una entrega confirmada con diferencia, una pendiente a la vez; al autorizarla PRE se mueve la caja de origen (p. ej. `-5000` da de baja un faltante). Las aclaraciones de corte llevan `closingId` en lugar de `handoverId` (ver cortes).
+- **Entregas** (D-16): JM o PRE preparan `{ declaredAmount, notes? }` desde su caja, nunca más que el disponible (saldo − entregas pendientes, `INSUFFICIENT_BALANCE`). Quien la preparó la retira mientras esté pendiente. TES confirma `{ receivedAmount }` (0 a lo declarado): la caja de origen baja solo lo recibido y la caja del comité sube lo mismo; el faltante se queda en la caja de origen. El folio `EN-` es el de la constancia. JM y PRE ven las de su caja; TES y VOC todas. PRE además ve el detalle (`GET /v1/handovers/{id}`) de una entrega con una aclaración solicitada, que resuelve desde R-03. `preparedBy` trae `userAccountId`, `username` y `fullName` (la persona de la cuenta).
+- **Aclaraciones** (`/v1/adjustments`, RF-CAJ-06): TES propone `{ handoverId, amount (con signo), reason }` sobre una entrega confirmada con diferencia. El importe es fijo: **la diferencia completa con signo negativo** (`-difference`; da de baja el faltante de la caja de origen); otro importe → `VALIDATION_ERROR` en `body.amount`. Una pendiente a la vez; al autorizarla PRE la entrega queda `adjusted` y no admite otra; una rechazada la deja libre. Si después aparece el dinero, entra como una entrega nueva. Las aclaraciones de corte llevan `closingId` en lugar de `handoverId` (ver cortes).
 
 ## Detalle: comité
 
@@ -314,6 +318,9 @@ Si el total recalculado no coincide con `expectedTotal` → 409 `TOTAL_CHANGED` 
 
 - **Previsualizar y registrar** (`/v1/payments/preview`, `/v1/payments`): `{ unitId?, periods, extraChargeIds, paperFolio, expectedTotal }` (los dos últimos solo al registrar). Hay que elegir al menos un mes o un cargo; los meses exigen la unidad. El servidor recalcula con la función del estado de cuenta: `MONTH_ORDER` (desde el más antiguo, sin huecos, anticipos solo liquidando todo), `PERIOD_ALREADY_PAID`, y `VALIDATION_ERROR` para meses no cobrables o sin tarifa. Los meses vencidos llevan recargo si el ciclo de adeudo está abierto; el pendiente y los anticipos nunca, y cada anticipo usa la tarifa de su mes.
 - **Cargos extraordinarios**: vigentes y sin pagar en un pago vigente. Con unidad, los de esa unidad o de su toma; sin unidad, solo la apertura de una solicitud aprobada pendiente de pago. Al pagarla la solicitud pasa a pendiente de instalación y ya se puede activar.
+- **Crear un cargo extraordinario** (`POST /v1/extra-charges`, D-28): solo TES, con `{ feeId, unitId | connectionId, chargedOn? }` (exactamente uno de los dos destinos). `chargedOn` es hoy si se omite y nunca una fecha futura. El concepto debe ser reinstalación, reparación u otro (la apertura se cobra con su solicitud → `VALIDATION_ERROR`) y tener importe vigente en esa fecha (`FEE_WITHOUT_AMOUNT`); ese importe queda fijo para el cargo (D-13). Una unidad o toma dada de baja → `INVALID_STATE`; una suspendida sí se puede cargar (la reinstalación existe para eso). No mueve dinero, así que no lleva `Idempotency-Key`; se escribe en la bitácora. Responde `201 { charge }` con `{ id, fee { id, type, name }, amount, chargedOn, target (unit | connection), unitId, connectionId, status (pending | paid | cancelled), paymentId, cancelledOn, cancellationReason }`.
+- **Cargos de una familia** (`GET /v1/units/{id}/extra-charges?status=pending|all`): los que la familia puede pagar, los de la unidad y los de su toma, sin la apertura. `pending` (por omisión) deja fuera los cancelados y los pagados en un pago vigente. JM solo de su manzana (`OUT_OF_SCOPE`). F-02 los muestra para cobrarlos en el mismo pago que los meses (`extraChargeIds`).
+- **Cancelar un cargo** (`POST /v1/extra-charges/{id}/cancel`, D-28): solo TES, `{ reason }` obligatorio, sin autorización del presidente; queda en la bitácora con su motivo y el cargo no se borra (`cancelledOn`, `cancellationReason`). Uno pagado se corrige cancelando el pago (`INVALID_STATE`, `status: paid`); uno ya cancelado → `INVALID_STATE`; la apertura se cancela con su solicitud.
 - **Registro**: en una transacción con la `Idempotency-Key`, la unidad bloqueada (`FOR UPDATE`), la caja bloqueada y la bitácora; guarda el pago, sus meses con tarifa y recargo fijos (D-25), los meses cubiertos, los cargos y el recibo de papel original. Dos cobros simultáneos del mismo mes: uno entra y el otro recibe `PERIOD_ALREADY_PAID`.
 - **Caja receptora** (D-07): la del cargo de la cuenta. JM → caja de su manzana (se crea con el primer cobro si la manzana no tiene); TES → caja del comité; PRE → su caja de apoyo, que se crea con su primer cobro. La manzana atendida es la de la unidad (o la de la solicitud).
 - **Alcance**: un JM solo cobra, consulta y repone en su manzana (`OUT_OF_SCOPE`). `GET /v1/payments` filtra por `unitId`, `blockId` y fechas `from`/`to`, paginado; el detalle incluye meses, cargos, recibos de papel y cancelaciones.
@@ -340,7 +347,7 @@ Si el total recalculado no coincide con `expectedTotal` → 409 `TOTAL_CHANGED` 
 | PERIOD_CLOSED                   | 409  | Fecha dentro de un mes con corte cerrado                 |
 | INSUFFICIENT_BALANCE            | 422  | Entrega o gasto mayor al saldo esperado                  |
 | CONNECTION_NOT_ACTIVE           | 422  | Agregar familia a toma no activa                         |
-| FEE_WITHOUT_AMOUNT              | 422  | El concepto (p. ej. apertura) no tiene importe vigente en la fecha del cargo |
+| FEE_WITHOUT_AMOUNT              | 422  | El concepto (apertura o cargo extraordinario) no tiene importe vigente en la fecha del cargo |
 | OPENING_NOT_PAID                | 422  | Activar una toma con la cuota de apertura sin pagar      |
 | INVALID_STATE                   | 409  | La operación no corresponde al estado actual del registro; solo si no hay un código más específico (`APPROVAL_ALREADY_RESOLVED`, `CONNECTION_NOT_ACTIVE`…). `details`: `status` actual y `action` intentada |
 | LEADER_ALREADY_ASSIGNED         | 409  | La manzana ya tiene jefe o la persona ya es jefe de otra |

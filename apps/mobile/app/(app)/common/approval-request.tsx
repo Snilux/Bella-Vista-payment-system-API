@@ -1,9 +1,10 @@
 // G-11 · Solicitud con motivo
-import type { PersonBasic } from '@bella-vista/shared';
+import { formatMoney, type PersonBasic } from '@bella-vista/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { describeError, UNKNOWN_OUTCOME_MESSAGE } from '../../../src/api/error-messages.js';
 import { useApprovalRequest } from '../../../src/api/useApprovalRequest.js';
+import { useHandover } from '../../../src/api/useCashboxes.js';
 import {
   isRequestType,
   MISSING_HOLDER,
@@ -11,6 +12,7 @@ import {
   REQUEST_CONFIGS,
   type RequestType,
 } from '../../../src/features/approvals/approval-types.js';
+import { adjustmentAmount } from '../../../src/features/cashboxes/cashbox-view.js';
 import {
   DiscardChangesSheet,
   useDiscardGuard,
@@ -21,19 +23,22 @@ import {
   AppText,
   Button,
   colors,
+  DataRow,
   Header,
   Notice,
   ScreenLayout,
   ScreenState,
   SuccessScreen,
+  SummaryCard,
   TextField,
 } from '../../../src/ui/index.js';
 
 // One form for every request that the president decides (2.6 G-11; 3.2 §10.2), opened with
-// ?type=<unit_deactivation|holder_change|payment_cancellation|expense_refund>&id=<record>
+// ?type=<unit_deactivation|holder_change|payment_cancellation|expense_refund|adjustment>&id=<record>
 // &subject=<the line under the title, e.g. "Pago PG-000981 · $200.00">. The screens that open
 // it (G-04, G-05, T-07) arrive in M6 and M7. The reason is mandatory; the holder change also
-// asks for the new holder. Sending goes through useMoneyOperation: a double tap sends once, the
+// asks for the new holder; the adjustment of a handover (T-03) shows its fixed amount, the whole
+// difference with the sign of the model, read from the handover itself. Sending goes through useMoneyOperation: a double tap sends once, the
 // money requests carry an Idempotency-Key, and a request without answer offers "Reintentar" with
 // the same key. Once sent it shows "Enviada al presidente" and cannot be sent again.
 
@@ -67,6 +72,18 @@ function RequestForm({
   const [holder, setHolder] = useState<PersonBasic | null>(null);
   const [search, setSearch] = useState('');
   const guard = useDiscardGuard((reason !== '' || holder !== null) && request.status !== 'success');
+  // adjustment: the handover gives the amount (never typed, D-16).
+  const handover = useHandover(config.fixedAmount ? recordId : 0);
+  const fixed = config.fixedAmount && handover.data ? adjustmentAmount(handover.data) : null;
+  const fixedProblem = !config.fixedAmount
+    ? null
+    : !handover.data
+      ? handover.isError
+        ? 'No se pudo cargar la entrega.'
+        : 'Cargando la entrega...'
+      : handover.data.status !== 'with_difference'
+        ? 'Esta entrega no tiene un faltante por aclarar.'
+        : null;
 
   if (!allowed) {
     return (
@@ -90,7 +107,8 @@ function RequestForm({
 
   const trimmed = reason.trim();
   const missing =
-    trimmed === '' ? MISSING_REASON : config.needsNewHolder && !holder ? MISSING_HOLDER : null;
+    fixedProblem ??
+    (trimmed === '' ? MISSING_REASON : config.needsNewHolder && !holder ? MISSING_HOLDER : null);
   const unknown = request.status === 'unknown';
   const failure = request.status === 'failed' ? describeError(request.error).message : null;
 
@@ -105,7 +123,11 @@ function RequestForm({
     <Button
       label="Enviar solicitud"
       onPress={() =>
-        void request.submit({ reason: trimmed, ...(holder ? { newHolderId: holder.id } : {}) })
+        void request.submit({
+          reason: trimmed,
+          ...(holder ? { newHolderId: holder.id } : {}),
+          ...(fixed !== null ? { amount: fixed } : {}),
+        })
       }
       loading={request.sending}
       loadingLabel="Enviando..."
@@ -120,6 +142,20 @@ function RequestForm({
         {...(subject ? { subtitle: subject } : {})}
         onBack={() => router.back()}
       />
+
+      {config.fixedAmount && handover.data && fixed !== null ? (
+        <>
+          <SummaryCard tone="plain">
+            <DataRow label="Entrega" value={handover.data.folio} />
+            <DataRow label="Faltante" value={formatMoney(handover.data.difference ?? 0)} amount />
+            <DataRow label="Importe de la aclaración" value={formatMoney(fixed)} amount />
+          </SummaryCard>
+          <AppText variant="caption" color={colors.textSecondary}>
+            Es la diferencia completa y no se cambia: al autorizarla, el faltante sale de la caja
+            del jefe. Si después aparece el dinero, entra como una entrega nueva.
+          </AppText>
+        </>
+      ) : null}
 
       {config.needsNewHolder ? (
         <PersonPicker
