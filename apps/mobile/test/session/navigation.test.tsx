@@ -186,9 +186,10 @@ describe('C-05 Perfil', () => {
   it('a "Más" option of a later phase opens its "Próximamente" page', async () => {
     sessionStore.signedIn(account('block_leader'));
     const router = await open('/block_leader/more');
-    await fireEvent.press(screen.getByRole('button', { name: 'Solicitudes de toma' }));
+    // G-06 arrives in M8.
+    await fireEvent.press(screen.getByRole('button', { name: 'Reporte de mi manzana' }));
     expect(router.getPathname()).toBe('/common/coming-soon');
-    expect(screen.getByText('Mis solicitudes de toma')).toBeTruthy();
+    expect(screen.getByText('Reporte de padrón por manzana')).toBeTruthy();
     expect(screen.getByText('Próximamente')).toBeTruthy();
   });
 });

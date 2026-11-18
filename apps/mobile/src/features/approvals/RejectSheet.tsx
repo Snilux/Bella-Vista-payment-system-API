@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { AppText, BottomSheet, Button, colors, Notice, TextField } from '../../ui/index.js';
+import { ReasonSheet } from '../forms/ReasonSheet.js';
 
 // R-03 "Rechazar": the reason is mandatory (docs/api.md; 3.2 §12). While it is empty the button
 // stays disabled and says why, so the president never sends a rejection without it.
@@ -16,59 +15,16 @@ export type RejectSheetProps = {
   onCancel: () => void;
 };
 
-export function RejectSheet({
-  visible,
-  summary,
-  loading,
-  serverError,
-  onConfirm,
-  onCancel,
-}: RejectSheetProps) {
-  const [reason, setReason] = useState('');
-
-  // Each opening starts empty.
-  useEffect(() => {
-    if (visible) setReason('');
-  }, [visible]);
-
-  const trimmed = reason.trim();
+export function RejectSheet(props: RejectSheetProps) {
   return (
-    <BottomSheet
-      visible={visible}
+    <ReasonSheet
+      {...props}
       title="Rechazar solicitud"
-      onClose={loading ? () => undefined : onCancel}
-      footer={
-        <>
-          <Button
-            label="Rechazar"
-            variant="danger"
-            loading={loading}
-            disabledReason={trimmed === '' ? REJECT_NEEDS_REASON : null}
-            onPress={() => onConfirm(trimmed)}
-          />
-          <Button
-            label="Volver"
-            variant="secondary"
-            onPress={onCancel}
-            disabledReason={loading ? 'Espere a que termine de guardar.' : null}
-          />
-        </>
-      }
-    >
-      <AppText variant="bodyStrong">{summary}</AppText>
-      <TextField
-        label="Motivo del rechazo"
-        required
-        value={reason}
-        onChangeText={setReason}
-        help="Quien la solicitó leerá este motivo."
-        maxLength={500}
-        multiline
-      />
-      {serverError ? <Notice title={serverError} /> : null}
-      <AppText variant="caption" color={colors.textSecondary}>
-        El rechazo queda en la bitácora con su motivo.
-      </AppText>
-    </BottomSheet>
+      reasonLabel="Motivo del rechazo"
+      confirmLabel="Rechazar"
+      needsReason={REJECT_NEEDS_REASON}
+      help="Quien la solicitó leerá este motivo."
+      footnote="El rechazo queda en la bitácora con su motivo."
+    />
   );
 }
