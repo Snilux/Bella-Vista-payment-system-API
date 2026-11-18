@@ -1,0 +1,4 @@
+{
+  "//": "ESM for NodeNext consumers of @bella-vista/mobile/api-client (the API tests); Metro and Jest ignore it.",
+  "type": "module"
+}
