@@ -44,13 +44,12 @@ export default function PresidentHome() {
 
       <ScreenState status={status} error={report.error} onRetry={() => void report.refetch()}>
         {totals ? (
-          <SummaryCard>
-            <AppText variant="label" color={colors.textSecondary}>
-              Fondos comunitarios esperados
-            </AppText>
-            <AppText variant="display" amount>
-              {formatMoney(totals.expectedCommunityFunds)}
-            </AppText>
+          <SummaryCard
+            heading={{
+              label: 'Fondos comunitarios esperados',
+              amountCents: totals.expectedCommunityFunds,
+            }}
+          >
             <DataRow label="Caja del comité" value={formatMoney(totals.committeeBalance)} amount />
             <DataRow
               label="Efectivo con jefes"

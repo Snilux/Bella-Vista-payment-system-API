@@ -4,6 +4,10 @@
   "private": true,
   "description": "Mobile app for the water committee (Expo + React Native)",
   "main": "expo-router/entry",
+  "exports": {
+    "./api-client": "./src/api/api-client.ts",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "start": "expo start",
     "typecheck": "tsc -p tsconfig.json --noEmit",

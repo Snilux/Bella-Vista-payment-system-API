@@ -566,7 +566,13 @@ export const paymentCancellationHandler: ApprovalHandler = {
   async describe(db, approvalIds) {
     const rows = await repo.cancellationsByApproval(db, approvalIds);
     return new Map(
-      rows.map((r) => [r.approvalId, `Cancelar el pago ${r.folio} (${formatMoney(r.total)})`]),
+      rows.map((r) => [
+        r.approvalId,
+        {
+          description: `Cancelar el pago ${r.folio} (${formatMoney(r.total)})`,
+          subject: { type: 'payment', id: r.paymentId },
+        },
+      ]),
     );
   },
 };

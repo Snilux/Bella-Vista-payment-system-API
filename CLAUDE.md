@@ -59,8 +59,10 @@ apps/mobile/
   src/api/             client.ts (fetch, token refresh, errors), error-messages.ts, query hooks (useAuth…)
   src/session/         tokens, session state, screen-catalog.ts (63 screens, `done` flag), role-menu.ts
                        (role → tabs → "Más"), permissions.ts
-  src/features/        screen pieces per module (session/: RoleTabs, MoreMenu, ComingSoon; accounts/: A-01 to A-04)
-  test/                Jest (jest-expo): api/, session/ (navigation, catalog) and ui/ (140 % checks)
+  src/features/        screen pieces per module (session/: RoleTabs, MoreMenu, ComingSoon; accounts/, organization/,
+                       approvals/, registry/, billing/: the payment flow; forms/ and people/: shared form pieces)
+  test/                Jest (jest-expo): api/, session/ (navigation, catalog), ui/ (140 % checks) and one
+                       folder per phase with its scripted API (accounts/, m4/, m5/, m6/)
 packages/shared/src/   schemas/ (Zod), domain/ (pure rules), format/ (es-MX)
 docs/                  business context, data model, API contract, glossary
 ```
@@ -73,7 +75,7 @@ Workspace package names (use them as dependencies and imports, e.g. in `apps/mob
 |---|---|---|
 | `@bella-vista/shared` | `packages/shared` | Zod schemas, pure domain rules, es-MX formats. Import from the package root: `import { loginRequestSchema, can } from '@bella-vista/shared'`. Exports `src/` under the `development` condition and `dist/` otherwise |
 | `@bella-vista/api` | `apps/api` | The API; nothing imports it |
-| `@bella-vista/mobile` | `apps/mobile` | The Expo app; nothing imports it. Metro and Jest resolve `@bella-vista/shared` to its sources |
+| `@bella-vista/mobile` | `apps/mobile` | The Expo app. Only `@bella-vista/mobile/api-client` (its HTTP client, no Expo imports) is imported, by the API's integration tests. Metro and Jest resolve `@bella-vista/shared` to its sources |
 | `bella-vista-payment-system-api` | repository root | Private workspace root (scripts only) |
 
 ## Coding rules

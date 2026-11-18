@@ -20,7 +20,7 @@ import { errors } from '../../lib/errors.js';
 import { dateToPeriod, periodOf, periodToDate } from '../../lib/periods.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
 import { assertInScope, blockScope } from '../../plugins/permissions.js';
-import type { ApprovalHandler } from '../approvals/approval-registry.js';
+import type { ApprovalHandler, ApprovalSummary } from '../approvals/approval-registry.js';
 import { loadDebts, NO_DEBT } from '../billing/account-statements.js';
 import { registryErrors } from './registry.errors.js';
 import * as repo from './registry.repository.js';
@@ -562,17 +562,18 @@ export type RegistryService = ReturnType<typeof createRegistryService>;
 
 async function describeChanges(executor: Executor, ids: number[]) {
   const rows = await repo.changeRequestsByApproval(executor, ids);
-  const texts = new Map<number, string>();
+  const texts = new Map<number, ApprovalSummary>();
   for (const row of rows) {
     const holder = await repo.currentHolderOf(executor, row.unitId);
     const current = holder ? personBasic(holder).fullName : 'sin titular';
     const next = optionalPerson(row.newHolder);
-    texts.set(
-      row.approvalId,
-      row.type === 'deactivation'
-        ? `Baja de la unidad ${row.unitFolio} (titular: ${current})`
-        : `Cambio de titular de la unidad ${row.unitFolio}: ${current} → ${next?.fullName ?? '?'}`,
-    );
+    texts.set(row.approvalId, {
+      description:
+        row.type === 'deactivation'
+          ? `Baja de la unidad ${row.unitFolio} (titular: ${current})`
+          : `Cambio de titular de la unidad ${row.unitFolio}: ${current} → ${next?.fullName ?? '?'}`,
+      subject: { type: 'unit', id: row.unitId },
+    });
   }
   return texts;
 }

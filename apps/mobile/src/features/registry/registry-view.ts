@@ -236,8 +236,8 @@ export function estimateDebt(
   return { text, totalDue: summary.totalDue, missingRates: missingRatePeriods.length };
 }
 
-/** P-06: "Ir a cobrar" stays disabled until the payment screens (M6, 3.2 §6). */
-export const CHARGE_COMES_LATER = 'El cobro desde la app llega en la siguiente versión.';
+/** P-06: the secretary does not collect; the block leader or the treasurer does (D-07). */
+export const COLLECT_ELSEWHERE = 'El cobro lo registra el jefe de manzana o el tesorero.';
 
 // --- S-08 · suspensions (D-06) -------------------------------------------------------------------
 

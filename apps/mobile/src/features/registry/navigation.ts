@@ -1,14 +1,13 @@
 import type { PersonBasic } from '@bella-vista/shared';
 import { router } from 'expo-router';
 
-// Navigation shared by the registry screens. The family file (G-04) arrives in M6: until then a
-// family opens "Próximamente G-04". A person travels between forms as route parameters (id,
-// folio, name, distinguishing note) so the next form starts with it chosen.
+// Navigation shared by the registry screens; a family opens its file (G-04). A person travels
+// between forms as route parameters (id, folio, name, distinguishing note) so the next form
+// starts with it chosen.
 
 export const openPerson = (id: number) => router.push(`/common/people/${id}`);
 export const openConnection = (id: number) => router.push(`/common/connections/${id}`);
-export const openUnit = (_id: number) =>
-  router.push({ pathname: '/common/coming-soon', params: { screen: 'G-04' } });
+export const openUnit = (id: number) => router.push(`/common/units/${id}`);
 
 export type PersonParams = {
   personId?: string;

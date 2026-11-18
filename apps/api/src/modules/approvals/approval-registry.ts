@@ -1,4 +1,4 @@
-import type { ApprovalType } from '@bella-vista/shared';
+import type { ApprovalSubject, ApprovalType } from '@bella-vista/shared';
 import type { Actor } from '../../db/audit.js';
 import type { Database, Transaction } from '../../db/client.js';
 
@@ -19,13 +19,22 @@ export interface ApprovalResolution {
   reason: string | null;
 }
 
+/** How the inbox shows an approval: its text and the record it is about (R-03 opens it). */
+export interface ApprovalSummary {
+  description: string;
+  subject: ApprovalSubject;
+}
+
 export interface ApprovalHandler {
   /** Runs after the approval is marked approved, in the same transaction. */
   onApproved(resolution: ApprovalResolution): Promise<void>;
   /** Runs after the approval is marked rejected, in the same transaction. */
   onRejected(resolution: ApprovalResolution): Promise<void>;
-  /** Inbox text for each approval id of this type (missing ids show no description). */
-  describe(db: Database | Transaction, approvalIds: number[]): Promise<Map<number, string>>;
+  /** Text and record of each approval id of this type (missing ids show neither). */
+  describe(
+    db: Database | Transaction,
+    approvalIds: number[],
+  ): Promise<Map<number, ApprovalSummary>>;
 }
 
 export class ApprovalHandlerError extends Error {

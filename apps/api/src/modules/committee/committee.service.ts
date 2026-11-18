@@ -601,7 +601,13 @@ export const expenseRefundHandler: ApprovalHandler = {
   async describe(db, approvalIds) {
     const rows = await repo.refundsByApproval(db, approvalIds);
     return new Map(
-      rows.map((r) => [r.approvalId, `Reintegro del gasto ${r.folio} (${formatMoney(r.amount)})`]),
+      rows.map((r) => [
+        r.approvalId,
+        {
+          description: `Reintegro del gasto ${r.folio} (${formatMoney(r.amount)})`,
+          subject: { type: 'expense', id: r.expenseId },
+        },
+      ]),
     );
   },
 };
@@ -635,7 +641,10 @@ export const plumberSalaryHandler: ApprovalHandler = {
     return new Map(
       rows.map((r) => [
         r.approvalId,
-        `Salario ${FREQUENCY_LABELS[r.frequency] ?? r.frequency} de ${formatMoney(r.amount)} para ${r.plumberName} desde ${r.effectiveFrom}`,
+        {
+          description: `Salario ${FREQUENCY_LABELS[r.frequency] ?? r.frequency} de ${formatMoney(r.amount)} para ${r.plumberName} desde ${r.effectiveFrom}`,
+          subject: { type: 'plumber', id: r.plumberId },
+        },
       ]),
     );
   },

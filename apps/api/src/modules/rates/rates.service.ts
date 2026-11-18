@@ -279,7 +279,10 @@ export const rateApprovalHandler: ApprovalHandler = {
     return new Map(
       rows.map((r) => [
         r.approvalId,
-        `Tarifa de ${formatMoney(r.amount)} desde ${formatPeriod(dateToPeriod(r.effectivePeriod))}`,
+        {
+          description: `Tarifa de ${formatMoney(r.amount)} desde ${formatPeriod(dateToPeriod(r.effectivePeriod))}`,
+          subject: { type: 'rate', id: r.id },
+        },
       ]),
     );
   },

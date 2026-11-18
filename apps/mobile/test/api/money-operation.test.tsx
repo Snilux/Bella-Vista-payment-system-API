@@ -97,3 +97,53 @@ describe('useMoneyOperation', () => {
     expect(send.mock.calls[1]).toEqual([{ amount: 70 }, 'k2']);
   });
 });
+
+describe('useMoneyOperation with an external attempt store (the payment flow)', () => {
+  it('keeps the unanswered attempt outside the screen: a new screen retries with the same key', async () => {
+    let attempt: { vars: { amount: number }; key: string | undefined } | null = null;
+    const store = {
+      get: () => attempt,
+      set: (next: typeof attempt) => {
+        attempt = next;
+      },
+    };
+    const send = jest.fn().mockRejectedValueOnce(networkError()).mockResolvedValueOnce('PG-9');
+    let n = 0;
+    const first = await renderHook(() =>
+      useMoneyOperation<{ amount: number }, string>(send, {
+        attemptStore: store,
+        newKey: () => `k${++n}`,
+      }),
+    );
+    await act(() => first.result.current.submit({ amount: 100 }));
+    expect(attempt).toEqual({ vars: { amount: 100 }, key: 'k1' });
+    await first.unmount();
+
+    // F-03 again (after going back to F-02): it starts as "unknown" and retries the same attempt.
+    const second = await renderHook(() =>
+      useMoneyOperation<{ amount: number }, string>(send, {
+        attemptStore: store,
+        newKey: () => `k${++n}`,
+      }),
+    );
+    expect(second.result.current.status).toBe('unknown');
+    await act(() => second.result.current.retry());
+    expect(send.mock.calls[1]).toEqual([{ amount: 100 }, 'k1']);
+    expect(attempt).toBeNull();
+  });
+
+  it('tells onFailure about an answer of the API, never about a lost one', async () => {
+    const onFailure = jest.fn();
+    const send = jest
+      .fn()
+      .mockRejectedValueOnce(networkError())
+      .mockRejectedValueOnce(new ApiError('TOTAL_CHANGED', 409, 'Cambió'));
+    const { result } = await renderHook(() =>
+      useMoneyOperation<{ amount: number }, string>(send, { onFailure, newKey: () => 'k' }),
+    );
+    await act(() => result.current.submit({ amount: 1 }));
+    expect(onFailure).not.toHaveBeenCalled();
+    await act(() => result.current.retry());
+    expect(onFailure).toHaveBeenCalledWith(expect.objectContaining({ code: 'TOTAL_CHANGED' }));
+  });
+});

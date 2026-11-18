@@ -20,6 +20,32 @@ export type ApprovalType = (typeof APPROVAL_TYPES)[number];
 
 export const APPROVAL_STATUSES = ['pending', 'approved', 'rejected'] as const;
 
+/**
+ * The record an approval is about, so a screen can open it (R-03 → G-05, T-10, G-04…):
+ * role_assignment → its assignment; rate → the rate; plumber_salary → the plumber;
+ * opening_balance → the cashbox; unit_deactivation and holder_change → the unit;
+ * payment_cancellation → the payment; adjustment → its handover or closing;
+ * expense_refund → the expense.
+ */
+export const APPROVAL_SUBJECT_TYPES = [
+  'role_assignment',
+  'rate',
+  'plumber',
+  'cashbox',
+  'unit',
+  'payment',
+  'handover',
+  'closing',
+  'expense',
+] as const;
+
+export type ApprovalSubjectType = (typeof APPROVAL_SUBJECT_TYPES)[number];
+
+export const approvalSubjectSchema = z.object({
+  type: z.enum(APPROVAL_SUBJECT_TYPES),
+  id: z.int(),
+});
+
 const accountRefSchema = z.object({
   userAccountId: z.int(),
   username: z.string(),
@@ -35,6 +61,8 @@ export const approvalSchema = z.object({
   reason: z.string(),
   /** What is being approved, written by the module that owns the type. */
   description: z.string().nullable(),
+  /** The record it is about; null only if its module wrote none. */
+  subject: approvalSubjectSchema.nullable(),
   requestedBy: accountRefSchema,
   requestedAt: z.iso.datetime(),
   resolvedBy: accountRefSchema.nullable(),
@@ -65,5 +93,6 @@ export const resolveApprovalRequestSchema = z
   });
 
 export type Approval = z.infer<typeof approvalSchema>;
+export type ApprovalSubject = z.infer<typeof approvalSubjectSchema>;
 export type ApprovalListQuery = z.infer<typeof approvalListQuerySchema>;
 export type ResolveApprovalRequest = z.infer<typeof resolveApprovalRequestSchema>;

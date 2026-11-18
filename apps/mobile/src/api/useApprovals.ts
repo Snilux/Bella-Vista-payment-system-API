@@ -16,8 +16,8 @@ import { isApiError } from './errors.js';
 import { queryKeys } from './keys.js';
 
 // Approvals inbox (docs/api.md "Autorizaciones"; 3.2 §10.8, R-01 to R-03). The president sees
-// every request; any other role, the ones it sent. There is no GET /approvals/{id}: R-03 reads
-// the item from the lists. Resolving takes it out of the pending list at once (the inbox and
+// every request; any other role, the ones it sent. R-03 reads one with GET /approvals/{id}, whose
+// subject points to the record (the payment, the rate, the family…). Resolving takes it out of the pending list at once (the inbox and
 // the counter of the tab update without waiting) and then reloads everything it may change.
 
 type ListStatus = 'pending' | 'resolved' | 'all';
@@ -51,18 +51,28 @@ export function usePendingApprovalCount(enabled: boolean): number {
 }
 
 /**
- * R-03: one request, from the list of every status. While it loads, the pending list already
- * cached (the inbox the person came from) shows it at once.
+ * R-03: one request with its subject (GET /v1/approvals/{id}). While it loads, the item of the
+ * pending inbox already cached (where the person came from) shows at once.
  */
 export function useApproval(id: number) {
   const queryClient = useQueryClient();
   return useQuery({
-    ...approvalList('all'),
-    select: (data) => data.approvals.find((item) => item.id === id) ?? null,
-    placeholderData: () =>
-      queryClient.getQueryData(queryKeys.approvalList('pending')) as
-        | { approvals: Approval[] }
-        | undefined,
+    queryKey: queryKeys.approval(id),
+    queryFn: ({ signal }) =>
+      requireApiClient().request({
+        method: 'GET',
+        path: `/approvals/${id}`,
+        schema: approvalResponseSchema,
+        signal,
+      }),
+    select: (data) => data.approval,
+    placeholderData: () => {
+      const inbox = queryClient.getQueryData<{ approvals: Approval[] }>(
+        queryKeys.approvalList('pending'),
+      );
+      const item = inbox?.approvals.find((approval) => approval.id === id);
+      return item ? { approval: item } : undefined;
+    },
   });
 }
 
@@ -72,6 +82,12 @@ function afterResolution(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: queryKeys.roleAssignments });
   void queryClient.invalidateQueries({ queryKey: queryKeys.blocks });
   void queryClient.invalidateQueries({ queryKey: queryKeys.communityReport });
+  // An approved cancellation frees months and moves the cashbox; a rate changes prices.
+  void queryClient.invalidateQueries({ queryKey: queryKeys.payments });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.units });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.rates });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.myCashbox });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.people });
 }
 
 function withoutPending(queryClient: QueryClient, id: number) {
@@ -92,11 +108,7 @@ export function useResolveApproval(id: number) {
       }),
     onSuccess: ({ approval }) => {
       withoutPending(queryClient, id);
-      queryClient.setQueryData<{ approvals: Approval[] }>(queryKeys.approvalList('all'), (list) =>
-        list
-          ? { approvals: list.approvals.map((item) => (item.id === id ? approval : item)) }
-          : list,
-      );
+      queryClient.setQueryData(queryKeys.approval(id), { approval });
       afterResolution(queryClient);
     },
     onError: (error) => {

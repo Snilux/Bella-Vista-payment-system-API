@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { describeError } from '../../../../src/api/error-messages.js';
 import { isApiError } from '../../../../src/api/errors.js';
 import { useApproval, useResolveApproval } from '../../../../src/api/useApprovals.js';
+import { ApprovalSubjectDetail } from '../../../../src/features/approvals/ApprovalSubjectDetail.js';
 import {
   APPROVAL_STATUS_TAGS,
   APPROVAL_TYPE_TEXTS,
@@ -26,10 +27,10 @@ import {
   screenStatusOf,
 } from '../../../../src/ui/index.js';
 
-// Who requests it, when and why, and what is authorized (2.6 R-03; 3.2 §10.8). The API gives
-// no structured before/after (option (a) of M4): the description written by the module that
-// owns the type carries the data (block, who leaves and who comes in, start date…), and the
-// screen adds what authorizing does. Authorizing asks for confirmation; rejecting needs a
+// Who requests it, when and why, and what is authorized (2.6 R-03; 3.2 §10.8). The description
+// written by the module that owns the type carries the data (block, who leaves and who comes in,
+// start date…); since M6 the approval also points to its record (subject), so the screen shows
+// the real payment or rate and opens it (G-05, G-04). It adds what authorizing does. Authorizing asks for confirmation; rejecting needs a
 // reason. Once resolved, the inbox and the tab counter are already updated.
 
 type Sheet = 'approve' | 'reject' | null;
@@ -126,6 +127,7 @@ export default function ApprovalDetail() {
         </AppText>
         <AppText variant="bodyStrong">{summary}</AppText>
       </SummaryCard>
+      <ApprovalSubjectDetail subject={approval.subject} />
 
       {approval.status !== 'pending' ? (
         <SummaryCard tone="plain">

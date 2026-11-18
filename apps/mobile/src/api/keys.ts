@@ -43,4 +43,16 @@ export const queryKeys = {
   agreements: ['agreements'] as const,
   /** S-08 and S-01. */
   suspensions: ['suspensions'] as const,
+  /** G-04: a family and its account statement. */
+  units: ['units'] as const,
+  unit: (id: number) => ['units', id] as const,
+  statement: (id: number) => ['units', id, 'account-statement'] as const,
+  /** G-05, G-10 and the payment flow (F-03 preview). */
+  payments: ['payments'] as const,
+  payment: (id: number) => ['payments', id] as const,
+  /** J-01 (Mi caja in M7). */
+  myCashbox: ['cashboxes', 'mine'] as const,
+  handovers: ['handovers'] as const,
+  /** R-03: one approval with its subject. */
+  approval: (id: number) => ['approvals', 'detail', id] as const,
 };

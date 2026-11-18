@@ -255,6 +255,7 @@ describe.skipIf(!testDatabaseUrl)('organization', () => {
       type: 'role_assignment',
       reason: 'Registro de jefe de manzana de la manzana S2-M02',
       description: 'Jefe de manzana S2-M02: Teresa Navarro Cruz, desde el 1 nov 2026',
+      subject: { type: 'role_assignment', id: created.body.assignment.id },
       requestedBy: { username: 'secretario' },
     });
     const own = await call('GET', '/v1/approvals', 'secretario');

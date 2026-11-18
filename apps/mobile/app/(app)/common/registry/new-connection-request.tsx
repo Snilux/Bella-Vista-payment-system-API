@@ -24,7 +24,9 @@ import {
 } from '../../../../src/features/registry/navigation.js';
 import {
   Button,
+  DATE_FORMAT_MESSAGE,
   DataRow,
+  DateField,
   Header,
   Notice,
   ScreenLayout,
@@ -84,8 +86,7 @@ export default function NewConnectionRequest() {
       const next: Partial<Record<Field, string>> = {};
       for (const issue of parsed.error.issues) {
         const field = String(issue.path[0]) as Field;
-        next[field] ??=
-          field === 'requestedOn' ? 'Escriba la fecha como AAAA-MM-DD.' : issue.message;
+        next[field] ??= field === 'requestedOn' ? DATE_FORMAT_MESSAGE : issue.message;
       }
       setErrors(next);
       return;
@@ -117,14 +118,12 @@ export default function NewConnectionRequest() {
         maxLength={200}
       />
       <BlockField value={blockId} onChange={setBlockId} error={errorOf('blockId')} />
-      <TextField
+      <DateField
         label="Fecha de solicitud"
         required
         value={requestedOn}
-        onChangeText={setRequestedOn}
-        help="AAAA-MM-DD."
+        onChange={setRequestedOn}
         error={errorOf('requestedOn')}
-        maxLength={10}
       />
       <Notice
         icon="alert"

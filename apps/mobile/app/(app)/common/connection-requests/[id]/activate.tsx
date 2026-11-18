@@ -18,7 +18,7 @@ import {
 import { businessToday } from '../../../../../src/features/forms/business-date.js';
 import { ReasonSheet } from '../../../../../src/features/forms/ReasonSheet.js';
 import {
-  CHARGE_COMES_LATER,
+  COLLECT_ELSEWHERE,
   canCancelRequest,
   requestStatusView,
 } from '../../../../../src/features/registry/registry-view.js';
@@ -26,8 +26,9 @@ import { useCan } from '../../../../../src/session/permissions.js';
 import {
   AppText,
   Button,
-  colors,
+  DATE_FORMAT_MESSAGE,
   DataRow,
+  DateField,
   Header,
   Notice,
   ScreenLayout,
@@ -41,8 +42,9 @@ import {
 // Install an approved connection (Figma P-06; 3.2 §10.4): it creates the connection and its
 // first family with the applicant as holder, billed from the activation month. It is also the
 // page of a request opened from G-02, J-06 or S-02: it says its status and offers what fits it
-// (resolve, install, cancel). With the opening unpaid the API answers OPENING_NOT_PAID: the screen
-// shows it with "Ir a cobrar" disabled, since collecting arrives in M6 (3.2 §6, M6 row).
+// (resolve, install, cancel). While the opening is unpaid (or the API answers OPENING_NOT_PAID)
+// it offers "Ir a cobrar": the payment flow with the request's opening charge (F-02, M6), for the
+// roles that collect.
 
 type Field = 'activatedOn' | 'address' | 'reference';
 
@@ -56,6 +58,7 @@ export default function ActivateConnection() {
   const cancel = useCancelConnectionRequest(requestId);
   const canManage = useCan('connectionRequests.manage');
   const canResolve = useCan('connectionRequests.resolve');
+  const canCollect = useCan('billing.collect');
   const [activatedOn, setActivatedOn] = useState(businessToday());
   const [address, setAddress] = useState('');
   const [reference, setReference] = useState('');
@@ -97,8 +100,7 @@ export default function ActivateConnection() {
       const next: Partial<Record<Field, string>> = {};
       for (const issue of parsed.error.issues) {
         const field = String(issue.path[0]) as Field;
-        next[field] ??=
-          field === 'activatedOn' ? 'Escriba la fecha como AAAA-MM-DD.' : issue.message;
+        next[field] ??= field === 'activatedOn' ? DATE_FORMAT_MESSAGE : issue.message;
       }
       setErrors(next);
       return;
@@ -181,14 +183,12 @@ export default function ActivateConnection() {
 
       {installable ? (
         <>
-          <TextField
+          <DateField
             label="Fecha de activación"
             required
             value={activatedOn}
-            onChangeText={setActivatedOn}
-            help="AAAA-MM-DD."
+            onChange={setActivatedOn}
             error={errorOf('activatedOn')}
-            maxLength={10}
           />
           <TextField
             label="Dirección de la toma instalada"
@@ -216,26 +216,30 @@ export default function ActivateConnection() {
         </>
       ) : null}
 
-      {openingUnpaid ? (
+      {openingUnpaid || request.status === 'approved_pending_payment' ? (
         <Notice
-          title={describeError(activate.error).message}
-          detail={CHARGE_COMES_LATER}
+          title={
+            openingUnpaid
+              ? describeError(activate.error).message
+              : 'La toma se activa cuando la apertura esté pagada.'
+          }
+          {...(canCollect ? {} : { detail: COLLECT_ELSEWHERE })}
           action={
             <Button
               label="Ir a cobrar"
               variant="secondary"
-              disabledReason={CHARGE_COMES_LATER}
-              onPress={() => undefined}
+              disabledReason={canCollect ? null : COLLECT_ELSEWHERE}
+              onPress={() =>
+                router.push({
+                  pathname: '/common/new-payment/months',
+                  params: { requestId: String(request.id) },
+                })
+              }
             />
           }
         />
       ) : null}
       {general ? <Notice title={general} /> : null}
-      {request.status === 'approved_pending_payment' && !openingUnpaid ? (
-        <AppText variant="caption" color={colors.textSecondary}>
-          La toma se activa cuando la apertura esté pagada.
-        </AppText>
-      ) : null}
 
       <ReasonSheet
         visible={cancelling}

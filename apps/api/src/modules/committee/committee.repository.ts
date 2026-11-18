@@ -204,6 +204,7 @@ export function refundsByApproval(db: Executor, approvalIds: number[]) {
   return db
     .select({
       approvalId: expenseRefund.approvalId,
+      expenseId: expenseRefund.expenseId,
       folio: vExpense.folio,
       amount: effectiveAmount,
     })

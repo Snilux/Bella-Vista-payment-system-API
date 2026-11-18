@@ -18,7 +18,7 @@ import { isUniqueViolation } from '../../db/errors.js';
 import { businessDate } from '../../lib/dates.js';
 import { AppError, errors } from '../../lib/errors.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
-import type { ApprovalHandler } from '../approvals/approval-registry.js';
+import type { ApprovalHandler, ApprovalSummary } from '../approvals/approval-registry.js';
 import { revokeAllRefreshTokens } from '../auth/auth.repository.js';
 import { blockCashbox } from '../cashboxes/cashboxes.repository.js';
 import { ensureBlockCashbox } from '../cashboxes/cashboxes.service.js';
@@ -613,10 +613,13 @@ export const roleAssignmentApprovalHandler: ApprovalHandler = {
       ...new Set(rows.flatMap((row) => (row.blockId === null ? [] : [row.blockId]))),
     ];
     const ended = blockIds.length > 0 ? await endedLeadersOf(executor, blockIds) : [];
-    const texts = new Map<number, string>();
+    const texts = new Map<number, ApprovalSummary>();
     for (const row of rows) {
       if (row.approvalId === null) continue;
-      texts.set(row.approvalId, describeAssignment(row, outgoingLeaderOf(row, ended)));
+      texts.set(row.approvalId, {
+        description: describeAssignment(row, outgoingLeaderOf(row, ended)),
+        subject: { type: 'role_assignment', id: row.id },
+      });
     }
     return texts;
   },

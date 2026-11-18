@@ -190,7 +190,7 @@ export default function NewPerson() {
             <Radio
               key={person.id}
               label={homonyms.length === 1 ? 'Es la misma persona' : `Es ${personLine(person)}`}
-              description={personLine(person) + ` · Folio ${person.folio}`}
+              description={`${personLine(person)} · Folio ${person.folio}`}
               selected={decision !== null && decision !== 'other' && decision.id === person.id}
               onPress={() => setDecision(person)}
             />

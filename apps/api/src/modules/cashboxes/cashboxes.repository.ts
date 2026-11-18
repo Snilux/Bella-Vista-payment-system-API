@@ -437,6 +437,8 @@ export function adjustmentsByApproval(db: Executor, approvalIds: number[]) {
     .select({
       approvalId: adjustment.approvalId,
       amount: adjustment.amount,
+      handoverId: adjustment.handoverId,
+      closingId: adjustment.closingId,
       handoverFolio: handover.folio,
       closingFolio: closing.folio,
     })

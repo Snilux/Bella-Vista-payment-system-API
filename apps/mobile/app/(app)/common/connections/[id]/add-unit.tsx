@@ -15,7 +15,15 @@ import {
   useDiscardGuard,
 } from '../../../../../src/features/forms/DiscardChangesSheet.js';
 import { PersonPicker } from '../../../../../src/features/people/PersonPicker.js';
-import { Button, Header, Notice, ScreenLayout, TextField } from '../../../../../src/ui/index.js';
+import {
+  Button,
+  DATE_FORMAT_MESSAGE,
+  DateField,
+  Header,
+  Notice,
+  ScreenLayout,
+  TextField,
+} from '../../../../../src/ui/index.js';
 
 // A new family in an active connection (Figma P-04; 3.2 §10.4): holder, reference and the
 // registration date. No opening fee: the family pays its monthly fee from that month, in full.
@@ -54,8 +62,7 @@ export default function AddUnit() {
       const next: Partial<Record<Field, string>> = {};
       for (const issue of parsed.error.issues) {
         const field = String(issue.path[0]) as Field;
-        next[field] ??=
-          field === 'registeredOn' ? 'Escriba la fecha como AAAA-MM-DD.' : issue.message;
+        next[field] ??= field === 'registeredOn' ? DATE_FORMAT_MESSAGE : issue.message;
       }
       setErrors(next);
       return;
@@ -91,14 +98,12 @@ export default function AddUnit() {
         error={errorOf('reference')}
         maxLength={80}
       />
-      <TextField
+      <DateField
         label="Fecha de activación"
         required
         value={registeredOn}
-        onChangeText={setRegisteredOn}
-        help="AAAA-MM-DD."
+        onChange={setRegisteredOn}
         error={errorOf('registeredOn')}
-        maxLength={10}
       />
       <Notice
         icon="alert"
