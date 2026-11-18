@@ -12,6 +12,7 @@ export function createAuditService(deps: { db: Database }) {
       const rows = await listAuditLog(deps.db, {
         technicalOnly: viewer.role !== 'president',
         userAccountId: query.userAccountId,
+        role: query.role,
         tableName: query.tableName,
         recordId: query.recordId,
         action: query.action,

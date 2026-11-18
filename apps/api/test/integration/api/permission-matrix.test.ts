@@ -141,7 +141,8 @@ const MATRIX: Record<string, R[]> = {
   'POST /v1/closings': [JM, TES],
   'POST /v1/closings/:id/count': [JM, TES],
   'POST /v1/closings/:id/review': [PRE, VOC],
-  'POST /v1/closings/:id/close': [PRE, VOC],
+  // Only the president closes (M8); the member reviews.
+  'POST /v1/closings/:id/close': [PRE],
   'GET /v1/approvals': COMMITTEE_AND_JM,
   'GET /v1/approvals/:id': COMMITTEE_AND_JM,
   'POST /v1/approvals/:id/resolve': [PRE],

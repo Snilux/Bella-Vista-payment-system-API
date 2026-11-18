@@ -57,11 +57,11 @@ const periodsField = (details: Details): string[] => {
  */
 export const SUBSTITUTION_MESSAGES = {
   noClosing:
-    'Antes de sustituir al jefe, el tesorero debe hacer el corte extraordinario de la caja de esta manzana y contar el efectivo.',
+    'Antes de sustituir al jefe, el tesorero debe hacer el corte extraordinario de la caja de esta manzana (Más → Cortes → Corte extraordinario) y contar el efectivo.',
   notCounted:
     'El corte extraordinario de esta manzana aún no tiene el conteo del efectivo. Pida al tesorero que lo capture antes de sustituir al jefe.',
   staleClosing:
-    'La caja de esta manzana tuvo movimientos después del corte extraordinario. El tesorero debe hacer un corte extraordinario nuevo.',
+    'La caja de esta manzana tuvo movimientos después del corte extraordinario. El tesorero debe hacer un corte extraordinario nuevo (Más → Cortes → Corte extraordinario).',
   noLeader: 'Esta manzana no tiene un jefe vigente. Use «Asignar cargo» para registrar al jefe.',
 } as const;
 
@@ -137,7 +137,8 @@ export const ERROR_MESSAGES: Record<ApiErrorCode, ErrorInfo> = {
   },
   DUPLICATE_PAPER_FOLIO: { message: 'Este folio ya se usó en su talonario.', action: 'fix-field' },
   PERIOD_CLOSED: {
-    message: 'Ese mes ya tiene el corte cerrado. Registre el movimiento en el mes abierto.',
+    message:
+      'Ese mes ya tiene su corte cerrado y no admite movimientos. Registre la operación con una fecha del mes abierto; si es una corrección, se hace en el mes abierto.',
     action: 'none',
   },
   INSUFFICIENT_BALANCE: {

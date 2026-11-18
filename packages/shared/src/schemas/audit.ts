@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ROLES } from '../domain/role-assignment.js';
 import { page, paginationQuerySchema } from './common.js';
 
 // Audit log query (/v1/audit-log; CU-25, RF-AUD-02): the president sees every entry, the
@@ -8,6 +9,8 @@ export const auditEntrySchema = z.object({
   id: z.int(),
   userAccountId: z.int(),
   username: z.string(),
+  /** The person of the account (R-05). */
+  fullName: z.string(),
   role: z.string(),
   action: z.string(),
   tableName: z.string(),
@@ -21,6 +24,8 @@ export const auditEntrySchema = z.object({
 
 export const auditLogQuerySchema = paginationQuerySchema.extend({
   userAccountId: z.coerce.number().int().positive().optional(),
+  /** The role of the account when it acted (R-05 "Cargo"). */
+  role: z.enum(ROLES).optional(),
   tableName: z.string().trim().min(1).max(64).optional(),
   recordId: z.coerce.number().int().positive().optional(),
   action: z.string().trim().min(1).max(64).optional(),

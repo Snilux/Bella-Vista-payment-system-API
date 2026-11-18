@@ -160,6 +160,7 @@ function fakeServer() {
             after: null,
             reason: 'Olvidó su contraseña',
             isTechnical: true,
+            fullName: 'Rolando Gómez Torres',
             createdAt: '2026-10-23T16:00:00.000Z',
           },
           {
@@ -174,6 +175,7 @@ function fakeServer() {
             after: null,
             reason: null,
             isTechnical: true,
+            fullName: 'Rolando Gómez Torres',
             createdAt: '2026-10-20T16:00:00.000Z',
           },
         ],

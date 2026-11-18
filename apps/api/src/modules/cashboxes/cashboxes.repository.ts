@@ -528,3 +528,25 @@ export function adjustmentsByApproval(db: Executor, approvalIds: number[]) {
     .leftJoin(closing, eq(closing.id, adjustment.closingId))
     .where(inArray(adjustment.approvalId, approvalIds));
 }
+
+/**
+ * Where the monthly closings of each cashbox stand (D-14): the last day of its latest closed
+ * monthly closing and the date of its first movement (both null when there are none).
+ */
+export async function closingProgress(db: Executor, ids: number[]) {
+  if (ids.length === 0)
+    return new Map<number, { lastClosedTo: string | null; firstMovement: string | null }>();
+  const rows = await db
+    .select({
+      // Written with an alias: without a join Drizzle leaves columns unqualified, and inside
+      // the subqueries "id" would be the closing's.
+      id: sql<number>`cb.id`.mapWith(Number),
+      lastClosedTo: sql<string | null>`(SELECT max(c.date_to)::text FROM closing c
+        WHERE c.cashbox_id = cb.id AND c.type = 'monthly' AND c.closed_at IS NOT NULL)`,
+      firstMovement: sql<string | null>`(SELECT min(m.occurred_on)::text FROM v_cashbox_movement m
+        WHERE m.cashbox_id = cb.id)`,
+    })
+    .from(sql`cashbox cb`)
+    .where(sql`cb.id IN ${ids}`);
+  return new Map(rows.map(({ id, ...row }) => [id, row]));
+}

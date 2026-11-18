@@ -138,6 +138,13 @@ export function MyCashboxScreen({
                 {...(pending.data ? { count: pending.data.count } : {})}
                 onPress={() => router.push(`${base}/handovers`)}
               />
+              {support ? null : (
+                <MenuRow
+                  label="Cortes de caja"
+                  icon="closing"
+                  onPress={() => router.push(`${base}/closing`)}
+                />
+              )}
             </MenuGroup>
           </>
         ) : null}

@@ -3,4 +3,6 @@
 // Native: the token store and fetch are injected (createApiClient options). Re-exports only.
 
 export * from './client.js';
+// What the person reads for each API error (no Expo imports either).
+export { describeError } from './error-messages.js';
 export * from './errors.js';

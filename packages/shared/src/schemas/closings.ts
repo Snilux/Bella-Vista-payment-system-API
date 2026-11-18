@@ -41,7 +41,8 @@ export const closingSchema = z.object({
   /** counted - expected (negative = shortfall); null until counted. */
   difference: z.int().nullable(),
   notes: z.string().nullable(),
-  preparedBy: accountRef,
+  /** fullName: the person of the account (R-04 "Preparó María López"). */
+  preparedBy: accountRef.extend({ fullName: z.string() }),
   reviewedBy: accountRef.nullable(),
   reviewedAt: z.iso.datetime().nullable(),
   closedBy: accountRef.nullable(),
@@ -79,6 +80,7 @@ export const countClosingRequestSchema = z.object({
   notes: optionalText(1000),
 });
 
+export type ClosingFigures = z.infer<typeof closingFiguresSchema>;
 export type Closing = z.infer<typeof closingSchema>;
 export type ClosingListQuery = z.infer<typeof closingListQuerySchema>;
 export type OpenClosingRequest = z.infer<typeof openClosingRequestSchema>;

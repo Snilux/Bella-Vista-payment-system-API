@@ -58,6 +58,8 @@ export const PERMISSIONS = {
   'closings.view': COMMITTEE_AND_LEADERS,
   'closings.prepare': ['treasurer', 'block_leader'],
   'closings.review': ['president', 'member'],
+  // Closing locks the month (D-14): the president only; the member reviews
+  'closings.close': ['president'],
   // Approvals inbox (transversal): the president sees all; everyone else only their own
   'approvals.view': COMMITTEE_AND_LEADERS,
   'approvals.resolve': ['president'],

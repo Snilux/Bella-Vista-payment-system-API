@@ -1,6 +1,6 @@
 // J-01 · Inicio
 
-import { formatMoney } from '@bella-vista/shared';
+import { formatMoney, formatPeriod } from '@bella-vista/shared';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { useMyCashbox, usePendingHandoverCount } from '../../../src/api/useBilling.js';
@@ -25,8 +25,8 @@ import {
 // The block leader's home (Figma J-01; 3.2 §10.5): "Debo tener" (the expected balance of the
 // block's cashbox), what was collected this month (the block report of the month, the same
 // figures as the closings) and the handovers waiting for the treasurer; "Registrar pago" opens
-// the Cobrar tab. The pending rows open the roster filtered. "Corte del mes por hacer" arrives
-// with the closings (M8).
+// the Cobrar tab. The pending rows open the roster filtered; "Corte de <mes> por hacer" (the
+// month the API says comes next, M8) opens J-05.
 
 export default function BlockLeaderHome() {
   const account = useAccount();
@@ -82,6 +82,13 @@ export default function BlockLeaderHome() {
             router.navigate({ pathname: '/block_leader/registry', params: { filter: 'debt' } })
           }
         />
+        {cashbox.data?.nextClosingPeriod ? (
+          <MenuRow
+            label={`Corte de ${formatPeriod(cashbox.data.nextClosingPeriod).toLowerCase()} por hacer`}
+            icon="closing"
+            onPress={() => router.navigate('/block_leader/my-cashbox/closing')}
+          />
+        ) : null}
       </MenuGroup>
     </ScreenLayout>
   );

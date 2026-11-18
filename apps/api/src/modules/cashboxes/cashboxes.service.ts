@@ -163,6 +163,30 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
   const { db } = deps;
   const today = () => businessDate(deps.now(), deps.timeZone);
 
+  /**
+   * The month whose monthly closing comes next (J-01, J-05, T-13): the one after the latest
+   * closed monthly closing, or the month of the first movement; null while that month has not
+   * ended (closings are only of finished months) or without movements.
+   */
+  async function nextClosingPeriods(exec: Executor, ids: number[]) {
+    const progress = await repo.closingProgress(exec, ids);
+    const current = today().slice(0, 7);
+    const result = new Map<number, string | null>();
+    for (const id of ids) {
+      const row = progress.get(id);
+      let next: string | null = null;
+      if (row?.lastClosedTo) {
+        const day = new Date(`${row.lastClosedTo}T00:00:00Z`);
+        day.setUTCDate(day.getUTCDate() + 1);
+        next = day.toISOString().slice(0, 7);
+      } else if (row?.firstMovement) {
+        next = row.firstMovement.slice(0, 7);
+      }
+      result.set(id, next !== null && next < current ? next : null);
+    }
+    return result;
+  }
+
   async function toHandovers(exec: Executor, rows: repo.HandoverRow[]): Promise<Handover[]> {
     const labels = await repo.cashboxLabels(exec, [...new Set(rows.map((r) => r.cashboxId))]);
     return rows.map((row) => {
@@ -303,14 +327,16 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
             pendingHandover: 0,
             available: 0,
             openingBalance: null,
+            nextClosingPeriod: null,
           },
         };
       }
-      const [balance, totals, pending, opening] = await Promise.all([
+      const [balance, totals, pending, opening, next] = await Promise.all([
         repo.balanceOf(db, ref.id),
         repo.totalsByKind(db, ref.id),
         repo.pendingHandoverTotal(db, ref.id),
         repo.openingBalanceOf(db, ref.id),
+        nextClosingPeriods(db, [ref.id]),
       ]);
       const total = (kind: string) => totals.find((t) => t.kind === kind)?.amount ?? 0;
       return {
@@ -322,16 +348,22 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
           pendingHandover: pending,
           available: balance - pending,
           openingBalance: opening ? toOpeningBalance(opening) : null,
+          nextClosingPeriod: next.get(ref.id) ?? null,
         },
       };
     },
 
     async list() {
       const rows = await repo.listCashboxes(db);
+      const next = await nextClosingPeriods(
+        db,
+        rows.map((row) => row.id),
+      );
       return {
         cashboxes: rows.map(({ opening, ...row }) => ({
           ...row,
           openingBalance: opening && toOpeningBalance(opening),
+          nextClosingPeriod: next.get(row.id) ?? null,
         })),
       };
     },

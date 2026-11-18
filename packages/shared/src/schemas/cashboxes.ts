@@ -37,6 +37,11 @@ export const myCashboxSchema = z.object({
   /** What can still be handed over: balance - pendingHandover. */
   available: z.int(),
   openingBalance: openingBalanceSchema.nullable(),
+  /** The month (AAAA-MM) whose monthly closing comes next; null if none has ended yet. */
+  nextClosingPeriod: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .nullable(),
 });
 
 export const myCashboxResponseSchema = z.object({ cashbox: myCashboxSchema });
@@ -48,6 +53,11 @@ export const cashboxListResponseSchema = z.object({
       balance: z.int(),
       /** Its opening balance (T-12): approved, else pending, else the latest rejected; null if never captured. */
       openingBalance: openingBalanceSchema.nullable(),
+      /** The month (AAAA-MM) whose monthly closing comes next; null if none has ended yet. */
+      nextClosingPeriod: z
+        .string()
+        .regex(/^\d{4}-\d{2}$/)
+        .nullable(),
     }),
   ),
 });

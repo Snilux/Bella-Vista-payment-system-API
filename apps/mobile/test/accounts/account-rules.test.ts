@@ -138,6 +138,7 @@ describe('auditEntryView', () => {
     id: 1,
     userAccountId: 1,
     username: 'admin',
+    fullName: 'Rolando Gómez Torres',
     role: 'superadmin',
     action: 'reset_password',
     tableName: 'user_account',

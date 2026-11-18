@@ -183,14 +183,12 @@ describe('C-05 Perfil', () => {
     expect(screen.getByRole('button', { name: 'Sí, cerrar sesión' })).toBeTruthy();
   });
 
-  it('a "Más" option of a later phase opens its "Próximamente" page', async () => {
+  it('a "Más" option opens its screen (since M8 every screen is built)', async () => {
     sessionStore.signedIn(account('block_leader'));
     const router = await open('/block_leader/more');
-    // G-06 arrives in M8.
     await fireEvent.press(screen.getByRole('button', { name: 'Reporte de mi manzana' }));
-    expect(router.getPathname()).toBe('/common/coming-soon');
-    expect(screen.getByText('Reporte de padrón por manzana')).toBeTruthy();
-    expect(screen.getByText('Próximamente')).toBeTruthy();
+    expect(router.getPathname()).toBe('/common/reports/block');
+    expect(screen.queryByText('Próximamente')).toBeNull();
   });
 });
 

@@ -91,6 +91,9 @@ describe.skipIf(!testDatabaseUrl)('closings', () => {
   it('opens a monthly closing of a finished month with the figures of its movements', async () => {
     expect((await income('2026-09-10', 120_000)).status).toBe(201);
     expect((await income('2026-10-05', 80_000)).status).toBe(201);
+    // J-01, J-05, T-13: the month of the first movement is the next to close.
+    const mine = async () => (await call('GET', '/v1/cashboxes/mine', 'tesorero')).body.cashbox;
+    expect((await mine()).nextClosingPeriod).toBe('2026-09');
 
     const res = await open('tesorero', { type: 'monthly', period: '2026-09' });
     expect(res.status).toBe(201);
@@ -180,11 +183,21 @@ describe.skipIf(!testDatabaseUrl)('closings', () => {
     });
 
     await call('POST', `/v1/closings/${september}/review`, 'presidente');
-    const closed = await call('POST', `/v1/closings/${september}/close`, 'vocal');
+    // The member reviews but never closes (M8): only the president locks the month.
+    expect((await call('POST', `/v1/closings/${september}/close`, 'vocal')).body.error.code).toBe(
+      'FORBIDDEN',
+    );
+    const closed = await call('POST', `/v1/closings/${september}/close`, 'presidente');
     expect(closed.body.closing).toMatchObject({
       status: 'closed',
-      closedBy: { username: 'vocal' },
+      closedBy: { username: 'presidente' },
     });
+    expect(closed.body.closing.preparedBy.fullName).toMatch(/\S+ \S+/);
+    const next = async () =>
+      (await call('GET', '/v1/cashboxes', 'presidente')).body.cashboxes.find(
+        (item: { type: string }) => item.type === 'committee',
+      ).nextClosingPeriod;
+    expect(await next()).toBe('2026-10');
     expect(
       (await call('POST', `/v1/closings/${october}/close`, 'presidente')).body.closing.status,
     ).toBe('closed');
@@ -202,6 +215,10 @@ describe.skipIf(!testDatabaseUrl)('closings', () => {
     // Earlier months without a closing are locked too (they would change the closed figures).
     expect((await income('2026-08-01', 1_000)).body.error.code).toBe('PERIOD_CLOSED');
     expect((await income('2026-11-01', 1_000)).status).toBe(201);
+    // November has not ended: nothing to close yet.
+    expect(
+      (await call('GET', '/v1/cashboxes/mine', 'tesorero')).body.cashbox.nextClosingPeriod,
+    ).toBeNull();
   });
 
   it('refuses payments and handover confirmations dated in a closed month', async () => {

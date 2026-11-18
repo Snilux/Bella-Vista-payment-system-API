@@ -75,6 +75,8 @@ export default function SubstituteLeader() {
   const closings = useBlockExtraordinaryClosings(block);
   const counted = (closings.data ?? []).filter((closing) => closing.status !== 'draft');
   const closing = counted.find((item) => item.id === closingId) ?? counted[0] ?? null;
+  // An extraordinary closing still to count: S-07 opens it (G-08) so the secretary sees it.
+  const draft = (closings.data ?? []).find((item) => item.status === 'draft') ?? null;
 
   const dirty = person !== null || contactPhone !== '' || reason !== '';
   const guard = useDiscardGuard(dirty && !substitute.isSuccess);
@@ -183,7 +185,22 @@ export default function SubstituteLeader() {
         </SummaryCard>
       ) : null}
 
-      {missing ? <Notice title={missing} /> : null}
+      {missing ? (
+        <Notice
+          title={missing}
+          {...(draft
+            ? {
+                action: (
+                  <Button
+                    label="Ver el corte"
+                    variant="text"
+                    onPress={() => router.push(`/common/closings/${draft.id}`)}
+                  />
+                ),
+              }
+            : {})}
+        />
+      ) : null}
       {closings.isError ? <Notice title={describeError(closings.error).message} /> : null}
 
       {block && counted.length > 1 ? (

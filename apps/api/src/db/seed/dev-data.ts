@@ -9,6 +9,7 @@ import {
   type approvalType,
   block,
   cashbox,
+  closing,
   connection,
   connectionBlock,
   coveredPeriod,
@@ -24,6 +25,7 @@ import {
   unit,
   unitHolder,
   userAccount,
+  vClosing,
 } from '../schema/index.js';
 
 // Development data (`pnpm db:seed:dev`, 3.1 §2.2): sections, blocks, leaders, members, homonyms,
@@ -780,4 +782,107 @@ function one<T>(rows: T[]): T {
   const [row] = rows;
   if (row === undefined || rows.length !== 1) throw new Error(`expected 1 row, got ${rows.length}`);
   return row;
+}
+
+/**
+ * `pnpm db:seed:dev`: leaves every cashbox with its monthly closings closed (D-14) from the
+ * month of its first movement up to two months ago, counted at the expected balance (no
+ * difference), prepared by the treasurer and reviewed and closed by the president. A month only
+ * closes after the previous one, so without them the previous month (to try J-05, G-08 and R-04
+ * by hand) could not be closed. Idempotent: it continues after the latest closed one. Not part
+ * of runDevSeed: the API tests start without closings.
+ */
+export async function applyDevClosings(
+  db: Database,
+  options: DevSeedOptions & { today: string },
+): Promise<{ closed: number }> {
+  if (options.nodeEnv === 'production') {
+    throw new DevSeedRefusedError(
+      'pnpm db:seed:dev no se ejecuta con NODE_ENV=production: solo carga datos de prueba.',
+    );
+  }
+  // The last month to close: two months before the current one (the previous one stays open).
+  const [year, month] = options.today.split('-').map(Number) as [number, number];
+  const last = new Date(Date.UTC(year, month - 3, 1)).toISOString().slice(0, 7);
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${SEED_LOCK_KEY}))`);
+    const officer = async (role: 'treasurer' | 'president') => {
+      const [row] = await tx
+        .select({ id: userAccount.id })
+        .from(userAccount)
+        .innerJoin(roleAssignment, eq(userAccount.roleAssignmentId, roleAssignment.id))
+        .where(eq(roleAssignment.role, role))
+        .limit(1);
+      if (!row) {
+        throw new DevSeedRefusedError(
+          'Faltan las cuentas del tesorero o del presidente: ejecute primero pnpm db:seed (D-27).',
+        );
+      }
+      return row.id;
+    };
+    const treasurer = await officer('treasurer');
+    const president = await officer('president');
+    const boxes = (await tx.execute(sql`
+      SELECT cb.id,
+        (SELECT to_char(max(c.date_to) + 1, 'YYYY-MM') FROM closing c
+          WHERE c.cashbox_id = cb.id AND c.type = 'monthly' AND c.closed_at IS NOT NULL) AS after_closed,
+        (SELECT to_char(min(m.occurred_on), 'YYYY-MM') FROM v_cashbox_movement m
+          WHERE m.cashbox_id = cb.id) AS first_movement
+      FROM cashbox cb ORDER BY cb.id`)) as unknown as {
+      id: number;
+      after_closed: string | null;
+      first_movement: string | null;
+    }[];
+
+    let closed = 0;
+    for (const box of boxes) {
+      const start = box.after_closed ?? box.first_movement;
+      if (!start || start > last) continue;
+      for (const period of monthRange(`${start}-01`, `${last}-01`)) {
+        const dateTo = new Date(Date.UTC(Number(period.slice(0, 4)), Number(period.slice(5, 7)), 0))
+          .toISOString()
+          .slice(0, 10);
+        const [created] = await tx
+          .insert(closing)
+          .values({
+            cashboxId: Number(box.id),
+            type: 'monthly',
+            dateFrom: period,
+            dateTo,
+            createdBy: treasurer,
+          })
+          .returning({ id: closing.id });
+        if (!created) throw new Error('closing not inserted');
+        const [figures] = await tx
+          .select({ expected: vClosing.expectedBalance })
+          .from(vClosing)
+          .where(eq(vClosing.id, created.id));
+        const counted = Math.max(0, Number(figures?.expected ?? 0));
+        await tx
+          .update(closing)
+          .set({
+            countedCash: counted,
+            notes: counted === Number(figures?.expected ?? 0) ? null : DEV_AUDIT_REASON,
+            reviewedBy: president,
+            reviewedAt: sql`now()`,
+            closedBy: president,
+            closedAt: sql`now()`,
+          })
+          .where(eq(closing.id, created.id));
+        await writeAudit(
+          tx,
+          { userAccountId: president, role: 'president' },
+          {
+            action: 'close',
+            table: 'closing',
+            recordId: created.id,
+            after: { cashboxId: Number(box.id), period: period.slice(0, 7), countedCash: counted },
+            reason: DEV_AUDIT_REASON,
+          },
+        );
+        closed += 1;
+      }
+    }
+    return { closed };
+  });
 }
