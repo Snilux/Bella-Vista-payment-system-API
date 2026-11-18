@@ -22,6 +22,25 @@ export const queryKeys = {
   closings: ['closings'] as const,
   /** S-01: connection requests by status. */
   connectionRequests: ['connection-requests'] as const,
-  /** Person search of the pickers (G-01 in M5): ['search', text]. */
+  /** G-01 and the pickers: ['search', text]. */
+  searchAll: ['search'] as const,
   search: (text: string) => ['search', text] as const,
+  /** G-02 and G-03. */
+  people: ['people'] as const,
+  person: (id: number) => ['people', id] as const,
+  connections: ['connections'] as const,
+  connection: (id: number) => ['connections', id] as const,
+  /** P-01: the block report of a block, its roster. */
+  blockRosters: ['reports', 'block'] as const,
+  blockRoster: (blockId: number) => ['reports', 'block', blockId] as const,
+  /** P-03 (T-10 in M6): the rate history. */
+  rates: ['rates'] as const,
+  /** P-05 and S-03 (T-11 in M6): the fees with their amount in force. */
+  fees: ['fees'] as const,
+  /** S-02, J-06, S-03 and P-06: ['connection-requests', …]. */
+  connectionRequest: (id: number) => ['connection-requests', 'detail', id] as const,
+  /** S-03, S-04, S-05 and S-08. */
+  agreements: ['agreements'] as const,
+  /** S-08 and S-01. */
+  suspensions: ['suspensions'] as const,
 };

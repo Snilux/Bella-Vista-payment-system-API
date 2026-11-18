@@ -7,6 +7,7 @@ import type {
   PersonBasic,
   RoleAssignment,
   Section,
+  SuspensionListItem,
 } from '@bella-vista/shared';
 import { apiError, type Call, json, type Reply } from '../api/fake-api.js';
 
@@ -273,7 +274,29 @@ export function initialState() {
     }),
   ];
   const closings: Closing[] = [];
-  return { sections, blocks, assignments, approvals, closings, nextId: 100 };
+  const suspensions: SuspensionListItem[] = [
+    {
+      id: 1,
+      target: 'connection',
+      connectionId: 3,
+      unitId: null,
+      periodFrom: '2026-08',
+      periodTo: null,
+      reason: 'Fuga sin reparar',
+      agreementId: 40,
+      agreement: { id: 40, folio: 'AC-000040' },
+      connection: {
+        id: 3,
+        folio: 'T-0140',
+        address: 'Calle Sauce 5',
+        blockCode: 'S1-M02',
+        unitCount: 2,
+      },
+      unit: null,
+      createdAt: '2026-08-01T16:00:00.000Z',
+    },
+  ];
+  return { sections, blocks, assignments, approvals, closings, suspensions, nextId: 100 };
 }
 
 export type M4State = ReturnType<typeof initialState>;
@@ -303,6 +326,8 @@ export function fakeM4Api() {
     }
     if (get && pathName === '/reports/community') return json(200, { report: REPORT });
     if (get && pathName === '/connection-requests') return json(200, { data: [], next: null });
+    if (get && pathName === '/suspensions')
+      return json(200, { data: state.suspensions, next: null });
     if (get && pathName === '/closings') {
       const status = url.searchParams.get('status');
       return json(200, {

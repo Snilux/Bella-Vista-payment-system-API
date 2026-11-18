@@ -6,6 +6,7 @@ import {
   useRoleAssignments,
 } from '../../../src/api/useOrganization.js';
 import { useCommunityReport } from '../../../src/api/useReports.js';
+import { useActiveSuspensionCount } from '../../../src/api/useSuspensions.js';
 import { firstName } from '../../../src/features/forms/business-date.js';
 import { countLabel, isPending } from '../../../src/features/organization/organization-view.js';
 import { useAccount } from '../../../src/session/session-store.js';
@@ -24,8 +25,8 @@ import {
 
 // The secretary's summary and pending work (Figma S-01; 3.2 §10.7). "Familias activas" adds the
 // active families of every block (community report) and "Manzanas" counts the active blocks.
-// "Tomas activas" and "Suspensiones vigentes" have no endpoint yet: M5 adds GET /v1/suspensions
-// and that figure. "Solicitudes por resolver" opens the Tomas tab (S-02, M5).
+// "Suspensiones vigentes" counts GET /v1/suspensions (M5) and opens S-08. "Tomas activas" stays
+// out: no endpoint counts connections. "Solicitudes por resolver" opens the Tomas tab (S-02).
 
 export default function SecretaryHome() {
   const account = useAccount();
@@ -33,6 +34,7 @@ export default function SecretaryHome() {
   const blocks = useBlocks();
   const assignments = useRoleAssignments();
   const requests = useConnectionRequestCount('requested');
+  const suspensions = useActiveSuspensionCount();
 
   const status = screenStatusOf(report);
   const activeUnits = report.data?.sections.reduce((sum, item) => sum + item.totals.activeUnits, 0);
@@ -74,6 +76,12 @@ export default function SecretaryHome() {
           icon="people"
           {...(pendingAssignments === undefined ? {} : { count: pendingAssignments })}
           onPress={() => router.navigate('/secretary/organization/role-assignments')}
+        />
+        <MenuRow
+          label="Suspensiones vigentes"
+          icon="suspension"
+          {...(suspensions.data ? { count: suspensions.data.count } : {})}
+          onPress={() => router.navigate('/secretary/more/suspensions')}
         />
       </MenuGroup>
       {requests.data?.more ? (

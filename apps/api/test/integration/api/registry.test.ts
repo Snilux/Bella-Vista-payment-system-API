@@ -1,4 +1,8 @@
-import { personDetailSchema, searchResponseSchema } from '@bella-vista/shared';
+import {
+  personDetailSchema,
+  searchResponseSchema,
+  suspensionPageSchema,
+} from '@bella-vista/shared';
 import { eq } from 'drizzle-orm';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -582,10 +586,82 @@ describe.skipIf(!testDatabaseUrl)('registry', () => {
     ]);
   });
 
+  it('lists the active suspensions with their target, and the ended ones on request (S-08)', async () => {
+    // An ended one: Casa A was suspended in January and February.
+    const flores = await unitByReference('Casa A');
+    const past = await call('POST', '/v1/suspensions', 'secretario', {
+      unitId: flores.id,
+      periodFrom: '2026-01',
+      reason: 'Casa deshabitada',
+      agreementId: await newAgreement(),
+    });
+    expect(past.status).toBe(201);
+    const pastId = past.body.suspension.id;
+    await call('POST', `/v1/suspensions/${pastId}/end`, 'secretario', { periodTo: '2026-02' });
+
+    const active = await call('GET', '/v1/suspensions', 'tesorero');
+    expect(active.status).toBe(200);
+    expect(suspensionPageSchema.safeParse(active.body).success).toBe(true);
+    const juarez = await connectionAt('Calle Juárez 8');
+    const morelos = await connectionAt('Calle Morelos 45');
+    // Newest first: the unit of Morelos (ends in 2027, still active), then the whole Juárez.
+    expect(active.body.data).toEqual([
+      expect.objectContaining({
+        target: 'unit',
+        periodFrom: '2026-12',
+        periodTo: '2027-02',
+        connection: expect.objectContaining({ id: morelos.id, address: 'Calle Morelos 45' }),
+        unit: expect.objectContaining({ holderName: expect.any(String) }),
+        agreement: { id: expect.any(Number), folio: expect.stringMatching(/^AC-/) },
+      }),
+      expect.objectContaining({
+        target: 'connection',
+        reason: 'Fuga reportada',
+        periodTo: null,
+        connection: expect.objectContaining({ id: juarez.id, blockCode: expect.any(String) }),
+        unit: null,
+      }),
+    ]);
+    expect(active.body.data.map((item: { id: number }) => item.id)).not.toContain(pastId);
+    expect(active.body.next).toBeNull();
+
+    const ended = await call('GET', '/v1/suspensions?status=ended', 'vocal');
+    expect(ended.body.data.map((item: { id: number }) => item.id)).toEqual([pastId]);
+    const all = await call('GET', '/v1/suspensions?status=all', 'presidente');
+    expect(all.body.data).toHaveLength(3);
+
+    // Filters: a connection (its own suspensions and those of its units) or a unit.
+    const ofMorelos = await call('GET', `/v1/suspensions?connectionId=${morelos.id}`, 'secretario');
+    expect(ofMorelos.body.data.map((item: { target: string }) => item.target)).toEqual(['unit']);
+    const ofFlores = await call(
+      'GET',
+      `/v1/suspensions?status=all&unitId=${flores.id}`,
+      'secretario',
+    );
+    expect(ofFlores.body.data.map((item: { id: number }) => item.id)).toEqual([pastId]);
+
+    // Pages of { data, next }.
+    const first = await call('GET', '/v1/suspensions?status=all&limit=2', 'secretario');
+    // Newest first: the ended one of Casa A was registered last.
+    expect(first.body.data.map((item: { id: number }) => item.id)[0]).toBe(pastId);
+    expect(first.body.next).not.toBeNull();
+    const second = await call(
+      'GET',
+      `/v1/suspensions?status=all&limit=2&cursor=${first.body.next}`,
+      'secretario',
+    );
+    expect(second.body).toEqual({
+      data: [expect.objectContaining({ target: 'connection', reason: 'Fuga reportada' })],
+      next: null,
+    });
+    expect((await call('GET', '/v1/suspensions?status=otro', 'secretario')).status).toBe(400);
+  });
+
   // --- Permissions ----------------------------------------------------------------------------
 
   const cases: [string, 'GET' | 'POST', string, Record<string, unknown> | undefined, string[]][] = [
     ['search', 'GET', '/v1/search?q=abc', undefined, ['admin']],
+    ['list suspensions', 'GET', '/v1/suspensions', undefined, ['admin', 'jm.s1m01']],
     [
       'person matches',
       'GET',

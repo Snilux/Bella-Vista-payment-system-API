@@ -22,7 +22,9 @@ import {
 import { BOOTSTRAP_AUDIT_REASON, runBootstrap } from '../../../src/db/seed/bootstrap.js';
 import { type BootstrapFile, parseBootstrapFile } from '../../../src/db/seed/bootstrap-file.js';
 import {
+  applyDevOpeningFee,
   applyDevSuperadminPassword,
+  DEV_OPENING_FEE,
   DEV_PASSWORD,
   DevSeedRefusedError,
   runDevSeed,
@@ -374,6 +376,42 @@ describe.skipIf(!testDatabaseUrl)('pnpm db:seed:dev (development data)', () => {
       await expect(
         applyDevSuperadminPassword(db, { nodeEnv: 'production' }),
       ).rejects.toBeInstanceOf(DevSeedRefusedError);
+    }),
+  );
+
+  it('gives the opening fee its development amount once', { timeout: 60_000 }, () =>
+    withSeedDatabase(async (db) => {
+      await bootstrap(db);
+      await runDevSeed(db, { nodeEnv: 'development' });
+      const [opening] = await db.select().from(fee).where(eq(fee.type, 'opening'));
+      // runDevSeed leaves it without amount (the API tests rely on it).
+      expect(
+        await db
+          .select()
+          .from(feeAmount)
+          .where(eq(feeAmount.feeId, opening?.id ?? 0)),
+      ).toEqual([]);
+
+      expect(await applyDevOpeningFee(db, { nodeEnv: 'development' })).toEqual({ changed: true });
+      const amounts = await db
+        .select()
+        .from(feeAmount)
+        .where(eq(feeAmount.feeId, opening?.id ?? 0));
+      expect(amounts).toEqual([
+        expect.objectContaining({
+          amount: DEV_OPENING_FEE.amount,
+          effectiveFrom: DEV_OPENING_FEE.effectiveFrom,
+        }),
+      ]);
+      const [entry] = await db.select().from(auditLog).where(eq(auditLog.action, 'add_amount'));
+      expect(entry).toMatchObject({ tableName: 'fee', recordId: opening?.id });
+
+      const before = await counts(db);
+      expect(await applyDevOpeningFee(db, { nodeEnv: 'development' })).toEqual({ changed: false });
+      expect(await counts(db)).toEqual(before);
+      await expect(applyDevOpeningFee(db, { nodeEnv: 'production' })).rejects.toBeInstanceOf(
+        DevSeedRefusedError,
+      );
     }),
   );
 });

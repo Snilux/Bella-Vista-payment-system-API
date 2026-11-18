@@ -105,7 +105,7 @@ pnpm db:seed:dev                         # secciones, manzanas, personas, tomas,
 
 ### Cuentas de desarrollo
 
-Todas usan la contraseña `desarrollo-bella-vista` y no piden cambiarla. `pnpm db:seed:dev` también se la asigna al superadministrador del arranque (cada vez que se ejecuta, aunque los datos ya existan).
+Todas usan la contraseña `desarrollo-bella-vista` y no piden cambiarla. `pnpm db:seed:dev` también se la asigna al superadministrador del arranque (cada vez que se ejecuta, aunque los datos ya existan). También deja la cuota de apertura en $1,500.00 si no tiene importe, para poder aprobar solicitudes de toma; las tarifas de desarrollo ($40.00 desde 2025-01 y $50.00 desde 2026-01) ya están autorizadas. La apertura se paga con `http/04-padron.http` hasta que existan las pantallas de cobro (M6).
 
 | Usuario | Cargo | Manzana |
 |---|---|---|

@@ -85,9 +85,9 @@ describe('S-01 · Inicio del secretario', () => {
       await screen.findByRole('button', { name: 'Asignaciones por confirmar: 1' }),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Solicitudes por resolver: 0' })).toBeTruthy();
-    // No endpoint yet (M5): not shown rather than invented.
+    // GET /v1/suspensions since M5; no endpoint counts connections, so no "Tomas activas".
+    expect(await screen.findByRole('button', { name: 'Suspensiones vigentes: 1' })).toBeTruthy();
     expect(screen.queryByText('Tomas activas')).toBeNull();
-    expect(screen.queryByText('Suspensiones vigentes')).toBeNull();
   });
 });
 

@@ -29,6 +29,7 @@ const expected: Record<Action, string> = {
   'agreements.manage': 'SEC',
   'unitChanges.request': 'SEC JM',
   'suspensions.manage': 'PRE SEC',
+  'suspensions.view': 'PRE TES SEC VOC',
   'rates.view': 'PRE TES SEC VOC JM',
   'rates.register': 'TES',
   'payments.view': 'PRE TES SEC VOC JM',

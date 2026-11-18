@@ -12,6 +12,8 @@ import {
   connection,
   connectionBlock,
   coveredPeriod,
+  fee,
+  feeAmount,
   paperReceipt,
   payment,
   paymentMonth,
@@ -686,6 +688,67 @@ export async function applyDevSuperadminPassword(
       },
     );
     return { username: sa.username, changed: true };
+  });
+}
+
+/** Development amount of the opening fee (D-13): $1,500.00 since 2025-01-01, as in Figma. */
+export const DEV_OPENING_FEE = { amount: 150_000, effectiveFrom: '2025-01-01' } as const;
+
+/**
+ * `pnpm db:seed:dev` (also on an already seeded database): gives the opening fee the
+ * development amount when it has none, so a connection request can be approved without
+ * preparing data by hand (T-11, where the treasurer registers it, arrives in M6). It is not part
+ * of runDevSeed: the API tests start with the fee without amount (FEE_WITHOUT_AMOUNT).
+ */
+export async function applyDevOpeningFee(
+  db: Database,
+  options: DevSeedOptions,
+): Promise<{ changed: boolean }> {
+  if (options.nodeEnv === 'production') {
+    throw new DevSeedRefusedError(
+      'pnpm db:seed:dev no se ejecuta con NODE_ENV=production: solo carga datos de prueba.',
+    );
+  }
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${SEED_LOCK_KEY}))`);
+    const [opening] = await tx.select({ id: fee.id }).from(fee).where(eq(fee.type, 'opening'));
+    const [treasurer] = await tx
+      .select({ id: userAccount.id })
+      .from(userAccount)
+      .innerJoin(roleAssignment, eq(userAccount.roleAssignmentId, roleAssignment.id))
+      .where(eq(roleAssignment.role, 'treasurer'))
+      .limit(1);
+    if (!opening || !treasurer) {
+      throw new DevSeedRefusedError(
+        'Falta la cuota de apertura o la cuenta del tesorero: ejecute primero pnpm db:seed (D-27).',
+      );
+    }
+    const [existing] = await tx
+      .select({ feeId: feeAmount.feeId })
+      .from(feeAmount)
+      .where(eq(feeAmount.feeId, opening.id))
+      .limit(1);
+    if (existing) return { changed: false };
+
+    await tx.insert(feeAmount).values({
+      feeId: opening.id,
+      effectiveFrom: DEV_OPENING_FEE.effectiveFrom,
+      amount: DEV_OPENING_FEE.amount,
+      createdBy: treasurer.id,
+    });
+    await writeAudit(
+      tx,
+      { userAccountId: treasurer.id, role: 'treasurer' },
+      {
+        action: 'add_amount',
+        table: 'fee',
+        recordId: opening.id,
+        before: { amount: null },
+        after: DEV_OPENING_FEE,
+        reason: DEV_AUDIT_REASON,
+      },
+    );
+    return { changed: true };
   });
 }
 

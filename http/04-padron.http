@@ -137,3 +137,44 @@ Content-Type: application/json
 #   debt } ], totalDue, connectionRequests: [] } }   (cancelled requests are not listed)
 GET {{baseUrl}}/people/{{personId}}
 Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### --- Pay the opening of an approved request (until the payment screens of M6) ----------------
+# Approve a request in the app first (S-03, with an approved agreement); then set its id here.
+# The leader of its block pays the opening fee into their cashbox; P-06 can install it after.
+@openingRequestId = 1
+
+### The request with its opening charge
+# Expected: 200 { request: { status: "approved_pending_payment", openingCharge: { id, amount } } }
+# @name openingRequest
+GET {{baseUrl}}/connection-requests/{{openingRequestId}}
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Pay the opening (new Idempotency-Key, random paper folio)
+# Expected: 201 { payment: { charges: [ { feeName: "Apertura de toma" } ], total } }; the request
+# moves to "pending_installation". A request of another block → 403 OUT_OF_SCOPE.
+POST {{baseUrl}}/payments
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{
+  "extraChargeIds": [{{openingRequest.response.body.$.request.openingCharge.id}}],
+  "paperFolio": "{{$randomInt 1000 9999}}",
+  "expectedTotal": {{openingRequest.response.body.$.request.openingCharge.amount}}
+}
+
+### --- Suspensions (S-08, committee) -----------------------------------------------------------
+
+### Login: secretary
+# @name loginSecretary
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "secretario", "password": "{{password}}" }
+
+### Active suspensions, newest first (status=ended or status=all for the others)
+# Expected: 200 { data: [ { id, target: "connection" | "unit", periodFrom, periodTo, reason,
+#   agreement: { id, folio }, connection: { folio, address, blockCode, unitCount },
+#   unit: { folio, holderName } | null } ], next }. A block leader → 403 FORBIDDEN.
+GET {{baseUrl}}/suspensions?status=active&limit=20
+Authorization: Bearer {{loginSecretary.response.body.$.accessToken}}
