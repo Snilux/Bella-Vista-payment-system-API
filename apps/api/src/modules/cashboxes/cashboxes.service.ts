@@ -178,7 +178,11 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
         adjustedAmount: row.adjustedAmount,
         notes: row.notes,
         status: row.status,
-        preparedBy: { userAccountId: row.preparedById, username: row.preparedByUsername },
+        preparedBy: {
+          userAccountId: row.preparedById,
+          username: row.preparedByUsername,
+          fullName: row.preparedByName,
+        },
         withdrawnAt: row.withdrawnAt?.toISOString() ?? null,
         confirmedAt: row.confirmedAt?.toISOString() ?? null,
         confirmedBy:
@@ -199,14 +203,17 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
 
   /**
    * A handover the viewer may see: block leaders and the president (support) only the ones of
-   * their own cashbox; the treasurer and members all of them.
+   * their own cashbox; the treasurer and members all of them. The president also sees a handover
+   * with an adjustment request, which they resolve from R-03.
    */
   async function visibleHandover(exec: Executor, viewer: AuthenticatedAccount, id: number) {
     const row = await repo.findHandover(exec, id);
     if (!row) throw cashboxErrors.handoverNotFound();
     if (viewer.role === 'block_leader' || viewer.role === 'president') {
       const own = await custodianCashbox(exec, viewer, null);
-      if (own.id !== row.cashboxId) {
+      const resolves =
+        viewer.role === 'president' && (await repo.hasAdjustment(exec, { handoverId: id }));
+      if (own.id !== row.cashboxId && !resolves) {
         throw viewer.role === 'block_leader'
           ? errors.outOfScope()
           : cashboxErrors.handoverNotFound();
@@ -317,7 +324,13 @@ export function createCashboxesService(deps: CashboxesServiceDeps) {
     },
 
     async list() {
-      return { cashboxes: await repo.listCashboxes(db) };
+      const rows = await repo.listCashboxes(db);
+      return {
+        cashboxes: rows.map(({ opening, ...row }) => ({
+          ...row,
+          openingBalance: opening && toOpeningBalance(opening),
+        })),
+      };
     },
 
     async movements(viewer: AuthenticatedAccount, id: number, query: CashboxMovementQuery) {

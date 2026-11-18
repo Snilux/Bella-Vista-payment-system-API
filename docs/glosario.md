@@ -428,6 +428,7 @@ Los filtros de las listas (`?nombre=valor`) van en `camelCase` inglés, como los
 | permisos: ver cajas, registrar saldo inicial | `cashboxes.view`, `openingBalances.register` |
 | permisos: crear y cancelar cargos extraordinarios (D-28) | `charges.manage` |
 | `fechaCargo`, `motivoCancelacion`; destino del cargo: familia, toma; estado: pendiente, pagado, cancelado | `chargedOn`, `cancellationReason`; `target`: `unit`, `connection`; `status`: `pending`, `paid`, `cancelled` |
+| movimiento de caja: folio y detalle (familia, caja de origen, concepto, descripción) | `folio`, `detail` |
 
 ## Cortes, reportes y bitácora
 
