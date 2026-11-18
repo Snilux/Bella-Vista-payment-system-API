@@ -60,9 +60,10 @@ apps/mobile/
   src/session/         tokens, session state, screen-catalog.ts (63 screens, `done` flag), role-menu.ts
                        (role → tabs → "Más"), permissions.ts
   src/features/        screen pieces per module (session/: RoleTabs, MoreMenu, ComingSoon; accounts/, organization/,
-                       approvals/, registry/, billing/: the payment flow; forms/ and people/: shared form pieces)
+                       approvals/, registry/, billing/: the payment flow and extra charges; cashboxes/ and
+                       committee/: cashboxes, handovers, expenses, plumber; forms/ (MoneyFooter…) and people/)
   test/                Jest (jest-expo): api/, session/ (navigation, catalog), ui/ (140 % checks) and one
-                       folder per phase with its scripted API (accounts/, m4/, m5/, m6/)
+                       folder per phase with its scripted API (accounts/, m4/, m5/, m6/, m7/)
 packages/shared/src/   schemas/ (Zod), domain/ (pure rules), format/ (es-MX)
 docs/                  business context, data model, API contract, glossary
 ```
