@@ -1,7 +1,7 @@
 import { BUSINESS_TIME_ZONE } from '../domain/periods.js';
 
 // es-MX formats for the texts users see (RNF-USA-02): amounts as $1,234.00, periods as
-// "Junio 2026" and dates as "25 oct 2026". Pure functions, used by the API messages and the app.
+// "Junio 2026" and dates as "2026-10-25" (AAAA-MM-DD, M9). Pure functions, used by the API messages and the app.
 
 const MONTHS = [
   'Enero',
@@ -53,32 +53,27 @@ export function formatPeriod(period: string): string {
   return `${MONTHS[Number(match[2]) - 1]} ${match[1]}`;
 }
 
-const SHORT_MONTHS = [
-  'ene',
-  'feb',
-  'mar',
-  'abr',
-  'may',
-  'jun',
-  'jul',
-  'ago',
-  'sep',
-  'oct',
-  'nov',
-  'dic',
-] as const;
-
 const DATE = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
-/** Calendar date YYYY-MM-DD → "25 oct 2026". */
+/**
+ * Calendar date AAAA-MM-DD as the app shows it: the same AAAA-MM-DD (one format for every date,
+ * on screen and in the PDFs, M9). It throws on anything that is not a calendar date.
+ */
 export function formatDate(date: string): string {
+  if (!DATE.test(date)) throw new RangeError(`invalid date ${date}`);
+  return date;
+}
+
+/** AAAA-MM-DD → "25 de octubre de 2026": only to confirm a typed date (DateField). */
+export function formatDateInWords(date: string): string {
   const match = DATE.exec(date);
   if (!match) throw new RangeError(`invalid date ${date}`);
-  return `${Number(match[3])} ${SHORT_MONTHS[Number(match[2]) - 1]} ${match[1]}`;
+  const month = MONTHS[Number(match[2]) - 1]?.toLowerCase() ?? '';
+  return `${Number(match[3])} de ${month} de ${match[1]}`;
 }
 
 /**
- * Instant (ISO timestamp or Date) → "25 oct 2026, 10:42", on the clock of the business time zone
+ * Instant (ISO timestamp or Date) → "2026-10-25 10:42", on the clock of the business time zone
  * (America/Mexico_City by default), 24-hour.
  */
 export function formatDateTime(instant: string | Date, timeZone = BUSINESS_TIME_ZONE): string {
@@ -96,5 +91,5 @@ export function formatDateTime(instant: string | Date, timeZone = BUSINESS_TIME_
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((p) => p.type === type)?.value ?? '';
   const date = formatDate(`${part('year')}-${part('month')}-${part('day')}`);
-  return `${date}, ${part('hour')}:${part('minute')}`;
+  return `${date} ${part('hour')}:${part('minute')}`;
 }

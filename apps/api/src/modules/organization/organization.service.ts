@@ -643,7 +643,7 @@ function outgoingLeaderOf(row: AssignmentRow, ended: AssignmentRow[]): Assignmen
   );
 }
 
-/** "Sustitución de jefe de manzana S1-M01: sale …, entra …, desde el 18 nov 2026". */
+/** "Sustitución de jefe de manzana S1-M01: sale …, entra …, desde el 2026-11-18". */
 function describeAssignment(row: AssignmentRow, outgoing: AssignmentRow | null): string {
   const since = `desde el ${formatDate(row.startDate)}`;
   const block = row.blockCode ? ` ${row.blockCode}` : '';

@@ -1,4 +1,4 @@
-import { BUSINESS_TIME_ZONE } from '@bella-vista/shared';
+import { formatDateTime } from '@bella-vista/shared';
 import { colors, statusColors } from '../ui/theme/index.js';
 
 // The frame of the two PDF reports (RF-REP; 3.2 §11.1; D-26): HTML that expo-print turns into a
@@ -18,20 +18,9 @@ export function escapeHtml(value: string): string {
 /** Who generated the PDF and when (3.2: fecha y hora de generación y el cargo). */
 export type ReportMeta = { generatedAt: Date; generatedBy: string };
 
-/** "2026-11-18 10:42" in the business time zone. */
+/** "2026-11-18 10:42" in the business time zone (formatDateTime, as on screen). */
 export function generatedAtText(date: Date): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: BUSINESS_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(date);
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? '';
-  return `${part('year')}-${part('month')}-${part('day')} ${part('hour')}:${part('minute')}`;
+  return formatDateTime(date);
 }
 
 export type HtmlRow = { label: string; value: string };

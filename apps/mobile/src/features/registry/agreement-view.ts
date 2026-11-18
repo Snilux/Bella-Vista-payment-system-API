@@ -7,7 +7,7 @@ export const AGREEMENT_RESULT_LABELS: Record<Agreement['result'], string> = {
   rejected: 'Rechazado',
 };
 
-/** "AC-000047 · Aprobado por mayoría · 24 oct 2026". */
+/** "AC-000047 · Aprobado por mayoría · 2026-10-24". */
 export const agreementLabel = (agreement: Agreement) =>
   `${agreement.folio} · ${AGREEMENT_RESULT_LABELS[agreement.result]} · ${formatDate(agreement.meetingDate)}`;
 

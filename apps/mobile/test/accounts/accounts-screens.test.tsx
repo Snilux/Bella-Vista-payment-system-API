@@ -232,9 +232,9 @@ describe('A-01 · Cuentas', () => {
     await open('/superadmin/accounts');
     expect(await screen.findByText('Silvia Ramírez Cruz · sin cuenta')).toBeTruthy();
     expect(screen.getByText('Sin cuenta')).toBeTruthy();
-    expect(screen.getByText('Vocal · desde 1 ene 2026')).toBeTruthy();
+    expect(screen.getByText('Vocal · desde 2026-01-01')).toBeTruthy();
     expect(screen.getByText('Bloqueada por el administrador')).toBeTruthy();
-    expect(screen.getByText('Desactivada el 2 nov 2026, 12:00')).toBeTruthy();
+    expect(screen.getByText('Desactivada el 2026-11-02 12:00')).toBeTruthy();
     expect(screen.getAllByText('Activa')).toHaveLength(2);
   });
 
@@ -388,7 +388,7 @@ describe('A-04 · Bitácora técnica', () => {
     await open('/superadmin/audit-log');
     expect(await screen.findByText('Contraseña restablecida')).toBeTruthy();
     expect(
-      await screen.findByText('tesorero · 23 oct 2026, 10:00 · Olvidó su contraseña · por admin'),
+      await screen.findByText('tesorero · 2026-10-23 10:00 · Olvidó su contraseña · por admin'),
     ).toBeTruthy();
     expect(screen.getByText('Cuenta creada')).toBeTruthy();
     expect(

@@ -254,7 +254,7 @@ describe.skipIf(!testDatabaseUrl)('organization', () => {
     expect(item).toMatchObject({
       type: 'role_assignment',
       reason: 'Registro de jefe de manzana de la manzana S2-M02',
-      description: 'Jefe de manzana S2-M02: Teresa Navarro Cruz, desde el 1 nov 2026',
+      description: 'Jefe de manzana S2-M02: Teresa Navarro Cruz, desde el 2026-11-01',
       subject: { type: 'role_assignment', id: created.body.assignment.id },
       requestedBy: { username: 'secretario' },
     });

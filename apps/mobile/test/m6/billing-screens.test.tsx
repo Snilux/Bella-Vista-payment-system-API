@@ -168,7 +168,7 @@ describe('T-11 · Conceptos', () => {
     expect(await screen.findByText('Sin importe vigente')).toBeTruthy();
     await fireEvent.press(screen.getByText('Apertura de toma'));
     expect(await screen.findByText('Historial')).toBeTruthy();
-    expect(screen.getByText('Desde 1 ene 2025')).toBeTruthy();
+    expect(screen.getByText('Desde 2025-01-01')).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText('Importe nuevo, obligatorio'), '1,800');
     await fireEvent.press(screen.getByRole('button', { name: 'Guardar importe' }));
     await waitFor(() => expect(server.posts('/fees/1/amounts')).toHaveLength(1));

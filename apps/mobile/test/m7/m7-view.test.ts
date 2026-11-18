@@ -9,7 +9,6 @@ import {
 import {
   payablePeriods,
   payBlockedReason,
-  payPeriodLong,
   payPeriodShort,
 } from '../../src/features/committee/committee-view.js';
 
@@ -160,10 +159,9 @@ describe('plumber periods (T-08, T-09; D-24)', () => {
   });
 
   it.each([
-    ['2026-10-16', '2026-10-31', '16 al 31 oct 2026', '16 al 31 de octubre 2026'],
-    ['2026-09-28', '2026-10-04', '28 sep 2026 al 4 oct 2026', '28 sep 2026 al 4 oct 2026'],
-  ])('%s – %s', (start, end, short, long) => {
-    expect(payPeriodShort(start, end)).toBe(short);
-    expect(payPeriodLong(start, end)).toBe(long);
+    ['2026-10-16', '2026-10-31', '2026-10-16 al 2026-10-31'],
+    ['2026-09-28', '2026-10-04', '2026-09-28 al 2026-10-04'],
+  ])('%s – %s', (start, end, text) => {
+    expect(payPeriodShort(start, end)).toBe(text);
   });
 });

@@ -341,7 +341,7 @@ describe('T-08 / T-09 · Fontanero', () => {
     await open('/treasurer/more/plumber');
     expect(await screen.findByText('Pedro Ramírez Cruz · 222 987 6543')).toBeTruthy();
     expect(screen.getByText('Quincenal')).toBeTruthy();
-    expect(screen.getByText('1 al 15 oct 2026')).toBeTruthy();
+    expect(screen.getByText('2026-10-01 al 2026-10-15')).toBeTruthy();
     expect(screen.getByText('$2,500.00 · Quincenal')).toBeTruthy();
   });
 

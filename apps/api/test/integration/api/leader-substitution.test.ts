@@ -194,7 +194,7 @@ describe.skipIf(!testDatabaseUrl)('block leader substitution', () => {
     );
     // The president decides from the inbox: block, who leaves, who comes in and since when.
     expect(approval.description).toBe(
-      'Sustitución de jefe de manzana S1-M02: sale Rogelio Castañeda Ortiz, entra Mariana Relevo, desde el 17 nov 2026',
+      'Sustitución de jefe de manzana S1-M02: sale Rogelio Castañeda Ortiz, entra Mariana Relevo, desde el 2026-11-17',
     );
     expect(
       (

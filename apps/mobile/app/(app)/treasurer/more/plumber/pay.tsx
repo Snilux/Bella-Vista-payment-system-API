@@ -11,7 +11,6 @@ import { payPlumber, usePlumber } from '../../../../../src/api/useCommittee.js';
 import { useMoneyOperation } from '../../../../../src/api/useMoneyOperation.js';
 import {
   payablePeriods,
-  payPeriodLong,
   payPeriodShort,
 } from '../../../../../src/features/committee/committee-view.js';
 import { businessToday } from '../../../../../src/features/forms/business-date.js';
@@ -143,7 +142,7 @@ export default function PayPlumber() {
           required
           options={periods.map((item) => ({
             value: item.start,
-            label: payPeriodLong(item.start, item.end),
+            label: payPeriodShort(item.start, item.end),
           }))}
           value={period?.start ?? null}
           onChange={(value) => {

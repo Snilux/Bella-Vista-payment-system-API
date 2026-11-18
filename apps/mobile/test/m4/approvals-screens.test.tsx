@@ -109,7 +109,7 @@ describe('R-03 · Detalle de autorización', () => {
     const router = await open('/president/approvals');
     await fireEvent.press(await screen.findByRole('button', { name: 'Asignación de cargo: 1' }));
     expect(router.getPathname()).toBe('/president/approvals/31');
-    await screen.findByText('Jefe de manzana S2-M02: Teresa Navarro Cruz, desde el 18 nov 2026');
+    await screen.findByText('Jefe de manzana S2-M02: Teresa Navarro Cruz, desde el 2026-11-18');
     return router;
   }
 
