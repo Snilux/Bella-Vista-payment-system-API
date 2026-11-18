@@ -151,6 +151,7 @@ export default function ResolveConnectionRequest() {
       {header}
       {data}
       <Select
+        optionsQuery={agreements}
         label="Acuerdo de junta"
         required
         options={(agreements.data ?? []).map((agreement) => ({

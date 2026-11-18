@@ -279,6 +279,7 @@ function SalarySheet({
         error={errorOf('effectiveFrom')}
       />
       <Select
+        optionsQuery={agreements}
         label="Acuerdo de junta"
         required
         options={(agreements.data ?? []).map((agreement) => ({

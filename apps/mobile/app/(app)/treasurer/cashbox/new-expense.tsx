@@ -208,6 +208,7 @@ export default function NewExpense() {
         onBack={() => router.back()}
       />
       <Select
+        optionsQuery={categories}
         label="Categoría"
         required
         options={(categories.data ?? [])
@@ -238,6 +239,7 @@ export default function NewExpense() {
         editable={!locked}
       />
       <Select
+        optionsQuery={agreements}
         label="Acuerdo de junta"
         required
         options={(agreements.data ?? []).map((agreement) => ({

@@ -24,6 +24,7 @@ import {
   TabBar,
   TextField,
 } from '../../src/ui/index.js';
+import { OPTIONS_FAILED, OPTIONS_LOADING } from '../../src/ui/Select.js';
 import { largeTextProblems, renderUi, setFontScale } from './render.js';
 
 // Components of M1 (3.2 §6 and §12): readable at 140 % and the behavior each one promises.
@@ -247,6 +248,21 @@ describe('selection', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Categoría: sin elegir' }));
     await fireEvent.press(screen.getByRole('radio', { name: 'Materiales' }));
     expect(onChange).toHaveBeenCalledWith('materials');
+  });
+
+  it('options from the API: says while they load and offers "Reintentar" when they fail (M9)', async () => {
+    const refetch = jest.fn();
+    const props = { label: 'Acuerdo', value: null, onChange: jest.fn(), options: [] };
+    const view = await renderUi(
+      <Select {...props} optionsQuery={{ isPending: true, isError: false, refetch }} />,
+    );
+    expect(screen.getByText(OPTIONS_LOADING)).toBeTruthy();
+    await view.rerender(
+      <Select {...props} optionsQuery={{ isPending: false, isError: true, refetch }} />,
+    );
+    expect(screen.getByText(OPTIONS_FAILED)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(refetch).toHaveBeenCalled();
   });
 });
 

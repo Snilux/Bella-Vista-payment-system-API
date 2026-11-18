@@ -195,6 +195,7 @@ function AddChargeSheet({
       }
     >
       <Select
+        optionsQuery={fees}
         label="Concepto"
         required
         options={options.map((item) => ({

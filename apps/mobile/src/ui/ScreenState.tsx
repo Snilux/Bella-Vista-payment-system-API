@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { describeError } from '../api/error-messages.js';
 import { isApiError } from '../api/errors.js';
@@ -9,6 +9,11 @@ import { colors, iconSizes, layout, spacing } from './theme/index.js';
 
 // Envoltura de estados (3.2 §11.1, 2.4 §6.7): loading, empty, error with "Reintentar", no
 // connection and no permission look the same on every screen.
+
+/** After this long still loading, the screen says the signal is weak (each try waits up to 15 s). */
+export const SLOW_LOADING_MS = 8_000;
+export const SLOW_LOADING_MESSAGE =
+  'La señal es débil; seguimos intentando. Si no carga, regrese e intente más tarde.';
 
 export type ScreenStatus = 'loading' | 'empty' | 'error' | 'offline' | 'forbidden' | 'ready';
 
@@ -57,14 +62,7 @@ export function ScreenState({ status, error, onRetry, empty, children }: ScreenS
     case 'ready':
       return <>{children}</>;
     case 'loading':
-      return (
-        <Centered>
-          <ActivityIndicator size="large" color={colors.primaryStrong} />
-          <AppText variant="body" color={colors.textSecondary}>
-            Cargando...
-          </AppText>
-        </Centered>
-      );
+      return <Loading />;
     case 'empty':
       return (
         <Centered>
@@ -112,6 +110,23 @@ export function ScreenState({ status, error, onRetry, empty, children }: ScreenS
       );
     }
   }
+}
+
+/** Spinner; after SLOW_LOADING_MS also the weak-signal sentence (M9: up to ~48 s with retries). */
+function Loading() {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setSlow(true), SLOW_LOADING_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  return (
+    <Centered>
+      <ActivityIndicator size="large" color={colors.primaryStrong} />
+      <AppText variant="body" color={colors.textSecondary} style={styles.text}>
+        {slow ? SLOW_LOADING_MESSAGE : 'Cargando...'}
+      </AppText>
+    </Centered>
+  );
 }
 
 function Centered({ children }: { children: ReactNode }) {
