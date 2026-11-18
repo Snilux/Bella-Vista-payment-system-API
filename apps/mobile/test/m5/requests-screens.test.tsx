@@ -10,7 +10,7 @@ import {
   NEEDS_REJECTION_REASON,
 } from '../../src/features/registry/agreement-view.js';
 import {
-  CHARGE_COMES_LATER,
+  COLLECT_ELSEWHERE,
   currentPeriod,
   SUSPENSION_EFFECT,
 } from '../../src/features/registry/registry-view.js';
@@ -188,15 +188,23 @@ describe('P-05 · Nueva solicitud de toma', () => {
 });
 
 describe('P-06 · Activar toma', () => {
-  it('with the opening unpaid shows the API message and "Ir a cobrar" disabled', async () => {
+  it('with the opening unpaid shows the API message and "Ir a cobrar" opens the payment (M6)', async () => {
     sessionStore.signedIn(LEADER);
-    await open('/common/connection-requests/5/activate');
+    const router = await open('/common/connection-requests/5/activate');
     expect(await screen.findByText('$1,500.00 · por pagar')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Activar toma' }));
     expect(await screen.findByText('Primero hay que cobrar la cuota de apertura.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Ir a cobrar' }));
+    expect(router.getPathname()).toBe('/common/new-payment/months');
+    expect(router.getSearchParams()).toMatchObject({ requestId: '5' });
+  });
+
+  it('the secretary does not collect: "Ir a cobrar" says who does', async () => {
+    await open('/common/connection-requests/5/activate');
+    expect(await screen.findByText('$1,500.00 · por pagar')).toBeTruthy();
     const charge = screen.getByRole('button', { name: 'Ir a cobrar' });
     expect(charge.props.accessibilityState).toMatchObject({ disabled: true });
-    expect(screen.getAllByText(CHARGE_COMES_LATER).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(COLLECT_ELSEWHERE).length).toBeGreaterThan(0);
   });
 
   it('with the opening paid creates the connection and opens it', async () => {

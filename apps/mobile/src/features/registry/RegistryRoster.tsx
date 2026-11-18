@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useBlocks } from '../../api/useOrganization.js';
 import { useBlockRoster } from '../../api/useRegistry.js';
@@ -22,6 +22,9 @@ import {
 import { openUnit } from './navigation.js';
 import { filterRoster, ROSTER_FILTERS, type RosterFilter, rosterRows } from './registry-view.js';
 
+const isFilter = (value: unknown): value is RosterFilter =>
+  ROSTER_FILTERS.some((option) => option.value === value);
+
 // P-01 · Lista del padrón (Figma P-01; 3.2 §10.4). There is no list of families in the API: the
 // roster is the block report (GET /v1/reports/block), every connection with its families, status
 // and debt, not paginated (approved difference, 3.2 §6 M5). The block leader sees their block;
@@ -34,7 +37,14 @@ export function RegistryRoster({ withinTabs = false }: { withinTabs?: boolean })
   const blocks = useBlocks();
   const canRegister = useCan('registry.manage');
   const [chosenBlock, setChosenBlock] = useState<number | null>(null);
-  const [filter, setFilter] = useState<RosterFilter>('all');
+  // J-01 opens it filtered (?filter=surcharge or debt).
+  const params = useLocalSearchParams<{ filter?: string }>();
+  const [filter, setFilter] = useState<RosterFilter>(
+    isFilter(params.filter) ? params.filter : 'all',
+  );
+  useEffect(() => {
+    if (isFilter(params.filter)) setFilter(params.filter);
+  }, [params.filter]);
   const [text, setText] = useState('');
 
   const activeBlocks = (blocks.data ?? []).filter((block) => block.active);

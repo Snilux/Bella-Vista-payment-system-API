@@ -23,29 +23,55 @@ export type MoneyOperationState<TResult> = {
   error: unknown;
 };
 
-export type MoneyOperationOptions<TResult> = {
+/** An attempt whose outcome is unknown: the data and the key the retry must send again. */
+export type MoneyAttempt<TVars> = { vars: TVars; key: string | undefined };
+
+/**
+ * Where the unanswered attempt lives. By default inside the hook; a flow that spans several
+ * screens (the payment flow) keeps it in its context, so going back and forth never loses the
+ * key of a payment that may have gone in.
+ */
+export type MoneyAttemptStore<TVars> = {
+  get(): MoneyAttempt<TVars> | null;
+  set(attempt: MoneyAttempt<TVars> | null): void;
+};
+
+export type MoneyOperationOptions<TResult, TVars = unknown> = {
   /** False for operations the API does not key; the default is true. */
   idempotent?: boolean;
   onSuccess?: (result: TResult) => void;
+  /** The API answered with an error (not a lost answer): the key is already forgotten. */
+  onFailure?: (error: unknown) => void;
   /** Only for tests; the app uses expo-crypto's randomUUID. */
   newKey?: () => string;
+  attemptStore?: MoneyAttemptStore<TVars>;
 };
 
-type Pending<TVars> = { vars: TVars; key: string | undefined };
+type Pending<TVars> = MoneyAttempt<TVars>;
 
 export function useMoneyOperation<TVars, TResult>(
   send: (vars: TVars, idempotencyKey: string | undefined) => Promise<TResult>,
-  options: MoneyOperationOptions<TResult> = {},
+  options: MoneyOperationOptions<TResult, TVars> = {},
 ) {
-  const { idempotent = true, onSuccess, newKey = randomUUID } = options;
-  const [state, setState] = useState<MoneyOperationState<TResult>>({
-    status: 'idle',
-    data: undefined,
-    error: null,
-  });
+  const { idempotent = true, onSuccess, onFailure, newKey = randomUUID, attemptStore } = options;
   const inFlight = useRef(false);
   /** The attempt whose outcome is unknown: retry() sends exactly this again. */
-  const unanswered = useRef<Pending<TVars> | null>(null);
+  const ownAttempt = useRef<Pending<TVars> | null>(null);
+  const store: MoneyAttemptStore<TVars> = attemptStore ?? {
+    get: () => ownAttempt.current,
+    set: (attempt) => {
+      ownAttempt.current = attempt;
+    },
+  };
+  // The latest store, read inside run() without making it a dependency.
+  const storeRef = useRef(store);
+  storeRef.current = store;
+  // A flow that comes back with an unanswered attempt shows "No sabemos si se registró" again.
+  const [state, setState] = useState<MoneyOperationState<TResult>>(() => ({
+    status: store.get() ? 'unknown' : 'idle',
+    data: undefined,
+    error: null,
+  }));
 
   const run = useCallback(
     async (pending: Pending<TVars>) => {
@@ -54,36 +80,39 @@ export function useMoneyOperation<TVars, TResult>(
       setState((current) => ({ ...current, status: 'sending', error: null }));
       try {
         const result = await send(pending.vars, pending.key);
-        unanswered.current = null;
+        storeRef.current.set(null);
         setState({ status: 'success', data: result, error: null });
         onSuccess?.(result);
       } catch (error) {
         if (isNetworkError(error)) {
-          unanswered.current = pending;
+          storeRef.current.set(pending);
           setState({ status: 'unknown', data: undefined, error });
         } else {
-          unanswered.current = null;
+          storeRef.current.set(null);
           setState({ status: 'failed', data: undefined, error });
+          onFailure?.(error);
         }
       } finally {
         inFlight.current = false;
       }
     },
-    [send, onSuccess],
+    [send, onSuccess, onFailure],
   );
 
   return {
     ...state,
     sending: state.status === 'sending',
     /** Confirm: a new key per operation (or the same attempt again while its outcome is unknown). */
-    submit: (vars: TVars) =>
-      run(unanswered.current ?? { vars, key: idempotent ? newKey() : undefined }),
+    submit: (vars: TVars) => run(store.get() ?? { vars, key: idempotent ? newKey() : undefined }),
     /** "Reintentar" after "No sabemos si se registró": same data, same key. */
-    retry: () => (unanswered.current ? run(unanswered.current) : Promise.resolve()),
+    retry: () => {
+      const attempt = store.get();
+      return attempt ? run(attempt) : Promise.resolve();
+    },
     /** Back to the form (e.g. after an error the person will fix): forgets the attempt. */
     reset: () => {
       if (inFlight.current) return;
-      unanswered.current = null;
+      store.set(null);
       setState({ status: 'idle', data: undefined, error: null });
     },
   };
