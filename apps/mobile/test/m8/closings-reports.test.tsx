@@ -9,6 +9,7 @@ import { sessionStore } from '../../src/session/session-store.js';
 import { apiError } from '../api/fake-api.js';
 import { REPORT } from '../m4/fake-m4-api.js';
 import { fakeM6Api } from '../m6/fake-m6-api.js';
+import { largeTextProblems, setFontScale } from '../ui/render.js';
 import { BLOCK_REPORT, fakeM8Api, LEADER_OCTOBER, TRICKY_NAME } from './fake-m8-api.js';
 
 // M8 · Cortes, reportes y bitácora con la carpeta app/ real y una API simulada (3.2 §10, §12):
@@ -94,6 +95,7 @@ beforeEach(() => {
   mockKeys = 0;
   mockPdf.html = [];
   mockPdf.shared = [];
+  setFontScale(1);
 });
 
 const open = (url: string) => renderRouter(APP, { initialUrl: url });
@@ -340,5 +342,25 @@ describe('V-01 · Inicio del vocal', () => {
     }
     await fireEvent.press(screen.getByRole('button', { name: /^Padrón por manzana/ }));
     expect(await screen.findByRole('button', { name: 'Manzana: sin elegir' })).toBeTruthy();
+  });
+});
+
+describe('text at 140 % (M9)', () => {
+  it.each([
+    ['J-05', LEADER, '/block_leader/my-cashbox/closing', 'Corte de octubre 2026'],
+    ['G-08', PRESIDENT, '/common/closings/41', 'Corte de octubre 2026'],
+    ['T-13', TREASURER, '/treasurer/more/closings', 'Caja del comité'],
+    ['R-04', PRESIDENT, '/president/closings', 'Manzana S1-M01'],
+    ['G-06', LEADER, '/common/reports/block', 'Familias activas'],
+    ['G-07', PRESIDENT, '/president/reports', 'Fondos comunitarios'],
+    ['R-05', PRESIDENT, '/president/more/audit-log', 'Alta: Pago PG-202610-000981'],
+    ['V-01', MEMBER, '/member/home', 'Fondos comunitarios esperados'],
+  ] as const)('%s is never cut and keeps touch areas of 48', async (_id, account, url, text) => {
+    sessionStore.signedIn(account);
+    server.state.closings = [LEADER_OCTOBER({ status: 'counted', countedCash: 345_000 })];
+    setFontScale(1.4);
+    await open(url);
+    await screen.findAllByText(text);
+    expect(largeTextProblems(screen.toJSON() as never)).toEqual([]);
   });
 });

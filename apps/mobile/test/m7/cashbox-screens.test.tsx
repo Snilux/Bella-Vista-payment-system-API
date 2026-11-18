@@ -12,6 +12,7 @@ import {
 } from '../../src/features/forms/DiscardChangesSheet.js';
 import { sessionStore } from '../../src/session/session-store.js';
 import { apiError } from '../api/fake-api.js';
+import { largeTextProblems, setFontScale } from '../ui/render.js';
 import { expense, fakeM7Api, handover } from './fake-m7-api.js';
 
 // M7 · Cajas y comité con la carpeta app/ real y una API simulada (3.2 §10.5, §10.6, §12): a
@@ -86,6 +87,7 @@ beforeEach(() => {
     fetchFn: scriptedFetch(server.route).fetchFn,
   });
   mockKeys = 0;
+  setFontScale(1);
 });
 
 const as = (account: SessionAccount) => {
@@ -445,5 +447,22 @@ describe('R-03 · Detalle de autorización', () => {
     expect(screen.getByText('EN-202610-000031')).toBeTruthy();
     expect(screen.getByText('María López Torres')).toBeTruthy();
     expect(screen.getByText('$50.00')).toBeTruthy();
+  });
+});
+
+describe('text at 140 % (M9)', () => {
+  it.each([
+    ['J-02', LEADER, '/block_leader/my-cashbox', 'Por confirmar'],
+    ['J-03', LEADER, '/block_leader/my-cashbox/new-handover', 'Preparar entrega'],
+    ['T-03', TREASURER, '/treasurer/handovers/31', 'María López Torres · Manzana S1-M03'],
+    ['T-06', TREASURER, '/treasurer/cashbox/new-expense', 'Registrar gasto'],
+    ['T-08', TREASURER, '/treasurer/more/plumber', '2026-10-01 al 2026-10-15'],
+    ['T-12', TREASURER, '/treasurer/more/opening-balances', 'Saldos iniciales'],
+  ] as const)('%s is never cut and keeps touch areas of 48', async (_id, account, url, text) => {
+    as(account);
+    setFontScale(1.4);
+    await open(url);
+    await screen.findAllByText(text);
+    expect(largeTextProblems(screen.toJSON() as never)).toEqual([]);
   });
 });
