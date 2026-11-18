@@ -57,8 +57,9 @@ export default function ReviewPayment() {
   const body = useMemo<PaymentPreviewRequest | null>(() => {
     if (!target) return null;
     if (target.kind === 'unit') {
-      return flow.periods.length > 0
-        ? { unitId: target.unitId, periods: flow.periods, extraChargeIds: [] }
+      // The months and the extra charges chosen in F-02 go in the same payment.
+      return flow.periods.length > 0 || flow.chargeIds.length > 0
+        ? { unitId: target.unitId, periods: flow.periods, extraChargeIds: flow.chargeIds }
         : null;
     }
     return flow.chargeIds.length > 0 ? { periods: [], extraChargeIds: flow.chargeIds } : null;
