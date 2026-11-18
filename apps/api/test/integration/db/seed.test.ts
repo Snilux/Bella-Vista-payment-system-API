@@ -22,6 +22,7 @@ import {
 import { BOOTSTRAP_AUDIT_REASON, runBootstrap } from '../../../src/db/seed/bootstrap.js';
 import { type BootstrapFile, parseBootstrapFile } from '../../../src/db/seed/bootstrap-file.js';
 import {
+  applyDevClosings,
   applyDevOpeningFee,
   applyDevSuperadminPassword,
   DEV_OPENING_FEE,
@@ -413,5 +414,47 @@ describe.skipIf(!testDatabaseUrl)('pnpm db:seed:dev (development data)', () => {
         DevSeedRefusedError,
       );
     }),
+  );
+
+  it(
+    'closes the monthly closings of every cashbox up to two months ago, once',
+    { timeout: 60_000 },
+    () =>
+      withSeedDatabase(async (db) => {
+        await bootstrap(db);
+        await runDevSeed(db, { nodeEnv: 'development' });
+        const first = await applyDevClosings(db, { nodeEnv: 'development', today: '2026-11-18' });
+        expect(first.closed).toBeGreaterThan(0);
+        const rows = await db
+          .select({
+            cashboxId: schema.vClosing.cashboxId,
+            dateFrom: schema.vClosing.dateFrom,
+            countedCash: schema.vClosing.countedCash,
+            expected: schema.vClosing.expectedBalance,
+            closedAt: schema.vClosing.closedAt,
+          })
+          .from(schema.vClosing);
+        // Up to September 2026 (October stays open to be closed by hand), counted without difference.
+        expect(rows.every((row) => row.dateFrom <= '2026-09-01' && row.closedAt !== null)).toBe(
+          true,
+        );
+        expect(rows.some((row) => row.dateFrom === '2026-09-01')).toBe(true);
+        expect(rows.every((row) => row.countedCash === row.expected)).toBe(true);
+        // Every month of a cashbox, in a row (a month only closes after the previous one).
+        const byBox = Map.groupBy(rows, (row) => row.cashboxId);
+        for (const months of byBox.values()) {
+          const sorted = months.map((row) => row.dateFrom).sort();
+          expect(sorted.at(-1)).toBe('2026-09-01');
+          expect(sorted.length).toBe(new Set(sorted).size);
+        }
+        expect(await applyDevClosings(db, { nodeEnv: 'development', today: '2026-11-18' })).toEqual(
+          {
+            closed: 0,
+          },
+        );
+        await expect(
+          applyDevClosings(db, { nodeEnv: 'production', today: '2026-11-18' }),
+        ).rejects.toBeInstanceOf(DevSeedRefusedError);
+      }),
   );
 });

@@ -1,6 +1,8 @@
+import { businessDate } from '../../lib/dates.js';
 import { createDb } from '../client.js';
 import { createSeedLogger, loadSeedEnv } from './cli-support.js';
 import {
+  applyDevClosings,
   applyDevOpeningFee,
   applyDevSuperadminPassword,
   DEV_PASSWORD,
@@ -29,6 +31,15 @@ try {
   const openingFee = await applyDevOpeningFee(db, { nodeEnv: env.NODE_ENV });
   if (openingFee.changed) {
     log.info('La cuota de apertura ahora tiene el importe de desarrollo ($1,500.00).');
+  }
+  const closings = await applyDevClosings(db, {
+    nodeEnv: env.NODE_ENV,
+    today: businessDate(new Date(), env.BUSINESS_TIMEZONE),
+  });
+  if (closings.closed > 0) {
+    log.info(
+      `Se cerraron ${closings.closed} cortes mensuales de desarrollo (hasta dos meses antes del actual), para poder hacer el del mes pasado.`,
+    );
   }
   if (result.status === 'already_seeded') {
     log.warn('La base ya tiene secciones registradas; no se cargaron datos de desarrollo.');

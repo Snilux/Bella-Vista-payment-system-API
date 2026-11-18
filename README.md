@@ -105,7 +105,7 @@ pnpm db:seed:dev                         # secciones, manzanas, personas, tomas,
 
 ### Cuentas de desarrollo
 
-Todas usan la contraseña `desarrollo-bella-vista` y no piden cambiarla. `pnpm db:seed:dev` también se la asigna al superadministrador del arranque (cada vez que se ejecuta, aunque los datos ya existan). También deja la cuota de apertura en $1,500.00 si no tiene importe, para poder aprobar solicitudes de toma; las tarifas de desarrollo ($40.00 desde 2025-01 y $50.00 desde 2026-01) ya están autorizadas. La apertura se paga con `http/04-padron.http` hasta que existan las pantallas de cobro (M6).
+Todas usan la contraseña `desarrollo-bella-vista` y no piden cambiarla. `pnpm db:seed:dev` también se la asigna al superadministrador del arranque (cada vez que se ejecuta, aunque los datos ya existan). También deja la cuota de apertura en $1,500.00 si no tiene importe, para poder aprobar solicitudes de toma; las tarifas de desarrollo ($40.00 desde 2025-01 y $50.00 desde 2026-01) ya están autorizadas. Además deja cerrados los cortes mensuales de todas las cajas hasta dos meses antes del actual (contados sin diferencia), porque un mes solo se cierra después del anterior: así el corte del mes pasado se puede hacer, revisar y cerrar desde la app (J-05, T-13, R-04).
 
 | Usuario | Cargo | Manzana |
 |---|---|---|
