@@ -193,6 +193,9 @@ describe.skipIf(!testDatabaseUrl)('closings', () => {
       closedBy: { username: 'presidente' },
     });
     expect(closed.body.closing.preparedBy.fullName).toMatch(/\S+ \S+/);
+    // G-08 names who reviewed and who closed (M9), not only their usernames.
+    expect(closed.body.closing.reviewedBy.fullName).toMatch(/\S+ \S+/);
+    expect(closed.body.closing.closedBy.fullName).toMatch(/\S+ \S+/);
     const next = async () =>
       (await call('GET', '/v1/cashboxes', 'presidente')).body.cashboxes.find(
         (item: { type: string }) => item.type === 'committee',

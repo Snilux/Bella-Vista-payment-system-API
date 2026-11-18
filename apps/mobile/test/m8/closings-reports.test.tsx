@@ -176,6 +176,9 @@ describe('G-08 · Corte (detalle): review and close', () => {
       expect(screen.queryByRole('button', { name })).toBeNull();
     }
     expect(screen.getByText(/Corte cerrado: solo de consulta/)).toBeTruthy();
+    // Who reviewed and closed: the person's name and the date and time (AAAA-MM-DD HH:mm, M9).
+    expect(screen.getByText('Rosa Elena Vargas Luna · 2026-11-02 12:00')).toBeTruthy();
+    expect(screen.getByText('Rosa Elena Vargas Luna · 2026-11-02 13:00')).toBeTruthy();
   });
 
   it('the member reviews but never closes nor captures', async () => {
