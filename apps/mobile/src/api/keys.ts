@@ -18,8 +18,16 @@ export const queryKeys = {
   approvalList: (status: 'pending' | 'resolved' | 'all') => ['approvals', status] as const,
   /** R-01 and S-01 (G-07 in M8): the community report of the current month. */
   communityReport: ['reports', 'community'] as const,
-  /** R-01 counts and the handover record of S-07: ['closings', filter]. */
+  /** R-01, R-04, T-13, J-05, G-08 and S-07: ['closings', filter] and one closing. */
   closings: ['closings'] as const,
+  closing: (id: number) => ['closings', 'detail', id] as const,
+  /** G-06 and G-07 (M8): one report per filter. */
+  reports: ['reports'] as const,
+  blockReport: (blockId: number, from: string, to: string) =>
+    ['reports', 'block', blockId, from, to] as const,
+  communityReportRange: (from: string, to: string) => ['reports', 'community', from, to] as const,
+  /** R-05 and A-04. */
+  auditLogFiltered: (filter: unknown) => ['audit-log', filter] as const,
   /** S-01: connection requests by status. */
   connectionRequests: ['connection-requests'] as const,
   /** G-01 and the pickers: ['search', text]. */

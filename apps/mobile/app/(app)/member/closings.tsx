@@ -1,6 +1,8 @@
-// R-04 · Cortes por revisar (pestaña Cortes del vocal, reexportará la de president/; provisional hasta M8)
-import { ComingSoon } from '../../../src/features/session/ComingSoon.js';
+// R-04 · Cortes por revisar (pestaña Cortes del vocal)
+import { ClosingsToReview } from '../../../src/features/closings/ClosingsToReview.js';
+
+// The member reviews counted closings but never closes them (M8): no "Por cerrar" chip.
 
 export default function MemberClosingsTab() {
-  return <ComingSoon screen="R-04" withinTabs />;
+  return <ClosingsToReview />;
 }

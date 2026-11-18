@@ -1,6 +1,9 @@
-// R-04 · Cortes por revisar (provisional hasta M8)
-import { ComingSoon } from '../../../src/features/session/ComingSoon.js';
+// R-04 · Cortes por revisar
+import { ClosingsToReview } from '../../../src/features/closings/ClosingsToReview.js';
+
+// The president's "Cortes" tab (Figma R-04): counted closings to review and reviewed ones to
+// close (only the president closes).
 
 export default function PresidentClosingsTab() {
-  return <ComingSoon screen="R-04" withinTabs />;
+  return <ClosingsToReview />;
 }

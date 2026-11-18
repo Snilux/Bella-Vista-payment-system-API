@@ -23,8 +23,8 @@ import {
 
 // Community summary and what waits for the president (2.5; 3.2 §10.8). Every figure comes from
 // the API: the totals of the community report (balances and debt of today) and the pending
-// approvals. "Cortes por revisar" counts the counted closings; R-04 and the community report
-// (G-07) are built in M8, so those rows open their tabs.
+// approvals. "Cortes por revisar" counts the counted closings and opens R-04; "Reporte
+// comunitario" opens G-07 (both are tabs of the president).
 
 export default function PresidentHome() {
   const account = useAccount();
