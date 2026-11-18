@@ -469,6 +469,13 @@ describe.skipIf(!testDatabaseUrl)('payments', () => {
     const inbox = await call('GET', '/v1/approvals?status=pending', 'presidente');
     const item = inbox.body.approvals.find((a: { id: number }) => a.id === approvalId);
     expect(item.description).toMatch(/^Cancelar el pago PG-\d{6}-\d{6} \(\$200\.00\)$/);
+    // R-03 opens the payment itself (G-05).
+    expect(item.subject).toEqual({ type: 'payment', id: firstPayment.id });
+    const one = await call('GET', `/v1/approvals/${approvalId}`, 'presidente');
+    expect(one.body.approval).toMatchObject({ id: approvalId, subject: item.subject });
+    // The leader who asked follows it; the treasurer did not ask: for them it does not exist.
+    expect((await call('GET', `/v1/approvals/${approvalId}`, 'jm.s1m01')).status).toBe(200);
+    expect((await call('GET', `/v1/approvals/${approvalId}`, 'tesorero')).status).toBe(404);
 
     expect((await resolve(approvalId, 'rejected')).status).toBe(200);
     const detail = await call('GET', `/v1/payments/${firstPayment.id}`, 'tesorero');

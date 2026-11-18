@@ -605,7 +605,10 @@ export const openingBalanceHandler: ApprovalHandler = {
     return new Map(
       rows.map((r) => [
         r.approvalId,
-        `Saldo inicial de ${formatMoney(r.amount)} en ${labels.find((l) => l.id === r.cashboxId)?.label ?? 'la caja'}`,
+        {
+          description: `Saldo inicial de ${formatMoney(r.amount)} en ${labels.find((l) => l.id === r.cashboxId)?.label ?? 'la caja'}`,
+          subject: { type: 'cashbox', id: r.cashboxId },
+        },
       ]),
     );
   },
@@ -618,12 +621,19 @@ export const adjustmentHandler: ApprovalHandler = {
   async describe(db, approvalIds) {
     const rows = await repo.adjustmentsByApproval(db, approvalIds);
     return new Map(
-      rows.map((r) => [
-        r.approvalId,
-        r.closingFolio
+      rows.flatMap((r) => {
+        const subject =
+          r.closingId !== null
+            ? ({ type: 'closing', id: r.closingId } as const)
+            : r.handoverId !== null
+              ? ({ type: 'handover', id: r.handoverId } as const)
+              : null;
+        if (!subject) return [];
+        const description = r.closingFolio
           ? `Aclaración de ${formatMoney(r.amount)} en el corte ${r.closingFolio}`
-          : `Aclaración de ${formatMoney(r.amount)} en la entrega ${r.handoverFolio ?? ''}`.trim(),
-      ]),
+          : `Aclaración de ${formatMoney(r.amount)} en la entrega ${r.handoverFolio ?? ''}`.trim();
+        return [[r.approvalId, { description, subject }] as const];
+      }),
     );
   },
 };

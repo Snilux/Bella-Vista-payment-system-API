@@ -61,10 +61,16 @@ Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
 ### The president's inbox (pending by default)
 # Expected: 200 { approvals: [ { id, type: "payment_cancellation", status: "pending",
 #   reason: "Se capturó en la familia equivocada",
-#   description: "Cancelar el pago PG-… ($240.00)",
+#   description: "Cancelar el pago PG-… ($240.00)", subject: { type: "payment", id },
 #   requestedBy: { username: "jm.s1m01", role: "block_leader", fullName: "Laura Méndez Ruiz" },
 #   resolvedBy: null } ] }
 GET {{baseUrl}}/approvals?status=pending
+Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
+
+### One request with its record (R-03): the subject opens the payment
+# Expected: 200 { approval: { id, type: "payment_cancellation", subject: { type: "payment", id } } }
+# Someone else's request (another requester) → 404 NOT_FOUND, without revealing that it exists.
+GET {{baseUrl}}/approvals/{{approvalId}}
 Authorization: Bearer {{loginPresident.response.body.$.accessToken}}
 
 ### The leader cannot resolve it

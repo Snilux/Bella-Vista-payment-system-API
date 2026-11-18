@@ -100,6 +100,7 @@ describe.skipIf(!testDatabaseUrl)('rates and fees', () => {
         id: res.body.rate.approvalId,
         type: 'rate',
         description: 'Tarifa de $60.00 desde Diciembre 2026',
+        subject: { type: 'rate', id: res.body.rate.id },
       }),
     );
 

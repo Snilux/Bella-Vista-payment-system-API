@@ -4,7 +4,7 @@ import type { Database, Transaction } from '../../db/client.js';
 import { businessDate } from '../../lib/dates.js';
 import { AppError, errors } from '../../lib/errors.js';
 import type { AuthenticatedAccount } from '../../plugins/auth.js';
-import type { ApprovalRegistry } from './approval-registry.js';
+import type { ApprovalRegistry, ApprovalSummary } from './approval-registry.js';
 import {
   type ApprovalRow,
   findApproval,
@@ -40,9 +40,9 @@ const fullName = (who: {
 export function createApprovalsService(deps: ApprovalsServiceDeps) {
   const { db, registry } = deps;
 
-  /** Inbox items with the description written by each type's handler. */
+  /** Inbox items with the description and subject written by each type's handler. */
   async function toApprovals(executor: Database | Transaction, rows: ApprovalRow[]) {
-    const descriptions = new Map<number, string>();
+    const summaries = new Map<number, ApprovalSummary>();
     const byType = Map.groupBy(rows, (row) => row.type);
     for (const [type, group] of byType) {
       const handler = registry.find(type);
@@ -51,7 +51,7 @@ export function createApprovalsService(deps: ApprovalsServiceDeps) {
         executor,
         group.map((row) => row.id),
       );
-      for (const [id, text] of described) descriptions.set(id, text);
+      for (const [id, summary] of described) summaries.set(id, summary);
     }
     return rows.map(
       (row): Approval => ({
@@ -59,7 +59,8 @@ export function createApprovalsService(deps: ApprovalsServiceDeps) {
         type: row.type,
         status: row.result ?? 'pending',
         reason: row.reason,
-        description: descriptions.get(row.id) ?? null,
+        description: summaries.get(row.id)?.description ?? null,
+        subject: summaries.get(row.id)?.subject ?? null,
         requestedBy: {
           userAccountId: row.requester.userAccountId,
           username: row.requester.username,
@@ -90,6 +91,21 @@ export function createApprovalsService(deps: ApprovalsServiceDeps) {
         requestedBy: account.role === 'president' ? null : account.userAccountId,
       });
       return { approvals: await toApprovals(db, rows) };
+    },
+
+    /**
+     * One approval with its subject (R-03). The president sees any; anyone else only the ones
+     * they requested: another's answers NOT_FOUND, so it does not reveal that it exists.
+     */
+    async get(account: AuthenticatedAccount, id: number) {
+      const row = await findApproval(db, id);
+      if (!row) throw approvalErrors.notFound();
+      if (account.role !== 'president' && row.requester.userAccountId !== account.userAccountId) {
+        throw approvalErrors.notFound();
+      }
+      const [approval] = await toApprovals(db, [row]);
+      if (!approval) throw errors.internal();
+      return { approval };
     },
 
     async resolve(actor: Actor, id: number, input: ResolveApprovalRequest) {

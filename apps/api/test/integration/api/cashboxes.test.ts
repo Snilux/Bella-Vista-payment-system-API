@@ -184,6 +184,7 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
       expect.objectContaining({
         id: res.body.openingBalance.approvalId,
         description: 'Saldo inicial de $4,000.00 en Comité',
+        subject: { type: 'cashbox', id: box },
       }),
     );
     const second = await post(`/v1/cashboxes/${box}/opening-balance`, 'tesorero', {

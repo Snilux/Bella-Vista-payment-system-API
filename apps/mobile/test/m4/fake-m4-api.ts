@@ -53,6 +53,7 @@ export function approval(change: Partial<Approval> & Pick<Approval, 'id' | 'type
     status: 'pending',
     reason: 'Motivo de prueba',
     description: null,
+    subject: null,
     requestedBy: {
       userAccountId: 4,
       username: 'secretario',
@@ -355,6 +356,11 @@ export function fakeM4Api() {
       return json(200, { approvals });
     }
 
+    const one = /^\/approvals\/(\d+)$/.exec(pathName);
+    if (get && one) {
+      const found = state.approvals.find((item) => item.id === Number(one[1]));
+      return found ? json(200, { approval: found }) : apiError(404, 'NOT_FOUND', 'No existe.');
+    }
     const resolve = /^\/approvals\/(\d+)\/resolve$/.exec(pathName);
     if (call.method === 'POST' && resolve) {
       const id = Number(resolve[1]);

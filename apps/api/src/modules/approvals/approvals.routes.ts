@@ -10,7 +10,8 @@ import { requireActor } from '../../plugins/audit-context.js';
 import { requireAccount } from '../../plugins/auth.js';
 import type { ApprovalsService } from './approvals.service.js';
 
-// /v1/approvals: inbox (president: all; everyone else: their own) and resolution (president).
+// /v1/approvals: inbox and detail (president: all; everyone else: their own) and resolution
+// (president).
 
 const idParams = z.object({ id: z.coerce.number().int().positive() });
 
@@ -28,6 +29,15 @@ export const approvalsRoutes: FastifyPluginAsyncZod<{ service: ApprovalsService 
       },
     },
     async (request) => service.list(requireAccount(request), request.query),
+  );
+
+  app.get(
+    '/:id',
+    {
+      config: { permission: 'approvals.view' },
+      schema: { params: idParams, response: { 200: approvalResponseSchema } },
+    },
+    async (request) => service.get(requireAccount(request), request.params.id),
   );
 
   app.post(

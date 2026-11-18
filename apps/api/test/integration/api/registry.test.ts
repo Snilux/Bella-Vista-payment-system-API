@@ -421,6 +421,7 @@ describe.skipIf(!testDatabaseUrl)('registry', () => {
     ).toMatchObject({
       type: 'unit_deactivation',
       description: `Baja de la unidad ${fondo.folio} (titular: Carmen Aguilar)`,
+      subject: { type: 'unit', id: fondo.id },
     });
     const approved = await call(
       'POST',

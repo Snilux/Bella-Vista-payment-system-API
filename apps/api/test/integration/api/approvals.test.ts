@@ -1,4 +1,4 @@
-import { approvalListResponseSchema } from '@bella-vista/shared';
+import { approvalListResponseSchema, approvalResponseSchema } from '@bella-vista/shared';
 import { and, eq } from 'drizzle-orm';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { writeAudit } from '../../../src/db/audit.js';
@@ -30,7 +30,12 @@ const testHandler: ApprovalHandler = {
     calls.push({ kind: 'rejected', approvalId, reason });
   },
   async describe(_db, ids) {
-    return new Map(ids.map((id) => [id, `Saldo inicial de prueba #${id}`]));
+    return new Map(
+      ids.map((id) => [
+        id,
+        { description: `Saldo inicial de prueba #${id}`, subject: { type: 'cashbox', id: 1 } },
+      ]),
+    );
   },
 };
 
@@ -201,6 +206,35 @@ describe.skipIf(!testDatabaseUrl)('/v1/approvals', () => {
       (a: { id: number }) => a.id === id,
     );
     expect(item).toMatchObject({ type: 'plumber_salary', description: null });
+  });
+
+  it('gives one approval with its subject: the president any, the requester only theirs', async () => {
+    const id = await request('tesorero');
+    const get = async (username: string, approvalId = id) => {
+      const res = await ctx.app.inject({
+        method: 'GET',
+        url: `/v1/approvals/${approvalId}`,
+        headers: await ctx.authFor(username),
+      });
+      return { status: res.statusCode, body: res.json() };
+    };
+    const president = await get('presidente');
+    expect(president.status).toBe(200);
+    expect(approvalResponseSchema.safeParse(president.body).success).toBe(true);
+    expect(president.body.approval).toMatchObject({
+      id,
+      type: 'opening_balance',
+      description: `Saldo inicial de prueba #${id}`,
+      subject: { type: 'cashbox', id: 1 },
+    });
+    expect((await get('tesorero')).body.approval.id).toBe(id);
+    // Someone else's request does not exist for them; nor an unknown id.
+    expect(await get('secretario')).toMatchObject({
+      status: 404,
+      body: { error: { code: 'NOT_FOUND' } },
+    });
+    expect((await get('presidente', 999_999)).status).toBe(404);
+    expect((await get('admin')).status).toBe(403);
   });
 
   it('answers NOT_FOUND for an unknown approval', async () => {
