@@ -480,6 +480,10 @@ Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en espa�
 | Pantalla de éxito | `SuccessScreen` |
 | Envoltura de estados (`EstadoPantalla`): cargando, vacío, error, sin conexión, sin permiso | `ScreenState` (`loading`, `empty`, `error`, `offline`, `forbidden`) |
 | Lista paginada (`ListaPaginada`) | `PaginatedList` |
+| Carga lenta por señal débil (aviso a los 8 s) | `SLOW_LOADING_MS`, `SLOW_LOADING_MESSAGE` (`ScreenState`) |
+| Tirar para recargar; recargar lo que está en pantalla (al enfocar una pestaña, solo lo de más de 30 s) | `useRefresh` (`ScreenLayout` `refresh`), `refreshShownQueries`, `FRESH_FOR_MS` (`src/api/query-client.ts`) |
+| Opciones que vienen de la API (cargando, no se pudieron cargar) | `Select` `optionsQuery` |
+| Alta sin clave que se quedó sin respuesta («No sabemos si se guardó») | `describeSaveError`, `UNKNOWN_SAVE_MESSAGE` (`src/api/error-messages.ts`) |
 | Mensajes de error (`mensajes-error.ts`) | `src/api/error-messages.ts` |
 | Galería de componentes | `ComponentGallery` (ruta `/dev/gallery`, solo en desarrollo) |
 | Hook de operación de dinero (`useOperacionDinero`): intento sin respuesta, almacén del intento | `useMoneyOperation` (desde M4), `MoneyAttempt`, `MoneyAttemptStore` (`attemptStore`, `onFailure`) |
@@ -487,7 +491,7 @@ Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en espa�
 | Catálogo de pantallas (ID, ruta, título, hecha) | `src/session/screen-catalog.ts` (`SCREENS`) |
 | Estado de la sesión: restaurando, sin respuesta, sin sesión, con sesión | `sessionStore` (`restoring`, `unreachable`, `signed-out`, `signed-in`), `useSession`, `useAccount` |
 | motivo del cierre de sesión: vencida, cargo no vigente, cuenta desactivada, cuenta bloqueada | `SessionEndReason`: `expired`, `role-not-active`, `account-disabled`, `account-locked` (la contraseña temporal no cierra la sesión: lleva a C-02) |
-| Pestañas del cargo, menú «Más», pantalla «Próximamente» | `RoleTabs`, `MoreMenu`, `ComingSoon` (`src/features/session/`) |
+| Pestañas del cargo y menú «Más» | `RoleTabs`, `MoreMenu` (`src/features/session/`) |
 | Marco de pantalla (con barra inferior fija), grupo de filas de menú | `ScreenLayout`, `MenuGroup` |
 | Cuentas del superadministrador: lista, cuenta, crear, restablecer, bloquear/desbloquear/desactivar | `useAccountList`, `useManagedAccount`, `useCreateAccount`, `useResetPassword`, `useAccountAction` (`lock`, `unlock`, `deactivate`) (`src/api/useAccounts.ts`) |
 | Vista de la cuenta: estado en palabras, etiqueta, acciones permitidas | `accountView`, `AccountCommand` (`reset`, `lock`, `unlock`, `deactivate`) (`src/features/accounts/account-status.ts`) |
@@ -495,10 +499,10 @@ Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en espa�
 | Confirmación con motivo | `ReasonSheet` |
 | Usuario propuesto («nombre.apellido») | `suggestUsername` |
 | Bitácora técnica: páginas, texto de cada acción | `useAuditLogPages` (`src/api/useAuditLog.ts`), `auditEntryView` |
-| Fecha y fecha con hora en es-MX («25 oct 2026», «25 oct 2026, 10:42») | `formatDate`, `formatDateTime` (`@bella-vista/shared`) |
+| Fecha y fecha con hora (AAAA-MM-DD: «2026-10-25», «2026-10-25 10:42»); fecha en palabras para confirmar lo capturado («25 de octubre de 2026») | `formatDate`, `formatDateTime`, `formatDateInWords` (`@bella-vista/shared`) |
 | Tarjeta de resumen (cálida o blanca), con encabezado de importe y total | `SummaryCard` (`tone`: `warm`, `plain`; `heading`, `total`) |
 | Campo de fecha (AAAA-MM-DD) | `DateField` (`isCalendarDate`, `dateError`) |
-| Salir con cambios («¿Salir sin enviar?»), salir después de guardar | `useDiscardGuard` (`leave`), `DiscardChangesSheet` (`src/features/forms/`) |
+| Salir con cambios («¿Salir sin enviar?»), salir después de guardar, salir sin saber si se registró | `useDiscardGuard` (`leave`, `unknown`), `DiscardChangesSheet` (`src/features/forms/`) |
 | Confirmación con motivo (rechazar, cancelar solicitud) | `ReasonSheet` (`src/features/forms/`; la de cuentas vive en `src/features/accounts/`), `RejectSheet` |
 | Buscador de persona | `PersonPicker` (`src/features/people/`) |
 | Organización: secciones, manzanas y jefes pendientes; cargos y jefes | `organizationView`, `blockView`, `assignmentGroups` (`src/features/organization/`) |
@@ -513,7 +517,7 @@ Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en espa�
 | Botonera de una operación de dinero (confirmar o «Reintentar» con la misma clave) | `MoneyFooter` (`src/features/forms/`) |
 | Mi caja (J-02, R-06), preparar entrega (J-03), mis entregas (J-04), tarjeta «Debo tener» | `MyCashboxScreen`, `PrepareHandoverScreen`, `MyHandoversScreen`, `CashboxCard` (`src/features/cashboxes/CashboxScreens.tsx`) |
 | Textos de cajas: estado de la entrega, diferencia en vivo, límite de la entrega, importe de la aclaración, movimiento, meses de G-09, fila de saldo inicial | `HANDOVER_TAGS`, `handoverDifference`, `handoverAmountError`, `adjustmentAmount`, `movementTitle`, `monthOptions`, `openingRow`, `cashboxTitle` (`src/features/cashboxes/cashbox-view.ts`) |
-| Textos del comité: estado del gasto, pago bloqueado por saldo, «quedó registrado y pendiente», periodicidad, periodos por pagar del fontanero | `EXPENSE_TAGS`, `payBlockedReason`, `SAVED_NOT_PAID`, `FREQUENCY_LABELS`, `payablePeriods`, `payPeriodShort`, `payPeriodLong` (`src/features/committee/committee-view.ts`) |
+| Textos del comité: estado del gasto, pago bloqueado por saldo, «quedó registrado y pendiente», periodicidad, periodos por pagar del fontanero | `EXPENSE_TAGS`, `payBlockedReason`, `SAVED_NOT_PAID`, `FREQUENCY_LABELS`, `payablePeriods`, `payPeriodShort` (`src/features/committee/committee-view.ts`) |
 | Cajas y entregas: lista de cajas, movimientos por mes, entregas, preparar, retirar, confirmar, saldo inicial, qué se recarga tras mover dinero | `useCashboxes`, `movementPages`, `handoverPages`, `useHandover`, `prepareHandover`, `withdrawHandover`, `confirmHandover`, `requestOpeningBalance`, `afterCashMovement` (`src/api/useCashboxes.ts`) |
 | Comité: ingreso, categorías, gastos, pagar, rechazar, fontanero, salario, pagar periodo | `createIncome`, `useExpenseCategories`, `useExpenses`, `useExpense`, `createExpense`, `payExpense`, `useRejectExpense`, `usePlumbers`, `usePlumber`, `useCreatePlumber`, `useCreateSalary`, `payPlumber` (`src/api/useCommittee.ts`) |
 | Cargos extraordinarios de la familia (F-02, G-04): pendientes, crear, cancelar; sección de G-04 | `useUnitCharges`, `useCreateCharge`, `useCancelCharge` (`src/api/useExtraCharges.ts`), `ExtraChargesSection` (`src/features/billing/ExtraCharges.tsx`) |
