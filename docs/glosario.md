@@ -427,6 +427,8 @@ Los filtros de las listas (`?nombre=valor`) van en `camelCase` inglés, como los
 | periodo de pago del fontanero | `plumberPayPeriod` (`packages/shared/src/domain/plumber.ts`) |
 | permisos: ver cajas, registrar saldo inicial | `cashboxes.view`, `openingBalances.register` |
 | permisos: crear y cancelar cargos extraordinarios (D-28) | `charges.manage` |
+| permiso: cerrar un corte (solo el presidente; el vocal revisa) | `closings.close` |
+| mes del siguiente corte mensual de una caja | `nextClosingPeriod` |
 | `fechaCargo`, `motivoCancelacion`; destino del cargo: familia, toma; estado: pendiente, pagado, cancelado | `chargedOn`, `cancellationReason`; `target`: `unit`, `connection`; `status`: `pending`, `paid`, `cancelled` |
 | movimiento de caja: folio y detalle (familia, caja de origen, concepto, descripción) | `folio`, `detail` |
 
@@ -515,3 +517,10 @@ Nombres de 2.4 y 3.2 en el código. Los textos que ve el usuario siguen en espa�
 | Cajas y entregas: lista de cajas, movimientos por mes, entregas, preparar, retirar, confirmar, saldo inicial, qué se recarga tras mover dinero | `useCashboxes`, `movementPages`, `handoverPages`, `useHandover`, `prepareHandover`, `withdrawHandover`, `confirmHandover`, `requestOpeningBalance`, `afterCashMovement` (`src/api/useCashboxes.ts`) |
 | Comité: ingreso, categorías, gastos, pagar, rechazar, fontanero, salario, pagar periodo | `createIncome`, `useExpenseCategories`, `useExpenses`, `useExpense`, `createExpense`, `payExpense`, `useRejectExpense`, `usePlumbers`, `usePlumber`, `useCreatePlumber`, `useCreateSalary`, `payPlumber` (`src/api/useCommittee.ts`) |
 | Cargos extraordinarios de la familia (F-02, G-04): pendientes, crear, cancelar; sección de G-04 | `useUnitCharges`, `useCreateCharge`, `useCancelCharge` (`src/api/useExtraCharges.ts`), `ExtraChargesSection` (`src/features/billing/ExtraCharges.tsx`) |
+| Cortes: lista, un corte, abrir, contar, revisar o cerrar | `useClosings`, `useClosing`, `useOpenClosing`, `useCountClosing`, `useClosingStep` (`review`, `close`) (`src/api/useClosings.ts`) |
+| Detalle del corte con sus cifras y acciones (G-08, J-05), cortes por revisar (R-04) | `ClosingDetail`, `FiguresCard`, `ClosingsToReview` (`src/features/closings/`) |
+| Textos de cortes: estado, título, cifras, diferencia, qué puede hacer cada cargo, meses | `CLOSING_TAGS`, `closingTitle`, `figureRows`, `countDifference`, `differenceText`, `closingActions`, `periodOptions` (`src/features/closings/closing-view.ts`) |
+| Reportes con rango de meses (G-06, G-07) | `useBlockReport`, `useCommunityReport` (`src/api/useReports.ts`), `MonthRangeFields`, `ExportButton`, `CommunityReportScreen` (`src/features/reports/`) |
+| Filas de los reportes que comparten pantalla y PDF | `blockSummaryRows`, `blockCashboxRows`, `unitRow`, `communitySummaryRows`, `committeeRows`, `blockFigureRows` (`src/features/reports/report-view.ts`) |
+| Plantillas HTML de los PDF, escapar texto, generar y compartir el PDF | `blockReportHtml`, `communityReportHtml`, `escapeHtml`, `exportPdf` (`src/reports/`) |
+| Bitácora (R-05): acción y tabla en palabras, detalle sin datos sensibles | `auditRow`, `auditChanges`, `AUDIT_ACTION_LABELS` (`src/features/audit/audit-view.ts`) |

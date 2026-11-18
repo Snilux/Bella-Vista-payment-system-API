@@ -61,9 +61,11 @@ apps/mobile/
                        (role → tabs → "Más"), permissions.ts
   src/features/        screen pieces per module (session/: RoleTabs, MoreMenu, ComingSoon; accounts/, organization/,
                        approvals/, registry/, billing/: the payment flow and extra charges; cashboxes/ and
-                       committee/: cashboxes, handovers, expenses, plumber; forms/ (MoneyFooter…) and people/)
+                       committee/: cashboxes, handovers, expenses, plumber; closings/, reports/ and audit/;
+                       forms/ (MoneyFooter…) and people/)
+  src/reports/         HTML templates of the two PDF reports and exportPdf (expo-print, expo-sharing)
   test/                Jest (jest-expo): api/, session/ (navigation, catalog), ui/ (140 % checks) and one
-                       folder per phase with its scripted API (accounts/, m4/, m5/, m6/, m7/)
+                       folder per phase with its scripted API (accounts/, m4/ to m8/)
 packages/shared/src/   schemas/ (Zod), domain/ (pure rules), format/ (es-MX)
 docs/                  business context, data model, API contract, glossary
 ```
