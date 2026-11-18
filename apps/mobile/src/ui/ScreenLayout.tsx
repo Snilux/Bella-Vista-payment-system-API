@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OfflineNotice } from './OfflineNotice.js';
 import { borders, colors, layout, radii, spacing } from './theme/index.js';
@@ -7,7 +14,7 @@ import { borders, colors, layout, radii, spacing } from './theme/index.js';
 // Screen frame (2.4 §4; Figma C-01, C-02): safe area, scrolling content with the screen margin,
 // the "Sin conexión" notice on top and, when given, a fixed bottom bar (top hairline) with
 // the main button and its caption. The content scrolls under the keyboard, so at 140 % text
-// every field stays reachable.
+// every field stays reachable. With `refresh` the content reloads by pulling it down.
 
 export type ScreenLayoutProps = {
   children: ReactNode;
@@ -20,6 +27,8 @@ export type ScreenLayoutProps = {
    * ScrollView): the list scrolls by itself and carries the header and the screen margin.
    */
   scroll?: boolean;
+  /** "Tirar para recargar" (useRefresh of src/api): screens that are not a list. */
+  refresh?: { refreshing: boolean; onRefresh: () => void };
 };
 
 export function ScreenLayout({
@@ -27,6 +36,7 @@ export function ScreenLayout({
   footer,
   withinTabs = false,
   scroll = true,
+  refresh,
 }: ScreenLayoutProps) {
   return (
     <SafeAreaView
@@ -42,6 +52,19 @@ export function ScreenLayout({
             style={styles.flex}
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
+            {...(refresh
+              ? {
+                  refreshControl: (
+                    <RefreshControl
+                      refreshing={refresh.refreshing}
+                      onRefresh={refresh.onRefresh}
+                      colors={[colors.primaryStrong]}
+                      tintColor={colors.primaryStrong}
+                      accessibilityLabel="Recargar"
+                    />
+                  ),
+                }
+              : {})}
           >
             <OfflineNotice />
             {children}

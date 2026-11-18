@@ -1,9 +1,14 @@
-import { MutationObserver, onlineManager } from '@tanstack/react-query';
+import { MutationObserver, onlineManager, QueryObserver } from '@tanstack/react-query';
 import { ApiError } from '../../src/api/errors.js';
-import { createQueryClient, shouldRetryQuery } from '../../src/api/query-client.js';
+import {
+  createQueryClient,
+  FRESH_FOR_MS,
+  refreshShownQueries,
+  shouldRetryQuery,
+} from '../../src/api/query-client.js';
 
 // Queries retry twice only when it can help (3.2 §3.3); operations never wait paused without
-// signal (M9).
+// signal; a tab that gains focus reloads what is stale (M9).
 
 describe('shouldRetryQuery', () => {
   it.each([
@@ -30,5 +35,28 @@ describe('createQueryClient (M9)', () => {
     expect(send).toHaveBeenCalledTimes(1);
     expect(observer.getCurrentResult().isPaused).toBe(false);
     client.clear(); // no garbage-collection timers left behind
+  });
+
+  it('a tab that gains focus reloads only what is older than 30 s', async () => {
+    const client = createQueryClient();
+    const fresh = jest.fn(() => Promise.resolve('fresh'));
+    const old = jest.fn(() => Promise.resolve('old'));
+    client.setQueryData(['fresh'], 'cached');
+    client.setQueryData(['old'], 'cached', { updatedAt: Date.now() - FRESH_FOR_MS - 1 });
+    const watch = (queryKey: string[], queryFn: () => Promise<string>) =>
+      new QueryObserver(client, { queryKey, queryFn, refetchOnMount: false }).subscribe(
+        () => undefined,
+      );
+    const stop = [watch(['fresh'], fresh), watch(['old'], old)];
+
+    await refreshShownQueries(client, { staleOnly: true });
+    expect(fresh).not.toHaveBeenCalled();
+    expect(old).toHaveBeenCalledTimes(1);
+
+    // "Tirar para recargar" reloads everything on screen.
+    await refreshShownQueries(client, { staleOnly: false });
+    expect(fresh).toHaveBeenCalledTimes(1);
+    for (const unsubscribe of stop) unsubscribe();
+    client.clear();
   });
 });

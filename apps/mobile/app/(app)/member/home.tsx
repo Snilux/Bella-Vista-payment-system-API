@@ -2,6 +2,7 @@
 import { formatMoney } from '@bella-vista/shared';
 import { router } from 'expo-router';
 import { useCountedClosingCount } from '../../../src/api/useClosings.js';
+import { useRefresh } from '../../../src/api/useRefresh.js';
 import { useCommunityReport } from '../../../src/api/useReports.js';
 import { firstName } from '../../../src/features/forms/business-date.js';
 import { useAccount } from '../../../src/session/session-store.js';
@@ -21,12 +22,13 @@ import {
 // No capture and no authorization: the member reviews closings from G-08 but never closes them.
 
 export default function MemberHome() {
+  const refresh = useRefresh();
   const account = useAccount();
   const report = useCommunityReport();
   const closings = useCountedClosingCount();
   const totals = report.data?.totals;
   return (
-    <ScreenLayout withinTabs>
+    <ScreenLayout withinTabs refresh={refresh}>
       <Header
         title={account ? `Hola, ${firstName(account.fullName)}` : 'Inicio'}
         subtitle="Vocal del comité · solo consulta"

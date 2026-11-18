@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useMyCashbox, usePendingHandoverCount } from '../../../src/api/useBilling.js';
 import { useCashboxes } from '../../../src/api/useCashboxes.js';
 import { useExpenses } from '../../../src/api/useCommittee.js';
+import { useRefresh } from '../../../src/api/useRefresh.js';
 import { firstName } from '../../../src/features/forms/business-date.js';
 import { roleDescription } from '../../../src/session/role-labels.js';
 import { useAccount } from '../../../src/session/session-store.js';
@@ -26,6 +27,7 @@ import {
 // closings (M8).
 
 export default function TreasurerHome() {
+  const refresh = useRefresh();
   const account = useAccount();
   const cashbox = useMyCashbox();
   const all = useCashboxes();
@@ -37,7 +39,7 @@ export default function TreasurerHome() {
   const pendingHandovers = handovers.data?.count ?? 0;
 
   return (
-    <ScreenLayout withinTabs>
+    <ScreenLayout withinTabs refresh={refresh}>
       <Header
         title={account ? `Hola, ${firstName(account.fullName)}` : 'Inicio'}
         {...(account ? { subtitle: roleDescription(account) } : {})}
