@@ -1,6 +1,7 @@
 import { createDb } from '../client.js';
 import { createSeedLogger, loadSeedEnv } from './cli-support.js';
 import {
+  applyDevOpeningFee,
   applyDevSuperadminPassword,
   DEV_PASSWORD,
   DevSeedRefusedError,
@@ -24,6 +25,10 @@ try {
   const superadmin = await applyDevSuperadminPassword(db, { nodeEnv: env.NODE_ENV });
   if (superadmin.changed) {
     log.info(`El superadministrador ${superadmin.username} ahora usa la contraseña de desarrollo.`);
+  }
+  const openingFee = await applyDevOpeningFee(db, { nodeEnv: env.NODE_ENV });
+  if (openingFee.changed) {
+    log.info('La cuota de apertura ahora tiene el importe de desarrollo ($1,500.00).');
   }
   if (result.status === 'already_seeded') {
     log.warn('La base ya tiene secciones registradas; no se cargaron datos de desarrollo.');
