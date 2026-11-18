@@ -48,6 +48,13 @@ export default function Profile() {
           icon="key"
           onPress={() => router.push('/new-password')}
         />
+        {__DEV__ ? (
+          <MenuRow
+            label="Probar G-11 (solo desarrollo)"
+            icon="soon"
+            onPress={() => router.push('/dev/approval-request')}
+          />
+        ) : null}
       </MenuGroup>
 
       <Button label="Cerrar sesión" variant="secondary" onPress={() => setConfirming(true)} />

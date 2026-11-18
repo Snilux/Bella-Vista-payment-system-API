@@ -51,6 +51,38 @@ const periodsField = (details: Details): string[] => {
   return parsed.success ? parsed.data : [];
 };
 
+/**
+ * S-07 "Sustituir jefe" (D-08): what is missing before the substitution. The screen shows the
+ * first two before sending, when it finds no counted extraordinary closing of the block.
+ */
+export const SUBSTITUTION_MESSAGES = {
+  noClosing:
+    'Antes de sustituir al jefe, el tesorero debe hacer el corte extraordinario de la caja de esta manzana y contar el efectivo.',
+  notCounted:
+    'El corte extraordinario de esta manzana aún no tiene el conteo del efectivo. Pida al tesorero que lo capture antes de sustituir al jefe.',
+  staleClosing:
+    'La caja de esta manzana tuvo movimientos después del corte extraordinario. El tesorero debe hacer un corte extraordinario nuevo.',
+  noLeader: 'Esta manzana no tiene un jefe vigente. Use «Asignar cargo» para registrar al jefe.',
+} as const;
+
+/** INVALID_STATE of POST /v1/blocks/{id}/leader-substitution: `details.status` says why. */
+function substitutionMessage(status: unknown): string | null {
+  switch (status) {
+    // The record sent is a monthly closing, or a closing of another cashbox.
+    case 'monthly':
+    case 'extraordinary':
+      return SUBSTITUTION_MESSAGES.noClosing;
+    case 'draft':
+      return SUBSTITUTION_MESSAGES.notCounted;
+    case 'stale_closing':
+      return SUBSTITUTION_MESSAGES.staleClosing;
+    case 'no_leader':
+      return SUBSTITUTION_MESSAGES.noLeader;
+    default:
+      return null;
+  }
+}
+
 export const ERROR_MESSAGES: Record<ApiErrorCode, ErrorInfo> = {
   // Business codes
   INVALID_CREDENTIALS: {
@@ -117,8 +149,13 @@ export const ERROR_MESSAGES: Record<ApiErrorCode, ErrorInfo> = {
   LEADER_ALREADY_ASSIGNED: {
     message: 'Esa manzana ya tiene jefe, o la persona ya es jefe de otra manzana.',
     action: 'reload',
+    useServerMessage: true,
   },
-  ROLE_ALREADY_ASSIGNED: { message: 'Ese cargo ya está asignado.', action: 'reload' },
+  ROLE_ALREADY_ASSIGNED: {
+    message: 'Ese cargo ya está asignado.',
+    action: 'reload',
+    useServerMessage: true,
+  },
   DUPLICATE_CODE: { message: 'Esa clave o ese nombre ya está registrado.', action: 'fix-field' },
   INVALID_RATE_EFFECTIVE_PERIOD: {
     message: 'La tarifa nueva debe empezar después del mes actual.',
@@ -136,7 +173,12 @@ export const ERROR_MESSAGES: Record<ApiErrorCode, ErrorInfo> = {
     message: 'Primero hay que cobrar la cuota de apertura.',
     action: 'go-to-charge',
   },
-  INVALID_STATE: { message: 'Esto ya cambió. Se actualizó la pantalla.', action: 'reload' },
+  INVALID_STATE: {
+    message: (details) =>
+      (details.action === 'substitute_leader' ? substitutionMessage(details.status) : null) ??
+      'Esto ya cambió. Se actualizó la pantalla.',
+    action: 'reload',
+  },
 
   // General codes
   VALIDATION_ERROR: { message: 'Revise los datos marcados.', action: 'fix-field' },

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, type SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, type SQL } from 'drizzle-orm';
 import type { Database, Transaction } from '../../db/client.js';
 import {
   approval,
@@ -191,6 +191,17 @@ export async function findAssignment(db: Executor, id: number): Promise<Assignme
 
 export function assignmentsByApproval(db: Executor, approvalIds: number[]) {
   return assignmentQuery(db).where(inArray(roleAssignment.approvalId, approvalIds));
+}
+
+/** Block leader assignments of these blocks that already ended (the leaders before). */
+export function endedLeadersOf(db: Executor, blockIds: number[]) {
+  return assignmentQuery(db).where(
+    and(
+      eq(roleAssignment.role, 'block_leader'),
+      inArray(roleAssignment.blockId, blockIds),
+      isNotNull(roleAssignment.endDate),
+    ),
+  );
 }
 
 /** The open block leader assignment of a block, locked, with its approval result. */

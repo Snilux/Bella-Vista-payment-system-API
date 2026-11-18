@@ -192,6 +192,10 @@ describe.skipIf(!testDatabaseUrl)('block leader substitution', () => {
       (a: { type: string; description: string | null }) =>
         a.type === 'role_assignment' && a.description?.includes('Relevo'),
     );
+    // The president decides from the inbox: block, who leaves, who comes in and since when.
+    expect(approval.description).toBe(
+      'Sustitución de jefe de manzana S1-M02: sale Rogelio Castañeda Ortiz, entra Mariana Relevo, desde el 17 nov 2026',
+    );
     expect(
       (
         await call('POST', `/v1/approvals/${approval.id}/resolve`, 'presidente', {

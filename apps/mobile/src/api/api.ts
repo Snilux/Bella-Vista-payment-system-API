@@ -2,6 +2,7 @@ import { apiBaseUrl } from '../config.js';
 import { sessionStore } from '../session/session-store.js';
 import { secureTokenStore } from '../session/tokens.js';
 import { type ApiClient, createApiClient } from './client.js';
+import { ApiError } from './errors.js';
 
 // The app's single client instance. Screens never call it: they use the hooks of src/api.
 // When the client ends the session (or the API asks for the new password) it tells the session
@@ -21,4 +22,11 @@ export function getApiClient(): ApiClient | null {
     onPasswordChangeRequired: () => sessionStore.passwordChangeRequired(),
   });
   return client;
+}
+
+/** The client for a hook; a missing EXPO_PUBLIC_API_URL becomes an error the screen shows. */
+export function requireApiClient(): ApiClient {
+  const current = getApiClient();
+  if (!current) throw new ApiError('INVALID_REQUEST', 0, 'Falta EXPO_PUBLIC_API_URL.');
+  return current;
 }
