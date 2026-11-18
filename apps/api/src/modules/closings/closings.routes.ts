@@ -78,7 +78,8 @@ export const closingRoutes: FastifyPluginAsyncZod<Options> = async (app, { servi
   app.post(
     '/:id/close',
     {
-      config: { permission: 'closings.review' },
+      // Only the president closes (M8): the member reviews but never closes.
+      config: { permission: 'closings.close' },
       schema: { params: idParamsSchema, response: { 200: closingResponseSchema } },
     },
     async (request) => service.close(requireActor(request), request.params.id),

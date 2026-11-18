@@ -180,10 +180,14 @@ describe.skipIf(!testDatabaseUrl)('closings', () => {
     });
 
     await call('POST', `/v1/closings/${september}/review`, 'presidente');
-    const closed = await call('POST', `/v1/closings/${september}/close`, 'vocal');
+    // The member reviews but never closes (M8): only the president locks the month.
+    expect((await call('POST', `/v1/closings/${september}/close`, 'vocal')).body.error.code).toBe(
+      'FORBIDDEN',
+    );
+    const closed = await call('POST', `/v1/closings/${september}/close`, 'presidente');
     expect(closed.body.closing).toMatchObject({
       status: 'closed',
-      closedBy: { username: 'vocal' },
+      closedBy: { username: 'presidente' },
     });
     expect(
       (await call('POST', `/v1/closings/${october}/close`, 'presidente')).body.closing.status,

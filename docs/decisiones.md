@@ -80,26 +80,26 @@ Precisiones acordadas al implementarlo:
 
 ## Permisos (resumen)
 
-| Operación                   | SA      | PRE              | TES      | SEC      | VOC             | JM         |
-| --------------------------- | ------- | ---------------- | -------- | -------- | --------------- | ---------- |
-| Cuentas de acceso           | sí      | —                | —        | —        | —               | —          |
-| Cargos y jefes              | —       | confirma         | —        | registra | —               | —          |
-| Secciones y manzanas        | —       | ver              | ver      | sí       | ver             | ver        |
-| Personas, tomas, unidades   | —       | ver (para cobrar en apoyo) | ver      | sí       | ver             | su manzana |
-| Solicitudes de toma         | —       | ver              | ver      | sí       | ver             | su manzana |
-| Acuerdos                    | —       | ver              | ver      | sí       | ver             | —          |
-| Baja / cambio de titular    | —       | autoriza         | —        | solicita | —               | solicita   |
-| Suspender / reactivar       | —       | sí               | —        | sí       | —               | —          |
-| Tarifas y saldos iniciales  | —       | confirma         | registra | ver      | ver             | ver        |
-| Cargos extraordinarios      | —       | ver              | crea y cancela | ver | ver             | ver y cobra en su manzana |
-| Cobrar                      | —       | en apoyo         | sí       | —        | —               | su manzana |
-| Consultar pagos             | —       | sí               | sí       | sí       | sí              | su manzana |
-| Reposición de recibo        | —       | —                | sí       | —        | —               | su manzana |
-| Cancelar pago               | —       | autoriza         | solicita | —        | —               | solicita   |
-| Cajas y movimientos         | —       | sí               | sí       | ver      | ver             | su manzana |
-| Entregas                    | —       | ver              | confirma | —        | ver             | prepara    |
-| Ingresos, gastos, fontanero | —       | confirma salario | sí       | ver      | ver             | —          |
-| Cortes                      | —       | revisa y cierra  | prepara  | ver      | revisa y cierra | prepara    |
-| Reporte por manzana         | —       | sí               | sí       | sí       | ver             | su manzana |
-| Reporte comunitario         | —       | sí               | sí       | sí       | ver             | —          |
-| Bitácora                    | técnica | completa         | —        | —        | —               | —          |
+| Operación                   | SA      | PRE                        | TES            | SEC      | VOC                | JM                        |
+| --------------------------- | ------- | -------------------------- | -------------- | -------- | ------------------ | ------------------------- |
+| Cuentas de acceso           | sí      | —                          | —              | —        | —                  | —                         |
+| Cargos y jefes              | —       | confirma                   | —              | registra | —                  | —                         |
+| Secciones y manzanas        | —       | ver                        | ver            | sí       | ver                | ver                       |
+| Personas, tomas, unidades   | —       | ver (para cobrar en apoyo) | ver            | sí       | ver                | su manzana                |
+| Solicitudes de toma         | —       | ver                        | ver            | sí       | ver                | su manzana                |
+| Acuerdos                    | —       | ver                        | ver            | sí       | ver                | —                         |
+| Baja / cambio de titular    | —       | autoriza                   | —              | solicita | —                  | solicita                  |
+| Suspender / reactivar       | —       | sí                         | —              | sí       | —                  | —                         |
+| Tarifas y saldos iniciales  | —       | confirma                   | registra       | ver      | ver                | ver                       |
+| Cargos extraordinarios      | —       | ver                        | crea y cancela | ver      | ver                | ver y cobra en su manzana |
+| Cobrar                      | —       | en apoyo                   | sí             | —        | —                  | su manzana                |
+| Consultar pagos             | —       | sí                         | sí             | sí       | sí                 | su manzana                |
+| Reposición de recibo        | —       | —                          | sí             | —        | —                  | su manzana                |
+| Cancelar pago               | —       | autoriza                   | solicita       | —        | —                  | solicita                  |
+| Cajas y movimientos         | —       | sí                         | sí             | ver      | ver                | su manzana                |
+| Entregas                    | —       | ver                        | confirma       | —        | ver                | prepara                   |
+| Ingresos, gastos, fontanero | —       | confirma salario           | sí             | ver      | ver                | —                         |
+| Cortes                      | —       | revisa y cierra            | prepara        | ver      | revisa (no cierra) | prepara                   |
+| Reporte por manzana         | —       | sí                         | sí             | sí       | ver                | su manzana                |
+| Reporte comunitario         | —       | sí                         | sí             | sí       | ver                | —                         |
+| Bitácora                    | técnica | completa                   | —              | —        | —                  | —                         |
