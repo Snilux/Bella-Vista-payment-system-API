@@ -9,7 +9,8 @@ import { DataRow, SuccessScreen } from '../../../../src/ui/index.js';
 
 // The payment went in (Figma F-04; 3.2 §10.3): the data to copy on the paper receipt. "Listo"
 // goes back to the home of the role (the statement, the files, the search and "Mi caja" were
-// already reloaded); "Cobrar a otra familia" starts an empty flow.
+// already reloaded); "Cobrar a otra familia" starts an empty flow; "Ver el pago" leaves the flow
+// for G-05 (12.1: the leader sees the payment right after collecting it).
 
 export default function PaymentDone() {
   const flow = usePaymentFlow();
@@ -24,6 +25,10 @@ export default function PaymentDone() {
       message="Copie estos datos en el recibo de papel."
       onDone={() => router.dismissTo(account ? homeHref(account.role) : '/')}
       doneLabel="Listo"
+      link={{
+        label: 'Ver el pago',
+        onPress: () => router.replace(`/common/payments/${payment.id}`),
+      }}
       secondary={{
         label: 'Cobrar a otra familia',
         onPress: () => {

@@ -1,6 +1,6 @@
 import type { Action, Role } from '@bella-vista/shared';
 import type { IconName } from '../ui/Icon.js';
-import { type ScreenEntry, type ScreenId, screenById, screenHref } from './screen-catalog.js';
+import { type ScreenId, screenById, screenHref } from './screen-catalog.js';
 
 // Menú y pestañas por cargo (2.5 §1; 3.2 §11.1): one table role → tabs → "Más" options. The role
 // is the route segment as it is in ROLES (app/(app)/<role>/…), with no conversion. Each account
@@ -8,7 +8,7 @@ import { type ScreenEntry, type ScreenId, screenById, screenHref } from './scree
 //
 // A tab is a file app/(app)/<role>/<name>.tsx (or a folder with index.tsx). `screen` is the
 // screen it shows: its own (J-01) or a shared one of common/ that the tab file re-exports
-// (Cobrar → F-01). Until that screen is built the tab file shows "Próximamente" with the ID.
+// (Cobrar → F-01).
 // `action` (when present) is the permission of @bella-vista/shared the option needs: the menu
 // hides what the role cannot do, and a test checks the table and the permissions agree.
 
@@ -263,16 +263,7 @@ export function homeHref(role: Role): string {
   return first ? tabHref(role, first) : `/${role}/more`;
 }
 
-/** The "Próximamente" page of a screen that a later phase builds. */
-export function comingSoonHref(screen: ScreenId): string {
-  return `/common/coming-soon?screen=${screen}`;
-}
-
-/**
- * Where a "Más" option goes: the screen when it is built, otherwise its "Próximamente" page
- * (never a route that does not exist yet).
- */
+/** Where a "Más" option goes: its screen (all 63 are built since M8). */
 export function moreOptionHref(role: Role, option: MoreOption): string {
-  const entry: ScreenEntry = screenById(option.screen);
-  return entry.done ? screenHref(entry, role) : comingSoonHref(option.screen);
+  return screenHref(screenById(option.screen), role);
 }
