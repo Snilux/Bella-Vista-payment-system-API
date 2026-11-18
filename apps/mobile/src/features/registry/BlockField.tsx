@@ -29,6 +29,7 @@ export function BlockField({
   }
   return (
     <Select
+      optionsQuery={blocks}
       label="Manzana"
       required
       options={(blocks.data ?? [])

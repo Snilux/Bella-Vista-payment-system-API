@@ -1,7 +1,7 @@
 import {
   type Closing,
   countClosingRequestSchema,
-  formatDate,
+  formatDateTime,
   formatMoney,
 } from '@bella-vista/shared';
 import { type ReactNode, useState } from 'react';
@@ -93,13 +93,13 @@ export function ClosingDetail({ closing, header }: { closing: Closing; header: R
         {closing.reviewedBy && closing.reviewedAt ? (
           <DataRow
             label="Revisó"
-            value={`${closing.reviewedBy.username} · ${formatDate(closing.reviewedAt.slice(0, 10))}`}
+            value={`${closing.reviewedBy.fullName} · ${formatDateTime(closing.reviewedAt)}`}
           />
         ) : null}
         {closing.closedBy && closing.closedAt ? (
           <DataRow
             label="Cerró"
-            value={`${closing.closedBy.username} · ${formatDate(closing.closedAt.slice(0, 10))}`}
+            value={`${closing.closedBy.fullName} · ${formatDateTime(closing.closedAt)}`}
           />
         ) : null}
       </SummaryCard>

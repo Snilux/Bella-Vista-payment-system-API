@@ -11,6 +11,7 @@ import {
   withdrawHandover,
 } from '../../api/useCashboxes.js';
 import { useMoneyOperation } from '../../api/useMoneyOperation.js';
+import { useRefresh } from '../../api/useRefresh.js';
 import {
   AmountField,
   AppText,
@@ -84,6 +85,7 @@ export function MyCashboxScreen({
 }) {
   const query = useMyCashbox();
   const pending = usePendingHandoverCount();
+  const refresh = useRefresh();
   const cashbox = query.data;
   const header = (
     <Header
@@ -97,7 +99,7 @@ export function MyCashboxScreen({
     />
   );
   return (
-    <ScreenLayout withinTabs={withinTabs}>
+    <ScreenLayout withinTabs={withinTabs} refresh={refresh}>
       {header}
       <ScreenState
         status={screenStatusOf(query)}
@@ -172,6 +174,7 @@ export function PrepareHandoverScreen() {
   });
   const guard = useDiscardGuard(
     (amount !== null || notes !== '') && operation.status !== 'success',
+    { unknown: operation.status === 'unknown' },
   );
   const header = <Header title="Preparar entrega" onBack={() => router.back()} />;
 

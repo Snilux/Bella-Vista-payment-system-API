@@ -71,7 +71,12 @@ function RequestForm({
   const [reason, setReason] = useState('');
   const [holder, setHolder] = useState<PersonBasic | null>(null);
   const [search, setSearch] = useState('');
-  const guard = useDiscardGuard((reason !== '' || holder !== null) && request.status !== 'success');
+  const guard = useDiscardGuard(
+    (reason !== '' || holder !== null) && request.status !== 'success',
+    {
+      unknown: request.status === 'unknown',
+    },
+  );
   // adjustment: the handover gives the amount (never typed, D-16).
   const handover = useHandover(config.fixedAmount ? recordId : 0);
   const fixed = config.fixedAmount && handover.data ? adjustmentAmount(handover.data) : null;

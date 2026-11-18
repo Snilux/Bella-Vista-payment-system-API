@@ -108,6 +108,7 @@ export default function NewRate() {
         error={errorOf('amount')}
       />
       <Select
+        optionsQuery={agreements}
         label="Acuerdo de junta"
         required
         options={(agreements.data ?? []).map((agreement) => ({

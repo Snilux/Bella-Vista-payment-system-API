@@ -43,9 +43,15 @@ function closingQuery(db: Executor) {
         WHERE ra.id = ${preparer.roleAssignmentId})`,
       reviewedById: reviewer.id,
       reviewedByUsername: reviewer.username,
+      reviewedByName: sql<string>`(SELECT concat_ws(' ', p.given_names, p.paternal_surname, p.maternal_surname)
+        FROM role_assignment ra JOIN person p ON p.id = ra.person_id
+        WHERE ra.id = ${reviewer.roleAssignmentId})`,
       reviewedAt: closing.reviewedAt,
       closedById: closer.id,
       closedByUsername: closer.username,
+      closedByName: sql<string>`(SELECT concat_ws(' ', p.given_names, p.paternal_surname, p.maternal_surname)
+        FROM role_assignment ra JOIN person p ON p.id = ra.person_id
+        WHERE ra.id = ${closer.roleAssignmentId})`,
       closedAt: closing.closedAt,
     })
     .from(vClosing)

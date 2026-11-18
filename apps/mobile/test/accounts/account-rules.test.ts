@@ -25,7 +25,7 @@ describe('accountView', () => {
     [
       'locked by failed attempts',
       { status: 'locked', lockedUntil: UNTIL, failedAttempts: 5 },
-      'Bloqueada por intentos fallidos hasta 17 nov 2026, 10:42',
+      'Bloqueada por intentos fallidos hasta 2026-11-17 10:42',
       'Bloqueada',
       ['unlock', 'reset', 'lock', 'deactivate'],
     ],
@@ -46,7 +46,7 @@ describe('accountView', () => {
     [
       'disabled',
       { status: 'disabled', deactivatedAt: '2026-11-02T18:00:00.000Z' },
-      'Desactivada el 2 nov 2026, 12:00',
+      'Desactivada el 2026-11-02 12:00',
       'Desactivada',
       [],
     ],
@@ -159,9 +159,9 @@ describe('auditEntryView', () => {
     [
       { reason: 'Olvidó su contraseña' },
       'Contraseña restablecida',
-      'jm.s1m01 · 23 oct 2026, 10:00 · Olvidó su contraseña · por admin',
+      'jm.s1m01 · 2026-10-23 10:00 · Olvidó su contraseña · por admin',
     ],
-    [{ action: 'create' }, 'Cuenta creada', 'jm.s1m01 · 23 oct 2026, 10:00 · por admin'],
+    [{ action: 'create' }, 'Cuenta creada', 'jm.s1m01 · 2026-10-23 10:00 · por admin'],
     [
       {
         action: 'lock_after_failed_attempts',
@@ -170,14 +170,14 @@ describe('auditEntryView', () => {
         reason: 'Bloqueo automático por intentos fallidos de inicio de sesión',
       },
       'Bloqueo por intentos fallidos',
-      'jm.s1m01 · 23 oct 2026, 10:00',
+      'jm.s1m01 · 2026-10-23 10:00',
     ],
     [
       { action: 'create', tableName: 'person', recordId: 3, reason: 'Arranque del sistema' },
       'Alta: Persona',
-      'Persona 3 · 23 oct 2026, 10:00 · Arranque del sistema · por admin',
+      'Persona 3 · 2026-10-23 10:00 · Arranque del sistema · por admin',
     ],
-    [{ action: 'something_new' }, 'Acción técnica', 'jm.s1m01 · 23 oct 2026, 10:00 · por admin'],
+    [{ action: 'something_new' }, 'Acción técnica', 'jm.s1m01 · 2026-10-23 10:00 · por admin'],
   ])('%o', (change, title, subtitle) => {
     expect(auditEntryView(entry(change), usernames)).toEqual({ title, subtitle });
   });

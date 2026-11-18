@@ -5,7 +5,7 @@ import {
   formatMoney,
 } from '@bella-vista/shared';
 import { useState } from 'react';
-import { describeError, fieldErrors } from '../../api/error-messages.js';
+import { describeError, describeSaveError, fieldErrors } from '../../api/error-messages.js';
 import { useCancelCharge, useCreateCharge, useUnitCharges } from '../../api/useExtraCharges.js';
 import { useFees } from '../../api/useRates.js';
 import { useCan } from '../../session/permissions.js';
@@ -153,7 +153,9 @@ function AddChargeSheet({
   const amount = fee && !dateProblem ? feeAmountOn(fee, chargedOn) : null;
   const server = create.isError ? fieldErrors(create.error) : {};
   const general =
-    create.isError && Object.keys(server).length === 0 ? describeError(create.error).message : null;
+    create.isError && Object.keys(server).length === 0
+      ? describeSaveError(create.error).message
+      : null;
 
   const submit = () => {
     const next: { feeId?: string; chargedOn?: string } = {};
@@ -193,6 +195,7 @@ function AddChargeSheet({
       }
     >
       <Select
+        optionsQuery={fees}
         label="Concepto"
         required
         options={options.map((item) => ({

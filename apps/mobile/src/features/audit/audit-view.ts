@@ -89,7 +89,7 @@ const folioOf = (value: unknown): string | null => {
 
 export type AuditRow = { title: string; subtitle: string };
 
-/** "Alta: Pago PG-202610-000981" · "María López · 25 oct 2026, 18:30". */
+/** "Alta: Pago PG-202610-000981" · "María López · 2026-10-25 18:30". */
 export function auditRow(entry: AuditEntry): AuditRow {
   const action = AUDIT_ACTION_LABELS[entry.action] ?? entry.action;
   const table = AUDIT_TABLE_LABELS[entry.tableName] ?? entry.tableName;

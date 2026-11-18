@@ -43,9 +43,9 @@ export const closingSchema = z.object({
   notes: z.string().nullable(),
   /** fullName: the person of the account (R-04 "Preparó María López"). */
   preparedBy: accountRef.extend({ fullName: z.string() }),
-  reviewedBy: accountRef.nullable(),
+  reviewedBy: accountRef.extend({ fullName: z.string() }).nullable(),
   reviewedAt: z.iso.datetime().nullable(),
-  closedBy: accountRef.nullable(),
+  closedBy: accountRef.extend({ fullName: z.string() }).nullable(),
   closedAt: z.iso.datetime().nullable(),
 });
 

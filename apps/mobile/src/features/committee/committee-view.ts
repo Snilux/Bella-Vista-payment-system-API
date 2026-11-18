@@ -42,35 +42,9 @@ export const FREQUENCY_LABELS: Record<PlumberSalary['frequency'], string> = {
   monthly: 'Mensual',
 };
 
-const MONTHS = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-] as const;
-
-const day = (date: string) => Number(date.slice(8, 10));
-
-/** T-08 rows: "1 al 15 oct 2026" (or "28 sep 2026 al 4 oct 2026" across months). */
+/** T-08 rows and T-09 selector: "2026-10-16 al 2026-10-31" (dates AAAA-MM-DD, M9). */
 export function payPeriodShort(start: string, end: string): string {
-  return start.slice(0, 7) === end.slice(0, 7)
-    ? `${day(start)} al ${formatDate(end)}`
-    : `${formatDate(start)} al ${formatDate(end)}`;
-}
-
-/** T-09 selector: "16 al 31 de octubre 2026". */
-export function payPeriodLong(start: string, end: string): string {
-  if (start.slice(0, 7) !== end.slice(0, 7)) return payPeriodShort(start, end);
-  const month = MONTHS[Number(start.slice(5, 7)) - 1] ?? '';
-  return `${day(start)} al ${day(end)} de ${month} ${start.slice(0, 4)}`;
+  return `${formatDate(start)} al ${formatDate(end)}`;
 }
 
 /** The authorized salary in force on `date` (the latest effectiveFrom on or before it). */

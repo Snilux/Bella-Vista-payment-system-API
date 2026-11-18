@@ -100,12 +100,20 @@ export function createClosingsService(deps: ClosingsServiceDeps) {
         },
         reviewedBy:
           row.reviewedById !== null && row.reviewedByUsername !== null
-            ? { userAccountId: row.reviewedById, username: row.reviewedByUsername }
+            ? {
+                userAccountId: row.reviewedById,
+                username: row.reviewedByUsername,
+                fullName: row.reviewedByName,
+              }
             : null,
         reviewedAt: row.reviewedAt?.toISOString() ?? null,
         closedBy:
           row.closedById !== null && row.closedByUsername !== null
-            ? { userAccountId: row.closedById, username: row.closedByUsername }
+            ? {
+                userAccountId: row.closedById,
+                username: row.closedByUsername,
+                fullName: row.closedByName,
+              }
             : null,
         closedAt: row.closedAt?.toISOString() ?? null,
       };

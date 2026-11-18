@@ -76,7 +76,7 @@ export function useCreateConnectionRequest() {
         body,
         schema: connectionRequestResponseSchema,
       }),
-    onSuccess: () => afterRequestChange(queryClient),
+    onSettled: () => afterRequestChange(queryClient),
   });
 }
 

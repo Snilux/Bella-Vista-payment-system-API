@@ -1,5 +1,10 @@
 // T-13 · Cortes
-import { type CashboxListItem, type Closing, formatPeriod } from '@bella-vista/shared';
+import {
+  type CashboxListItem,
+  type Closing,
+  formatDateTime,
+  formatPeriod,
+} from '@bella-vista/shared';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
@@ -168,7 +173,7 @@ function CashboxRow({
 }) {
   const subtitle = closing
     ? closing.status === 'closed'
-      ? `Cerrado el ${closing.closedAt?.slice(0, 10) ?? ''}`
+      ? `Cerrado el ${closing.closedAt ? formatDateTime(closing.closedAt).slice(0, 10) : ''}`
       : closing.status === 'draft'
         ? 'Preparado, falta contar'
         : `${CLOSING_TAGS[closing.status].label} · ${differenceText(closing.difference).toLowerCase()}`

@@ -118,7 +118,7 @@ export function useCreatePerson() {
         body,
         schema: personResponseSchema,
       }),
-    onSuccess: () => afterRegistryChange(queryClient),
+    onSettled: () => afterRegistryChange(queryClient),
   });
 }
 
@@ -132,7 +132,7 @@ export function useCreatePreexistingConnection() {
         body,
         schema: connectionResponseSchema,
       }),
-    onSuccess: () => afterRegistryChange(queryClient),
+    onSettled: () => afterRegistryChange(queryClient),
   });
 }
 
@@ -146,6 +146,6 @@ export function useCreateUnit() {
         body,
         schema: unitResponseSchema,
       }),
-    onSuccess: () => afterRegistryChange(queryClient),
+    onSettled: () => afterRegistryChange(queryClient),
   });
 }

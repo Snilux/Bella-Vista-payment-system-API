@@ -225,6 +225,14 @@ export const ERROR_MESSAGES: Record<ApiErrorCode, ErrorInfo> = {
   },
 };
 
+/**
+ * A record created without Idempotency-Key (a person, a family, an agreement, a charge…) whose
+ * request got no answer: it may be saved. The list reloads anyway; trying again blindly could
+ * register it twice (M9).
+ */
+export const UNKNOWN_SAVE_MESSAGE =
+  'No sabemos si se guardó porque se perdió la conexión. Revise la lista antes de intentarlo otra vez, para no registrarlo dos veces.';
+
 /** A money operation whose request got no answer: it may or may not have been registered. */
 export const UNKNOWN_OUTCOME_MESSAGE =
   'No sabemos si se registró. Toque Reintentar: si ya se había registrado, no se duplica.';
@@ -237,6 +245,14 @@ export function describeError(error: unknown): DescribedError {
     return { code: 'INTERNAL_ERROR', ...resolve('INTERNAL_ERROR', {}, '') };
   }
   return { code: error.code, ...resolve(error.code, error.details, error.message) };
+}
+
+/** The error of a creation without key: no answer → UNKNOWN_SAVE_MESSAGE; else describeError. */
+export function describeSaveError(error: unknown): DescribedError {
+  if (isApiError(error) && error.code === 'NETWORK_ERROR') {
+    return { code: error.code, message: UNKNOWN_SAVE_MESSAGE, action: 'none' };
+  }
+  return describeError(error);
 }
 
 function resolve(code: ApiErrorCode, details: Details, serverMessage: string) {

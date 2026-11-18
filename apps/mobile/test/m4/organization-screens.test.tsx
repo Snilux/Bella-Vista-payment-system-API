@@ -141,9 +141,9 @@ describe('S-07 · Cargos y jefes', () => {
   it('lists the committee and the block leaders, with the pending ones', async () => {
     await open('/secretary/organization/role-assignments');
     expect(await screen.findByText('Presidente')).toBeTruthy();
-    expect(screen.getByText('Roberto Sánchez Gil · desde 1 ene 2026')).toBeTruthy();
+    expect(screen.getByText('Roberto Sánchez Gil · desde 2026-01-01')).toBeTruthy();
     expect(screen.getByText('S1-M01 · Laura Méndez Ruiz')).toBeTruthy();
-    expect(screen.getByText('5551002001 · desde 1 ene 2026')).toBeTruthy();
+    expect(screen.getByText('5551002001 · desde 2026-01-01')).toBeTruthy();
     expect(screen.getByText('S2-M02 · Teresa Navarro Cruz')).toBeTruthy();
     expect(screen.getByText('Asignación por confirmar')).toBeTruthy();
     expect(screen.getByText('Pendiente')).toBeTruthy();
@@ -224,7 +224,7 @@ describe('S-07 · Sustituir jefe', () => {
   it('substitutes with the counted closing and leaves the new leader pending', async () => {
     server.state.closings = [closing({ id: 7 })];
     await openFor(1);
-    expect(await screen.findByText('Corte CC-000007 del 17 nov 2026')).toBeTruthy();
+    expect(await screen.findByText('Corte CC-000007 del 2026-11-17')).toBeTruthy();
     expect(screen.getByText('Laura Méndez Ruiz')).toBeTruthy();
 
     await choosePerson('Ernesto');
@@ -251,7 +251,7 @@ describe('S-07 · Sustituir jefe', () => {
   it('the outgoing leader cannot be the new one', async () => {
     server.state.closings = [closing({ id: 7 })];
     await openFor(1);
-    await screen.findByText('Corte CC-000007 del 17 nov 2026');
+    await screen.findByText('Corte CC-000007 del 2026-11-17');
     await fireEvent.changeText(screen.getByLabelText('Buscar por nombre o folio'), 'Laura');
     expect(await screen.findByText('Es el jefe saliente.', {}, { timeout: 2000 })).toBeTruthy();
   });
@@ -266,7 +266,7 @@ describe('S-07 · Sustituir jefe', () => {
       }),
     );
     await openFor(1);
-    await screen.findByText('Corte CC-000007 del 17 nov 2026');
+    await screen.findByText('Corte CC-000007 del 2026-11-17');
     await choosePerson('Ernesto');
     await fireEvent.changeText(
       screen.getByLabelText('Teléfono de contacto, obligatorio'),

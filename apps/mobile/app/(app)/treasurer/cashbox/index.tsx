@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useMyCashbox } from '../../../../src/api/useBilling.js';
 import { useExpenses } from '../../../../src/api/useCommittee.js';
+import { useRefresh } from '../../../../src/api/useRefresh.js';
 import { EXPENSE_TAGS } from '../../../../src/features/committee/committee-view.js';
 import { useAccount } from '../../../../src/session/session-store.js';
 import {
@@ -30,13 +31,14 @@ import {
 type Filter = Extract<Expense['status'], 'pending_payment' | 'paid'>;
 
 export default function CommitteeCashbox() {
+  const refresh = useRefresh();
   const account = useAccount();
   const cashbox = useMyCashbox();
   const [filter, setFilter] = useState<Filter>('pending_payment');
   const expenses = useExpenses(filter);
 
   return (
-    <ScreenLayout withinTabs>
+    <ScreenLayout withinTabs refresh={refresh}>
       <Header
         title="Caja del comité"
         {...(account ? { subtitle: `Custodio: ${account.fullName}` } : {})}

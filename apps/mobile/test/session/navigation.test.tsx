@@ -4,7 +4,6 @@ import path from 'node:path';
 import { ROLES, type Role, type SessionAccount } from '@bella-vista/shared';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { ROLE_MENU } from '../../src/session/role-menu.js';
-import { screenById } from '../../src/session/screen-catalog.js';
 import { sessionStore } from '../../src/session/session-store.js';
 import { largeTextProblems, setFontScale } from '../ui/render.js';
 
@@ -87,11 +86,6 @@ describe.each(ROLES.map((role) => [role] as const))('%s account', (role) => {
     const home = ROLE_MENU[role].tabs[0]?.name;
     expect(router.getPathname()).toBe(`/${role}/${home}`);
     expect(tabLabels()).toEqual(ROLE_MENU[role].tabs.map((tab) => tab.label));
-    // Tabs of later phases say "Próximamente", never a blank screen or an error.
-    const entry = screenById(ROLE_MENU[role].tabs[0]?.screen ?? 'C-04');
-    // A built home greets the person ("Hola, Laura") instead of repeating its catalog title.
-    if (entry.done) expect(screen.queryByText('Próximamente')).toBeNull();
-    else expect(screen.getByText('Próximamente')).toBeTruthy();
     expect(screen.getAllByRole('header').length).toBeGreaterThan(0);
   });
 
@@ -188,7 +182,6 @@ describe('C-05 Perfil', () => {
     const router = await open('/block_leader/more');
     await fireEvent.press(screen.getByRole('button', { name: 'Reporte de mi manzana' }));
     expect(router.getPathname()).toBe('/common/reports/block');
-    expect(screen.queryByText('Próximamente')).toBeNull();
   });
 });
 

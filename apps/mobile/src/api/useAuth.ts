@@ -95,13 +95,19 @@ export function restoreSession(): Promise<void> {
   return sessionActions().restore();
 }
 
+// The password travels in the mutation's variables: gcTime 0 drops them from TanStack's cache as
+// soon as the screen that sent them closes (they never outlive C-01 or C-02, M9).
 export function useLogin() {
-  return useMutation({ mutationFn: (input: LoginRequest) => sessionActions().login(input) });
+  return useMutation({
+    mutationFn: (input: LoginRequest) => sessionActions().login(input),
+    gcTime: 0,
+  });
 }
 
 export function useChangePassword() {
   return useMutation({
     mutationFn: (input: ChangePasswordRequest) => sessionActions().changePassword(input),
+    gcTime: 0,
   });
 }
 

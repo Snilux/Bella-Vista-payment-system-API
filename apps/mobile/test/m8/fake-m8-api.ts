@@ -233,7 +233,11 @@ export function fakeM8Api() {
         return save({
           ...found,
           status: 'reviewed',
-          reviewedBy: { userAccountId: 3, username: 'presidente' },
+          reviewedBy: {
+            userAccountId: 3,
+            username: 'presidente',
+            fullName: 'Rosa Elena Vargas Luna',
+          },
           reviewedAt: '2026-11-02T18:00:00.000Z',
         });
       }
@@ -241,7 +245,11 @@ export function fakeM8Api() {
         return save({
           ...found,
           status: 'closed',
-          closedBy: { userAccountId: 3, username: 'presidente' },
+          closedBy: {
+            userAccountId: 3,
+            username: 'presidente',
+            fullName: 'Rosa Elena Vargas Luna',
+          },
           closedAt: '2026-11-02T19:00:00.000Z',
         });
       }

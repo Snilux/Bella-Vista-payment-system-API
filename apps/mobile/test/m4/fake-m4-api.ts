@@ -254,7 +254,7 @@ export function initialState() {
       id: 31,
       type: 'role_assignment',
       reason: 'Acuerdo de asamblea del 15 de noviembre',
-      description: 'Jefe de manzana S2-M02: Teresa Navarro Cruz, desde el 18 nov 2026',
+      description: 'Jefe de manzana S2-M02: Teresa Navarro Cruz, desde el 2026-11-18',
     }),
     approval({
       id: 32,

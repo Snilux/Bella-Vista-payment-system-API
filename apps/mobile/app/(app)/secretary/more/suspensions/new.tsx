@@ -176,6 +176,7 @@ export default function Suspend() {
         multiline
       />
       <Select
+        optionsQuery={agreements}
         label="Acuerdo de junta"
         required
         options={(agreements.data ?? []).map((agreement) => ({

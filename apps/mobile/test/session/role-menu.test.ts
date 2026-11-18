@@ -5,7 +5,7 @@ import path from 'node:path';
 import { can, ROLES, type Role } from '@bella-vista/shared';
 import { allowedFor } from '../../src/session/permissions.js';
 import { homeHref, moreOptionHref, ROLE_MENU, tabHref } from '../../src/session/role-menu.js';
-import { screenById } from '../../src/session/screen-catalog.js';
+import { screenById, screenHref } from '../../src/session/screen-catalog.js';
 
 // Menu by role (2.5 §1, 3.2 §11.1): each role sees only its tabs and "Más" options, the role is
 // the route segment as in ROLES, every tab has its file, and the menu agrees with the
@@ -84,11 +84,9 @@ describe.each(ROLES.map((role) => [role] as const))('menu of %s', (role) => {
     expect(menu.more.at(-1)?.screen).toBe('C-05');
   });
 
-  it('sends "Más" options to built screens or to their "Próximamente" page', () => {
+  it('sends "Más" options to their screens', () => {
     for (const option of menu.more) {
-      const href = moreOptionHref(role, option);
-      if (screenById(option.screen).done) expect(href).not.toContain('coming-soon');
-      else expect(href).toBe(`/common/coming-soon?screen=${option.screen}`);
+      expect(moreOptionHref(role, option)).toBe(screenHref(screenById(option.screen), role));
     }
     expect(moreOptionHref(role, { label: 'Perfil', icon: 'profile', screen: 'C-05' })).toBe(
       '/common/profile',

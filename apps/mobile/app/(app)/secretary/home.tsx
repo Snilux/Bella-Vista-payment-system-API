@@ -5,6 +5,7 @@ import {
   useConnectionRequestCount,
   useRoleAssignments,
 } from '../../../src/api/useOrganization.js';
+import { useRefresh } from '../../../src/api/useRefresh.js';
 import { useCommunityReport } from '../../../src/api/useReports.js';
 import { useActiveSuspensionCount } from '../../../src/api/useSuspensions.js';
 import { firstName } from '../../../src/features/forms/business-date.js';
@@ -29,6 +30,7 @@ import {
 // out: no endpoint counts connections. "Solicitudes por resolver" opens the Tomas tab (S-02).
 
 export default function SecretaryHome() {
+  const refresh = useRefresh();
   const account = useAccount();
   const report = useCommunityReport();
   const blocks = useBlocks();
@@ -42,7 +44,7 @@ export default function SecretaryHome() {
   const pendingAssignments = assignments.data?.filter(isPending).length;
 
   return (
-    <ScreenLayout withinTabs>
+    <ScreenLayout withinTabs refresh={refresh}>
       <Header
         title={account ? `Hola, ${firstName(account.fullName)}` : 'Inicio'}
         subtitle="Secretario del comité"

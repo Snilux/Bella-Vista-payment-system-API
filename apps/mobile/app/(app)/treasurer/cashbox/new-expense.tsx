@@ -90,6 +90,7 @@ export default function NewExpense() {
   const registered = register.status === 'success' ? (register.data?.expense ?? null) : null;
   const guard = useDiscardGuard(
     (description !== '' || amount !== null || voucher !== '') && registered === null,
+    { unknown: register.status === 'unknown' || pay.status === 'unknown' },
   );
 
   // --- Outcomes -------------------------------------------------------------------------------
@@ -207,6 +208,7 @@ export default function NewExpense() {
         onBack={() => router.back()}
       />
       <Select
+        optionsQuery={categories}
         label="Categoría"
         required
         options={(categories.data ?? [])
@@ -237,6 +239,7 @@ export default function NewExpense() {
         editable={!locked}
       />
       <Select
+        optionsQuery={agreements}
         label="Acuerdo de junta"
         required
         options={(agreements.data ?? []).map((agreement) => ({

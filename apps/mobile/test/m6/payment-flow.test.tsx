@@ -168,6 +168,13 @@ describe('F-03 · Revisar y folio', () => {
     });
   });
 
+  it('"Ver el pago" leaves the flow for the payment (G-05)', async () => {
+    const router = await reviewJuneAndJuly();
+    await fireEvent.press(screen.getByRole('button', { name: 'Registrar pago' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Ver el pago' }));
+    expect(router.getPathname()).toMatch(/^\/common\/payments\/\d+$/);
+  });
+
   it('a double tap sends once', async () => {
     await reviewJuneAndJuly();
     const button = screen.getByRole('button', { name: 'Registrar pago' });

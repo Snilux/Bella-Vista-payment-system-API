@@ -1,7 +1,13 @@
-import { screen } from '@testing-library/react-native';
+import { act, screen } from '@testing-library/react-native';
 import { ApiError } from '../../src/api/errors.js';
 import { AppText } from '../../src/ui/AppText.js';
-import { type QueryLike, ScreenState, screenStatusOf } from '../../src/ui/ScreenState.js';
+import {
+  type QueryLike,
+  ScreenState,
+  SLOW_LOADING_MESSAGE,
+  SLOW_LOADING_MS,
+  screenStatusOf,
+} from '../../src/ui/ScreenState.js';
 import { renderUi } from './render.js';
 
 // Envoltura de estados (3.2 §11.1): one mapping from a query to the five states.
@@ -71,5 +77,17 @@ describe('ScreenState', () => {
     );
     expect(screen.getByText('Su sesión terminó, inicie sesión de nuevo.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+  });
+
+  it('a load that takes long says the signal is weak (M9)', async () => {
+    jest.useFakeTimers();
+    try {
+      await renderUi(<ScreenState status="loading" />);
+      expect(screen.getByText('Cargando...')).toBeTruthy();
+      await act(() => jest.advanceTimersByTime(SLOW_LOADING_MS));
+      expect(screen.getByText(SLOW_LOADING_MESSAGE)).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

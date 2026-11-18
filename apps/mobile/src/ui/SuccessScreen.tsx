@@ -18,6 +18,8 @@ export type SuccessScreenProps = {
   doneLabel?: string;
   /** Optional second action (e.g. "Cobrar a otra familia"). */
   secondary?: { label: string; onPress: () => void };
+  /** A text button under the data (e.g. "Ver el pago"). */
+  link?: { label: string; onPress: () => void };
 };
 
 export function SuccessScreen({
@@ -27,6 +29,7 @@ export function SuccessScreen({
   onDone,
   doneLabel = 'Listo',
   secondary,
+  link,
 }: SuccessScreenProps) {
   return (
     <View style={styles.screen}>
@@ -39,6 +42,7 @@ export function SuccessScreen({
         </View>
         {message ? <AppText variant="body">{message}</AppText> : null}
         {children ? <View style={styles.data}>{children}</View> : null}
+        {link ? <Button label={link.label} variant="text" onPress={link.onPress} /> : null}
       </ScrollView>
       <View style={styles.actions}>
         <Button label={doneLabel} onPress={onDone} />

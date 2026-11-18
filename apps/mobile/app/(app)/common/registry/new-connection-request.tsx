@@ -6,7 +6,7 @@ import {
 } from '@bella-vista/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { describeError, fieldErrors } from '../../../../src/api/error-messages.js';
+import { describeSaveError, fieldErrors } from '../../../../src/api/error-messages.js';
 import {
   useCreateConnectionRequest,
   useOpeningFee,
@@ -71,7 +71,9 @@ export default function NewConnectionRequest() {
 
   const server = create.isError ? fieldErrors(create.error) : {};
   const general =
-    create.isError && Object.keys(server).length === 0 ? describeError(create.error).message : null;
+    create.isError && Object.keys(server).length === 0
+      ? describeSaveError(create.error).message
+      : null;
   const errorOf = (field: Field) => errors[field] ?? server[field] ?? null;
   const amount = opening.data?.currentAmount?.amount ?? null;
 

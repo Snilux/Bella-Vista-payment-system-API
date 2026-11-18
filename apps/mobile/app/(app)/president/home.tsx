@@ -3,6 +3,7 @@ import { formatMoney } from '@bella-vista/shared';
 import { router } from 'expo-router';
 import { useApprovals } from '../../../src/api/useApprovals.js';
 import { useCountedClosingCount } from '../../../src/api/useClosings.js';
+import { useRefresh } from '../../../src/api/useRefresh.js';
 import { useCommunityReport } from '../../../src/api/useReports.js';
 import { firstName } from '../../../src/features/forms/business-date.js';
 import { countLabel } from '../../../src/features/organization/organization-view.js';
@@ -27,6 +28,7 @@ import {
 // comunitario" opens G-07 (both are tabs of the president).
 
 export default function PresidentHome() {
+  const refresh = useRefresh();
   const account = useAccount();
   const report = useCommunityReport();
   const approvals = useApprovals('pending');
@@ -36,7 +38,7 @@ export default function PresidentHome() {
   const pending = approvals.data?.length ?? null;
 
   return (
-    <ScreenLayout withinTabs>
+    <ScreenLayout withinTabs refresh={refresh}>
       <Header
         title={account ? `Hola, ${firstName(account.fullName)}` : 'Inicio'}
         subtitle="Presidente del comité"

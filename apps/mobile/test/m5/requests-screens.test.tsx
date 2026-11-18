@@ -4,6 +4,7 @@ import path from 'node:path';
 import { addMonths, formatPeriod, type SessionAccount } from '@bella-vista/shared';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import type { ApiClient } from '../../src/api/client.js';
+import { UNKNOWN_SAVE_MESSAGE } from '../../src/api/error-messages.js';
 import { businessToday } from '../../src/features/forms/business-date.js';
 import {
   NEEDS_AGREEMENT,
@@ -67,17 +68,26 @@ const LEADER: SessionAccount = {
 };
 
 let server: ReturnType<typeof fakeM5Api>;
+/** A request whose answer gets lost after the API applied it (M9), like a dropped connection. */
+let loseAnswerOf: ((url: string) => boolean) | null = null;
 
 beforeEach(() => {
   const { createApiClient } = jest.requireActual('../../src/api/client.js');
   const { scriptedFetch, memoryTokens } = jest.requireActual('../api/fake-api.js');
   server = fakeM5Api();
+  const answer = scriptedFetch(server.route).fetchFn;
   mockState.client = createApiClient({
     baseUrl: 'http://api.test:3000',
     tokens: memoryTokens({ access: 'access-0', refresh: 'refresh-0' }).store,
     onSessionEnded: () => undefined,
-    fetchFn: scriptedFetch(server.route).fetchFn,
+    fetchFn: (input: RequestInfo | URL, init?: RequestInit) => {
+      const reply = answer(input, init);
+      return loseAnswerOf?.(String(input))
+        ? reply.then(() => Promise.reject(new TypeError('Network request failed')))
+        : reply;
+    },
   });
+  loseAnswerOf = null;
   setFontScale(1);
   sessionStore.signedIn(SECRETARY);
 });
@@ -286,6 +296,23 @@ describe('S-04 and S-05 · Acuerdos', () => {
       minutesReference: 'Acta 2026-19, foja 3',
       correctsId: null,
     });
+  });
+});
+
+describe('S-05 · an answer lost while saving (M9)', () => {
+  it('says it may be saved and reloads the list instead of inviting a blind retry', async () => {
+    await open('/secretary/more/agreements/new');
+    await fireEvent.changeText(
+      await screen.findByLabelText('Tema, obligatorio'),
+      'Solicitud ST-000013',
+    );
+    await fireEvent.press(screen.getByRole('radio', { name: 'Aprobado por mayoría' }));
+    const listed = server.gets('/agreements').length;
+    loseAnswerOf = (url) => url.endsWith('/v1/agreements');
+    await fireEvent.press(screen.getByRole('button', { name: 'Guardar acuerdo' }));
+    expect(await screen.findByText(UNKNOWN_SAVE_MESSAGE)).toBeTruthy();
+    expect(server.posts('/agreements')).toHaveLength(1);
+    await waitFor(() => expect(server.gets('/agreements').length).toBeGreaterThan(listed));
   });
 });
 

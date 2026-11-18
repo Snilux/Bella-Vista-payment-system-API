@@ -59,7 +59,7 @@ apps/mobile/
   src/api/             client.ts (fetch, token refresh, errors), error-messages.ts, query hooks (useAuth…)
   src/session/         tokens, session state, screen-catalog.ts (63 screens, `done` flag), role-menu.ts
                        (role → tabs → "Más"), permissions.ts
-  src/features/        screen pieces per module (session/: RoleTabs, MoreMenu, ComingSoon; accounts/, organization/,
+  src/features/        screen pieces per module (session/: RoleTabs, MoreMenu; accounts/, organization/,
                        approvals/, registry/, billing/: the payment flow and extra charges; cashboxes/ and
                        committee/: cashboxes, handovers, expenses, plumber; closings/, reports/ and audit/;
                        forms/ (MoneyFooter…) and people/)

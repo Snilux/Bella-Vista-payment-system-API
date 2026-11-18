@@ -4,6 +4,7 @@ import { formatMoney, formatPeriod } from '@bella-vista/shared';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { useMyCashbox, usePendingHandoverCount } from '../../../src/api/useBilling.js';
+import { useRefresh } from '../../../src/api/useRefresh.js';
 import { useBlockRoster } from '../../../src/api/useRegistry.js';
 import { firstName } from '../../../src/features/forms/business-date.js';
 import { rosterRows } from '../../../src/features/registry/registry-view.js';
@@ -29,6 +30,7 @@ import {
 // month the API says comes next, M8) opens J-05.
 
 export default function BlockLeaderHome() {
+  const refresh = useRefresh();
   const account = useAccount();
   const cashbox = useMyCashbox();
   const roster = useBlockRoster(account?.blockId ?? null);
@@ -39,7 +41,7 @@ export default function BlockLeaderHome() {
   const status = screenStatusOf(cashbox);
 
   return (
-    <ScreenLayout withinTabs>
+    <ScreenLayout withinTabs refresh={refresh}>
       <Header
         title={account ? `Hola, ${firstName(account.fullName)}` : 'Inicio'}
         {...(account ? { subtitle: roleDescription(account) } : {})}

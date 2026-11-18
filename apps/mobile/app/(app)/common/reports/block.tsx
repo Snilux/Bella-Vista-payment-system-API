@@ -62,6 +62,7 @@ export default function BlockReportScreen() {
       />
       {leader ? null : (
         <Select
+          optionsQuery={blocks}
           label="Manzana"
           required
           options={(blocks.data ?? []).map((block) => ({ value: block.id, label: block.fullCode }))}

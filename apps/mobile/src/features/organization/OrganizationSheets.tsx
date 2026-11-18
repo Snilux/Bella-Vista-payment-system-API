@@ -5,7 +5,7 @@ import {
   type Section,
 } from '@bella-vista/shared';
 import { useState } from 'react';
-import { describeError, fieldErrors } from '../../api/error-messages.js';
+import { describeSaveError, fieldErrors } from '../../api/error-messages.js';
 import { isApiError } from '../../api/errors.js';
 import { useCreateBlock, useCreateSection } from '../../api/useOrganization.js';
 import {
@@ -46,7 +46,7 @@ function serverErrors(error: unknown): { fields: Errors; general: string | null 
   const fields = fieldErrors(error) as Errors;
   return Object.keys(fields).length > 0
     ? { fields, general: null }
-    : { fields: {}, general: describeError(error).message };
+    : { fields: {}, general: describeSaveError(error).message };
 }
 
 export function NewSectionSheet({

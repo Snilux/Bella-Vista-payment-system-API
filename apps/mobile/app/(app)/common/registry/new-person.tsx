@@ -3,7 +3,11 @@ import { createPersonRequestSchema, type PersonBasic } from '@bella-vista/shared
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { describeError, fieldErrors } from '../../../../src/api/error-messages.js';
+import {
+  describeError,
+  describeSaveError,
+  fieldErrors,
+} from '../../../../src/api/error-messages.js';
 import { isApiError } from '../../../../src/api/errors.js';
 import { useCreatePerson, usePersonMatches } from '../../../../src/api/useRegistry.js';
 import {
@@ -66,11 +70,11 @@ export default function NewPerson() {
     create.isError &&
     isApiError(create.error) &&
     ['HOMONYM_WITHOUT_NOTE', 'DUPLICATE_DISTINGUISHING_NOTE'].includes(create.error.code)
-      ? describeError(create.error).message
+      ? describeSaveError(create.error).message
       : null;
   const general =
     create.isError && !noteError && Object.keys(server).length === 0
-      ? describeError(create.error).message
+      ? describeSaveError(create.error).message
       : matchesQuery.isError
         ? describeError(matchesQuery.error).message
         : null;
