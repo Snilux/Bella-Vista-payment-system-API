@@ -384,6 +384,18 @@ describe.skipIf(!testDatabaseUrl)('cashboxes', () => {
   it('an approved adjustment settles the shortfall of a handover (RF-CAJ-06)', async () => {
     const source = await blockBox('S1-M01');
     const before = await balanceOf(source);
+    // The amount is the whole difference with the sign of the model (it takes cash out).
+    for (const amount of [-4_000, 5_000]) {
+      const wrong = await post('/v1/adjustments', 'tesorero', {
+        handoverId: shortfall.id,
+        amount,
+        reason: 'x',
+      });
+      expect(wrong.body.error).toMatchObject({
+        code: 'VALIDATION_ERROR',
+        details: { issues: [{ path: 'body.amount', message: expect.stringContaining('-$50.00') }] },
+      });
+    }
     const res = await post('/v1/adjustments', 'tesorero', {
       handoverId: shortfall.id,
       amount: -5_000,
