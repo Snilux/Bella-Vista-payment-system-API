@@ -173,7 +173,7 @@ export function useCreatePlumber() {
         body,
         schema: plumberResponseSchema,
       }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.plumbers }),
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: queryKeys.plumbers }),
   });
 }
 

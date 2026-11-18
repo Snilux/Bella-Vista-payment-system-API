@@ -53,6 +53,6 @@ export function useCreateAgreement() {
         body,
         schema: agreementResponseSchema,
       }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.agreements }),
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: queryKeys.agreements }),
   });
 }

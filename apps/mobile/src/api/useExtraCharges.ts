@@ -39,8 +39,9 @@ export function useCreateCharge() {
         body,
         schema: extraChargeResponseSchema,
       }),
-    // The family (its charges and statement) and the search, which shows the debt.
-    onSuccess: () => {
+    // The family (its charges and statement) and the search, which shows the debt. Also when no
+    // answer arrived: the charge may be saved (M9).
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.units });
       void queryClient.invalidateQueries({ queryKey: queryKeys.searchAll });
     },

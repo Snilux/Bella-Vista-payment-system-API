@@ -6,6 +6,10 @@ import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-li
 import type { ApiClient } from '../../src/api/client.js';
 import { UNKNOWN_OUTCOME_MESSAGE } from '../../src/api/error-messages.js';
 import { SAVED_NOT_PAID } from '../../src/features/committee/committee-view.js';
+import {
+  UNKNOWN_LEAVE_MESSAGE,
+  UNKNOWN_LEAVE_TITLE,
+} from '../../src/features/forms/DiscardChangesSheet.js';
 import { sessionStore } from '../../src/session/session-store.js';
 import { apiError } from '../api/fake-api.js';
 import { expense, fakeM7Api, handover } from './fake-m7-api.js';
@@ -133,6 +137,28 @@ describe('J-03 · Preparar entrega', () => {
     const [sent] = server.posts('/handovers');
     expect(sent?.body).toEqual({ declaredAmount: 150_000 });
     expect(keyOf(sent)).toBe('key-1');
+  });
+});
+
+describe('J-03 · leaving without an answer (M9)', () => {
+  it('warns that it may be registered instead of "se perderá"', async () => {
+    as(LEADER);
+    const router = await open('/block_leader/my-cashbox');
+    await fireEvent.press(await screen.findByRole('button', { name: 'Preparar entrega' }));
+    await fireEvent.changeText(
+      await screen.findByLabelText('Importe a entregar, obligatorio'),
+      '1,500.00',
+    );
+    server.loseAnswer((call) => call.url.endsWith('/handovers'));
+    await fireEvent.press(button('Preparar entrega'));
+    expect(await screen.findByText(UNKNOWN_OUTCOME_MESSAGE)).toBeTruthy();
+
+    await fireEvent.press(button('Atrás'));
+    expect(screen.getByText(UNKNOWN_LEAVE_TITLE)).toBeTruthy();
+    expect(screen.getByText(UNKNOWN_LEAVE_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText('Lo que escribió en este formulario se perderá.')).toBeNull();
+    await fireEvent.press(button('Sí, salir'));
+    await waitFor(() => expect(router.getPathname()).toBe('/block_leader/my-cashbox'));
   });
 });
 

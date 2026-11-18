@@ -7,7 +7,7 @@ import {
 } from '@bella-vista/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { describeError, fieldErrors } from '../../../../../src/api/error-messages.js';
+import { describeSaveError, fieldErrors } from '../../../../../src/api/error-messages.js';
 import { useConnection, useCreateUnit } from '../../../../../src/api/useRegistry.js';
 import { businessToday } from '../../../../../src/features/forms/business-date.js';
 import {
@@ -47,7 +47,9 @@ export default function AddUnit() {
 
   const server = create.isError ? fieldErrors(create.error) : {};
   const general =
-    create.isError && Object.keys(server).length === 0 ? describeError(create.error).message : null;
+    create.isError && Object.keys(server).length === 0
+      ? describeSaveError(create.error).message
+      : null;
   const errorOf = (field: Field) => errors[field] ?? server[field] ?? null;
   const firstMonth = DATE.test(registeredOn) ? formatPeriod(periodOfDate(registeredOn)) : null;
 

@@ -90,6 +90,7 @@ export default function NewExpense() {
   const registered = register.status === 'success' ? (register.data?.expense ?? null) : null;
   const guard = useDiscardGuard(
     (description !== '' || amount !== null || voucher !== '') && registered === null,
+    { unknown: register.status === 'unknown' || pay.status === 'unknown' },
   );
 
   // --- Outcomes -------------------------------------------------------------------------------

@@ -49,6 +49,7 @@ export default function NewIncome() {
   const operation = useMoneyOperation<CreateIncomeRequest, Result>(createIncome, { onSuccess });
   const guard = useDiscardGuard(
     (concept !== '' || amount !== null || voucher !== '') && operation.status !== 'success',
+    { unknown: operation.status === 'unknown' },
   );
 
   if (operation.status === 'success' && operation.data) {

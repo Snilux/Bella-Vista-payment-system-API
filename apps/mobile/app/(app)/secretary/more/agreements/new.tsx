@@ -3,7 +3,7 @@ import { type Agreement, createAgreementRequestSchema } from '@bella-vista/share
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { describeError, fieldErrors } from '../../../../../src/api/error-messages.js';
+import { describeSaveError, fieldErrors } from '../../../../../src/api/error-messages.js';
 import { useAgreementOptions, useCreateAgreement } from '../../../../../src/api/useAgreements.js';
 import { businessToday } from '../../../../../src/features/forms/business-date.js';
 import {
@@ -62,7 +62,9 @@ export default function NewAgreement() {
 
   const server = create.isError ? fieldErrors(create.error) : {};
   const general =
-    create.isError && Object.keys(server).length === 0 ? describeError(create.error).message : null;
+    create.isError && Object.keys(server).length === 0
+      ? describeSaveError(create.error).message
+      : null;
   const errorOf = (field: Field) => errors[field] ?? server[field] ?? null;
 
   const submit = () => {

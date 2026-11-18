@@ -1,9 +1,11 @@
 import { ERROR_CODES } from '@bella-vista/shared';
 import {
   describeError,
+  describeSaveError,
   ERROR_MESSAGES,
   fieldErrors,
   SUBSTITUTION_MESSAGES,
+  UNKNOWN_SAVE_MESSAGE,
 } from '../../src/api/error-messages.js';
 import { ApiError, CLIENT_ERROR_CODES } from '../../src/api/errors.js';
 
@@ -128,5 +130,18 @@ describe('leader substitution (S-07, D-08)', () => {
         new ApiError('INVALID_STATE', 409, '', { status: 'draft', action: 'close_closing' }),
       ).message,
     ).toBe('Esto ya cambió. Se actualizó la pantalla.');
+  });
+});
+
+describe('describeSaveError (M9)', () => {
+  it('a creation without key and without answer may be saved: check the list first', () => {
+    expect(describeSaveError(new ApiError('NETWORK_ERROR', 0, ''))).toEqual({
+      code: 'NETWORK_ERROR',
+      message: UNKNOWN_SAVE_MESSAGE,
+      action: 'none',
+    });
+    expect(describeSaveError(new ApiError('FORBIDDEN', 403, '')).message).toBe(
+      'No tiene permiso para esta acción.',
+    );
   });
 });

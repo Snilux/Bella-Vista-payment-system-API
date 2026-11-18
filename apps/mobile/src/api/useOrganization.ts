@@ -101,7 +101,7 @@ export function useCreateSection() {
         body,
         schema: sectionResponseSchema,
       }),
-    onSuccess: () => afterOrganizationChange(queryClient),
+    onSettled: () => afterOrganizationChange(queryClient),
   });
 }
 
@@ -115,7 +115,7 @@ export function useCreateBlock() {
         body,
         schema: blockResponseSchema,
       }),
-    onSuccess: () => afterOrganizationChange(queryClient),
+    onSettled: () => afterOrganizationChange(queryClient),
   });
 }
 

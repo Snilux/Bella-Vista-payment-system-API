@@ -9,7 +9,7 @@ import {
 import { router } from 'expo-router';
 import { type ReactNode, useState } from 'react';
 import { View } from 'react-native';
-import { describeError, fieldErrors } from '../../../../../src/api/error-messages.js';
+import { describeSaveError, fieldErrors } from '../../../../../src/api/error-messages.js';
 import { useAgreementOptions } from '../../../../../src/api/useAgreements.js';
 import {
   useCreatePlumber,
@@ -219,7 +219,9 @@ function SalarySheet({
   const [errors, setErrors] = useState<Partial<Record<SalaryField, string>>>({});
   const server = create.isError ? fieldErrors(create.error) : {};
   const general =
-    create.isError && Object.keys(server).length === 0 ? describeError(create.error).message : null;
+    create.isError && Object.keys(server).length === 0
+      ? describeSaveError(create.error).message
+      : null;
   const errorOf = (field: SalaryField) => errors[field] ?? server[field] ?? null;
 
   const submit = () => {
@@ -343,7 +345,7 @@ function NewPlumberSheet({ visible, onClose }: { visible: boolean; onClose: () =
         keyboardType="phone-pad"
         maxLength={20}
       />
-      {create.isError ? <Notice title={describeError(create.error).message} /> : null}
+      {create.isError ? <Notice title={describeSaveError(create.error).message} /> : null}
     </BottomSheet>
   );
 }

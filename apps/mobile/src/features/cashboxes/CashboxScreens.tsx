@@ -174,6 +174,7 @@ export function PrepareHandoverScreen() {
   });
   const guard = useDiscardGuard(
     (amount !== null || notes !== '') && operation.status !== 'success',
+    { unknown: operation.status === 'unknown' },
   );
   const header = <Header title="Preparar entrega" onBack={() => router.back()} />;
 
