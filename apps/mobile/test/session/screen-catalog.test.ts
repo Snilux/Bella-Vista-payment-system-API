@@ -42,7 +42,7 @@ describe('screen catalog', () => {
 
   const done = SCREENS.filter((entry: ScreenEntry) => entry.done);
 
-  it('marks the screens of M2 to M6 as done', () => {
+  it('marks the screens of M2 to M7 as done', () => {
     expect(done.map((entry) => entry.id)).toEqual([
       'C-01',
       'C-02',
@@ -53,6 +53,7 @@ describe('screen catalog', () => {
       'G-03',
       'G-04',
       'G-05',
+      'G-09',
       'G-10',
       'G-11',
       'F-01',
@@ -66,9 +67,22 @@ describe('screen catalog', () => {
       'P-05',
       'P-06',
       'J-01',
+      'J-02',
+      'J-03',
+      'J-04',
       'J-06',
+      'T-01',
+      'T-02',
+      'T-03',
+      'T-04',
+      'T-05',
+      'T-06',
+      'T-07',
+      'T-08',
+      'T-09',
       'T-10',
       'T-11',
+      'T-12',
       'S-01',
       'S-02',
       'S-03',
@@ -80,6 +94,7 @@ describe('screen catalog', () => {
       'R-01',
       'R-02',
       'R-03',
+      'R-06',
       'A-01',
       'A-02',
       'A-03',

@@ -89,6 +89,7 @@ export const REQUEST_TYPES = [
   'holder_change',
   'payment_cancellation',
   'expense_refund',
+  'adjustment',
 ] as const satisfies readonly ApprovalType[];
 
 export type RequestType = (typeof REQUEST_TYPES)[number];
@@ -98,6 +99,10 @@ export type RequestConfig = {
   title: string;
   /** POST path for the record id. */
   path: (id: number) => string;
+  /** The body, when it is more than the reason (the default is { reason }). */
+  body?: (id: number, vars: { reason: string; amount?: number }) => unknown;
+  /** The amount is fixed by the record (adjustment: the whole difference), shown, not typed. */
+  fixedAmount?: boolean;
   /** Moves money: Idempotency-Key (docs/api.md "Idempotencia"). */
   idempotent: boolean;
   /** Asks for the new holder (person picker). */
@@ -140,6 +145,17 @@ export const REQUEST_CONFIGS: Record<RequestType, RequestConfig> = {
     needsNewHolder: false,
     action: 'committee.manage',
     meanwhile: 'Mientras el presidente no lo autorice, el gasto sigue pagado.',
+  },
+  // T-03: the shortfall of a handover (D-16), one per handover, for the whole difference.
+  adjustment: {
+    title: 'Solicitar aclaración',
+    path: () => '/adjustments',
+    body: (id, vars) => ({ handoverId: id, amount: vars.amount, reason: vars.reason }),
+    fixedAmount: true,
+    idempotent: true,
+    needsNewHolder: false,
+    action: 'adjustments.propose',
+    meanwhile: 'Mientras el presidente no la autorice, el faltante sigue en la caja del jefe.',
   },
 };
 

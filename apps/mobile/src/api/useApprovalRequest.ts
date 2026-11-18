@@ -1,4 +1,5 @@
 import {
+  adjustmentResponseSchema,
   expenseResponseSchema,
   paymentResponseSchema,
   unitChangeRequestResponseSchema,
@@ -19,9 +20,10 @@ const RESPONSE_SCHEMAS = {
   holder_change: unitChangeRequestResponseSchema,
   payment_cancellation: paymentResponseSchema,
   expense_refund: expenseResponseSchema,
+  adjustment: adjustmentResponseSchema,
 } as const;
 
-export type ApprovalRequestVars = { reason: string; newHolderId?: number };
+export type ApprovalRequestVars = { reason: string; newHolderId?: number; amount?: number };
 
 export function useApprovalRequest(type: RequestType, recordId: number) {
   const queryClient = useQueryClient();
@@ -32,9 +34,11 @@ export function useApprovalRequest(type: RequestType, recordId: number) {
       requireApiClient().request({
         method: 'POST',
         path: config.path(recordId),
-        body: config.needsNewHolder
-          ? { newHolderId: vars.newHolderId, reason: vars.reason }
-          : { reason: vars.reason },
+        body: config.body
+          ? config.body(recordId, vars)
+          : config.needsNewHolder
+            ? { newHolderId: vars.newHolderId, reason: vars.reason }
+            : { reason: vars.reason },
         schema: RESPONSE_SCHEMAS[type],
         ...(idempotencyKey ? { idempotencyKey } : {}),
       }),
@@ -42,8 +46,11 @@ export function useApprovalRequest(type: RequestType, recordId: number) {
   );
 
   const onSuccess = useCallback(() => {
-    // The requester follows it in their own approvals list.
+    // The requester follows it in their own approvals list; a refund or an adjustment also
+    // changes the expense or the handover it is about.
     void queryClient.invalidateQueries({ queryKey: queryKeys.approvals });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.expenses });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.handovers });
   }, [queryClient]);
 
   return useMoneyOperation(send, { idempotent: config.idempotent, onSuccess });
