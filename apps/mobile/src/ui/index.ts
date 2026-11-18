@@ -24,6 +24,7 @@ export * from './SearchField.js';
 export * from './Select.js';
 export * from './StatusTag.js';
 export * from './SuccessScreen.js';
+export * from './SummaryCard.js';
 export * from './TabBar.js';
 export * from './TextField.js';
 export * from './theme/index.js';

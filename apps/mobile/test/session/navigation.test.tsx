@@ -39,8 +39,12 @@ jest.mock('../../src/api/useAuth.js', () => ({
   restoreSession: () => Promise.resolve(),
 }));
 
-// Built tabs that read the API (A-01 since M3) get an empty answer: the screens themselves are
-// tested with a scripted API in their own files.
+// Navigation never reaches the network: without an API URL the screens that read data (R-01,
+// S-01 since M4) show their own error state. The screens themselves are tested with a scripted
+// API in their own files.
+jest.mock('../../src/config.js', () => ({ apiBaseUrl: () => null }));
+
+// Built tabs that read the API (A-01 since M3) get an empty answer.
 jest.mock('../../src/api/useAccounts.js', () => ({
   ...jest.requireActual('../../src/api/useAccounts.js'),
   useAccountList: () => ({
@@ -85,8 +89,10 @@ describe.each(ROLES.map((role) => [role] as const))('%s account', (role) => {
     expect(tabLabels()).toEqual(ROLE_MENU[role].tabs.map((tab) => tab.label));
     // Tabs of later phases say "Próximamente", never a blank screen or an error.
     const entry = screenById(ROLE_MENU[role].tabs[0]?.screen ?? 'C-04');
-    if (entry.done) expect(screen.getByRole('header', { name: entry.title })).toBeTruthy();
+    // A built home greets the person ("Hola, Laura") instead of repeating its catalog title.
+    if (entry.done) expect(screen.queryByText('Próximamente')).toBeNull();
     else expect(screen.getByText('Próximamente')).toBeTruthy();
+    expect(screen.getAllByRole('header').length).toBeGreaterThan(0);
   });
 
   it('opens "Más" with its options', async () => {
