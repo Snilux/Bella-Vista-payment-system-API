@@ -133,6 +133,7 @@ La carpeta `http/` tiene un archivo por escenario para la extensión **REST Clie
 | `04-padron.http` | Persona con homónimo, familia nueva en una toma, solicitud de toma y su cancelación |
 | `05-comite.http` | Acuerdo, tarifa, ingreso, gasto, fontanero, corte mensual y reportes |
 | `06-permisos.http` | Casos que deben fallar: jefe en otra manzana, vocal registrando un gasto, presidente registrando una persona |
+| `07-cargos.http` | El tesorero da importe a la reinstalación y la carga a una familia, el jefe la ve y la cobra con un mes en un solo pago, y el tesorero cancela otro cargo con motivo (D-28) |
 
 Los importes de los comentarios son los de una base recién cargada con `pnpm db:seed:dev` en noviembre de 2026; cambian con la fecha y con lo que ya se haya ejecutado. `01` y `03` se pueden repetir en ese orden (`03` cancela el pago de `01`). El login y el refresco aceptan 10 solicitudes por minuto por IP: si alguna responde 429, espere un minuto.
 

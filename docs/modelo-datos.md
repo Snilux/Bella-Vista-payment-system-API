@@ -49,7 +49,7 @@ Implementación (bloque 2):
 | `tarifa`               | id, periodo_vigencia, importe, fecha_aprobacion, acuerdo_id, autorizacion_id          | importe > 0; autorizacion_id único; trigger: una sola tarifa autorizada por periodo_vigencia                                                                      |
 | `concepto`             | id, tipo (apertura, reinstalacion, reparacion, otro), nombre                          | nombre único                                                                                                                  |
 | `concepto_importe`     | concepto_id, vigente_desde, importe                                                   | PK (concepto_id, vigente_desde)                                                                                               |
-| `cargo_extraordinario` | id, concepto_id, solicitud_toma_id?, toma_id?, unidad_id?, fecha_cargo, cancelado_en? | exactamente uno de los tres destinos; importe = concepto_importe vigente en fecha_cargo; única apertura vigente por solicitud |
+| `cargo_extraordinario` | id, concepto_id, solicitud_toma_id?, toma_id?, unidad_id?, fecha_cargo, cancelado_en?, motivo_cancelacion? | exactamente uno de los tres destinos; motivo_cancelacion lo captura el tesorero al cancelar uno no pagado (D-28); importe = concepto_importe vigente en fecha_cargo; única apertura vigente por solicitud |
 
 ## Cobranza
 
@@ -149,7 +149,7 @@ Columnas con UPDATE para `agua_api` (migración 0015):
 | `solicitud_toma` | acuerdo_id, motivo_resolucion, cancelada_en, motivo_cancelacion |
 | `toma_manzana`, `unidad_titular` | hasta |
 | `suspension` | periodo_hasta |
-| `cargo_extraordinario` | cancelado_en |
+| `cargo_extraordinario` | cancelado_en, motivo_cancelacion |
 | `seccion`, `manzana` | activa |
 | `persona` | telefono, distintivo (con registro en bitácora) |
 | `fontanero` | telefono (con registro en bitácora), activo |

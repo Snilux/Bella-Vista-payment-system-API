@@ -41,6 +41,9 @@ export const PERMISSIONS = {
   'billing.collect': ['treasurer', 'block_leader', 'president'],
   'receipts.replace': ['treasurer', 'block_leader'],
   'payments.requestCancellation': ['treasurer', 'block_leader'],
+  // Extra charges (D-28): only the treasurer creates and cancels them; whoever collects sees and
+  // collects them with payments.view and billing.collect
+  'charges.manage': ['treasurer'],
   // Cashboxes and handovers (CU-17, CU-18): a block leader only sees their own cashbox
   'cashboxes.view': COMMITTEE_AND_LEADERS,
   'openingBalances.register': ['treasurer'],

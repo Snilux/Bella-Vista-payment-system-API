@@ -1,6 +1,11 @@
 import {
   accountStatementResponseSchema,
+  cancelExtraChargeRequestSchema,
+  createExtraChargeRequestSchema,
   createPaymentRequestSchema,
+  extraChargeListQuerySchema,
+  extraChargeListResponseSchema,
+  extraChargeResponseSchema,
   idParamsSchema,
   paperReceiptReplacementRequestSchema,
   paymentCancellationRequestSchema,
@@ -30,6 +35,50 @@ export const accountStatementRoutes: FastifyPluginAsyncZod<Options> = async (app
       schema: { params: idParamsSchema, response: { 200: accountStatementResponseSchema } },
     },
     async (request) => service.getStatement(requireAccount(request), request.params.id),
+  );
+
+  app.get(
+    '/:id/extra-charges',
+    {
+      config: { permission: 'payments.view' },
+      schema: {
+        params: idParamsSchema,
+        querystring: extraChargeListQuerySchema,
+        response: { 200: extraChargeListResponseSchema },
+      },
+    },
+    async (request) =>
+      service.listExtraCharges(requireAccount(request), request.params.id, request.query),
+  );
+};
+
+/** /v1/extra-charges: only the treasurer creates and cancels them (D-28). */
+export const extraChargeRoutes: FastifyPluginAsyncZod<Options> = async (app, { service }) => {
+  app.post(
+    '/',
+    {
+      config: { permission: 'charges.manage' },
+      schema: {
+        body: createExtraChargeRequestSchema,
+        response: { 201: extraChargeResponseSchema },
+      },
+    },
+    async (request, reply) =>
+      reply.code(201).send(await service.createExtraCharge(requireActor(request), request.body)),
+  );
+
+  app.post(
+    '/:id/cancel',
+    {
+      config: { permission: 'charges.manage' },
+      schema: {
+        params: idParamsSchema,
+        body: cancelExtraChargeRequestSchema,
+        response: { 200: extraChargeResponseSchema },
+      },
+    },
+    async (request) =>
+      service.cancelExtraCharge(requireActor(request), request.params.id, request.body.reason),
   );
 };
 

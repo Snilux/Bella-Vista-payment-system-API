@@ -1,0 +1,118 @@
+# Extra charges (D-13, D-28): the treasurer gives "Reinstalación" an amount, charges it to the
+# family "Planta alta" (S1-M01), the block leader sees it pending and collects it together with
+# the months in a single payment, and the treasurer cancels another charge with its reason.
+#
+# Run in order after a fresh `pnpm db:seed:dev`. The fee ids are those of the bootstrap
+# (1 Apertura de toma, 2 Reinstalación, 3 Reparación a usuario). Run again, "Give Reinstalación
+# an amount" answers 409 INVALID_STATE (there are charges from today on): skip it. It pays
+# 2025-07, like 01-cobro.http: run it on a fresh seed or after 03-autorizaciones.http cancels
+# that payment.
+
+@baseUrl = http://localhost:3000/v1
+@password = desarrollo-bella-vista
+@reconnectionFeeId = 2
+
+### Login: treasurer
+# @name loginTreasurer
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "tesorero", "password": "{{password}}" }
+
+### Login: block leader of S1-M01
+# @name loginLeader
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "jm.s1m01", "password": "{{password}}" }
+
+### Give Reinstalación an amount from today ($350.00)
+# Expected: 201 { fee: { type: "reconnection", currentAmount: 35000, amounts: [...] } }
+POST {{baseUrl}}/fees/{{reconnectionFeeId}}/amounts
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "effectiveFrom": "{{$datetime 'YYYY-MM-DD'}}", "amount": 35000 }
+
+### Find the family
+# @name search
+GET {{baseUrl}}/search?q=planta
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+@unitId = {{search.response.body.$.units[0].id}}
+
+### The treasurer charges a reconnection to the family (today, the amount in force)
+# Expected: 201 { charge: { fee: { type: "reconnection", name: "Reinstalación" }, amount: 35000,
+#   target: "unit", status: "pending", paymentId: null } }
+# @name createCharge
+POST {{baseUrl}}/extra-charges
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "feeId": {{reconnectionFeeId}}, "unitId": {{unitId}} }
+
+### The block leader cannot create charges (D-28)
+# Expected: 403 FORBIDDEN
+POST {{baseUrl}}/extra-charges
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "feeId": {{reconnectionFeeId}}, "unitId": {{unitId}} }
+
+### The block leader sees the pending charges of the family (F-02)
+# Expected: 200 { charges: [ { id, fee: { type: "reconnection" }, amount: 35000, status: "pending" } ] }
+GET {{baseUrl}}/units/{{unitId}}/extra-charges
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### Preview: the oldest overdue month plus the charge
+# Expected: 200 { preview: { months: [ { period: "2025-07", ... } ], charges: [ { amount: 35000 } ],
+#   total } } — the total includes the charge
+# @name preview
+POST {{baseUrl}}/payments/preview
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "unitId": {{unitId}}, "periods": ["2025-07"],
+  "extraChargeIds": [{{createCharge.response.body.$.charge.id}}] }
+
+### Collect both in a single payment
+# Expected: 201 { payment: { months: [ "2025-07" ], charges: [ { feeType: "reconnection" } ] } }
+# Repeat it with the same Idempotency-Key: the same answer, no second payment.
+POST {{baseUrl}}/payments
+Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+Content-Type: application/json
+Idempotency-Key: 6a0d2a40-5e0f-4a54-9b51-3c07d2c1a001
+
+{ "unitId": {{unitId}}, "periods": ["2025-07"],
+  "extraChargeIds": [{{createCharge.response.body.$.charge.id}}],
+  "paperFolio": "CARGO-0001",
+  "expectedTotal": {{preview.response.body.$.preview.total}} }
+
+### A paid charge is not cancelled (it is corrected by cancelling the payment)
+# Expected: 409 INVALID_STATE, details.status "paid"
+POST {{baseUrl}}/extra-charges/{{createCharge.response.body.$.charge.id}}/cancel
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "Prueba" }
+
+### A second charge, captured by mistake
+# @name mistaken
+POST {{baseUrl}}/extra-charges
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "feeId": {{reconnectionFeeId}}, "unitId": {{unitId}} }
+
+### The treasurer cancels it with its reason (no presidential approval; in the audit log)
+# Expected: 200 { charge: { status: "cancelled", cancelledOn, cancellationReason } }
+POST {{baseUrl}}/extra-charges/{{mistaken.response.body.$.charge.id}}/cancel
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "Se capturó dos veces" }
+
+### Everything the family was charged
+# Expected: 200 { charges: [ { status: "paid", paymentId }, { status: "cancelled" } ] }
+GET {{baseUrl}}/units/{{unitId}}/extra-charges?status=all
+Authorization: Bearer {{loginTreasurer.response.body.$.accessToken}}

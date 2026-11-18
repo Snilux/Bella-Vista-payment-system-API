@@ -426,6 +426,8 @@ Los filtros de las listas (`?nombre=valor`) van en `camelCase` inglés, como los
 | `salarioVigente`, `inicioPeriodo`, `finPeriodo` | `currentSalary`, `periodStart`, `periodEnd` |
 | periodo de pago del fontanero | `plumberPayPeriod` (`packages/shared/src/domain/plumber.ts`) |
 | permisos: ver cajas, registrar saldo inicial | `cashboxes.view`, `openingBalances.register` |
+| permisos: crear y cancelar cargos extraordinarios (D-28) | `charges.manage` |
+| `fechaCargo`, `motivoCancelacion`; destino del cargo: familia, toma; estado: pendiente, pagado, cancelado | `chargedOn`, `cancellationReason`; `target`: `unit`, `connection`; `status`: `pending`, `paid`, `cancelled` |
 
 ## Cortes, reportes y bitácora
 

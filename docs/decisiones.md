@@ -31,6 +31,7 @@ Fuente: documento 1.1 de Notion, sección 2. Todas están confirmadas por el com
 | D-25 | Sin procesos programados | Mensualidades, vencimientos y recargos **se calculan al consultar**. Al pagar, la tarifa y el recargo quedan fijos en el pago.                                                                                          |
 | D-26 | Sin archivos             | No se suben fotos ni documentos; comprobantes y actas son referencias de texto.                                                                                                                                         |
 | D-27 | Arranque inicial         | El sistema se inicializa **una sola vez** con un script técnico (`pnpm db:seed`) que crea la cuenta del SA (contraseña temporal), registra a PRE, TES y SEC elegidos en junta con su acuerdo como **autorizados por arranque**, y crea la caja del comité, las categorías de gasto y los conceptos sin importe. Después todo entra por los flujos normales de la app. Detalle en 3.1 ([estructura.md](estructura.md#plan-de-implementación)). |
+| D-28 | Cargos extraordinarios   | Solo el **tesorero** crea un cargo extraordinario (reinstalación, reparación, otro) para una toma o una familia, con el importe vigente del concepto en la fecha del cargo; quien cobra no genera cargos de su propia manzana. El jefe los ve y los cobra con los meses. Un cargo no pagado lo cancela solo el tesorero, con motivo obligatorio y en la bitácora, sin autorización del presidente; nada se borra. La apertura se cobra y se cancela con su solicitud. |
 
 ## Cálculo del estado de cuenta (D-01, D-02, D-06, D-25)
 
@@ -90,6 +91,7 @@ Precisiones acordadas al implementarlo:
 | Baja / cambio de titular    | —       | autoriza         | —        | solicita | —               | solicita   |
 | Suspender / reactivar       | —       | sí               | —        | sí       | —               | —          |
 | Tarifas y saldos iniciales  | —       | confirma         | registra | ver      | ver             | ver        |
+| Cargos extraordinarios      | —       | ver              | crea y cancela | ver | ver             | ver y cobra en su manzana |
 | Cobrar                      | —       | en apoyo         | sí       | —        | —               | su manzana |
 | Consultar pagos             | —       | sí               | sí       | sí       | sí              | su manzana |
 | Reposición de recibo        | —       | —                | sí       | —        | —               | su manzana |

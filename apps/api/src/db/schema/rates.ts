@@ -94,6 +94,8 @@ export const extraCharge = pgTable(
     unitId: fk().references((): AnyPgColumn => unit.id),
     chargedOn: date({ mode: 'string' }).notNull(),
     cancelledOn: date({ mode: 'string' }),
+    /** Why the treasurer cancelled an unpaid charge (D-28); null for the other cancellations. */
+    cancellationReason: text(),
     createdBy: createdBy(userAccountId),
     createdAt: createdAt(),
   },
