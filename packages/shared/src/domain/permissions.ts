@@ -30,6 +30,8 @@ export const PERMISSIONS = {
   'agreements.manage': ['secretary'],
   'unitChanges.request': ['secretary', 'block_leader'],
   'suspensions.manage': ['president', 'secretary'],
+  // The list of suspensions (S-08); a block leader sees theirs in the block roster (P-01)
+  'suspensions.view': COMMITTEE,
   // Rates, fees and opening balances (CU-12, D-20)
   'rates.view': COMMITTEE_AND_LEADERS,
   'rates.register': ['treasurer'],

@@ -9,6 +9,8 @@ import {
   personResponseSchema,
   searchQuerySchema,
   searchResponseSchema,
+  suspensionListQuerySchema,
+  suspensionPageSchema,
   suspensionResponseSchema,
   unitChangeRequestResponseSchema,
   unitDeactivationRequestSchema,
@@ -145,6 +147,15 @@ export const unitRoutes: FastifyPluginAsyncZod<Options> = async (app, { service 
 };
 
 export const suspensionRoutes: FastifyPluginAsyncZod<Options> = async (app, { service }) => {
+  app.get(
+    '/',
+    {
+      config: { permission: 'suspensions.view' },
+      schema: { querystring: suspensionListQuerySchema, response: { 200: suspensionPageSchema } },
+    },
+    async (request) => service.listSuspensions(request.query),
+  );
+
   app.post(
     '/',
     {

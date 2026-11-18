@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { debtSummarySchema } from './billing.js';
-import { optionalText, periodSchema, personBasicSchema, requiredText } from './common.js';
+import {
+  optionalText,
+  page,
+  paginationQuerySchema,
+  periodSchema,
+  personBasicSchema,
+  requiredText,
+} from './common.js';
 
 // Registry endpoints (/v1/search, /v1/people, /v1/units, /v1/suspensions; CU-05 to CU-07,
 // CU-10, CU-11, RF-PAD). A block leader sees payment data of their block only; of people
@@ -226,6 +233,44 @@ export const suspensionSchema = z.object({
 
 export const suspensionResponseSchema = z.object({ suspension: suspensionSchema });
 
+/**
+ * GET /v1/suspensions (S-08, committee): active = still stopping the billing (no end, or it ends
+ * in the current month or later); ended = it ended before the current month.
+ */
+export const SUSPENSION_LIST_STATUSES = ['active', 'ended', 'all'] as const;
+
+export const suspensionListQuerySchema = paginationQuerySchema.extend({
+  status: z.enum(SUSPENSION_LIST_STATUSES).default('active'),
+  /** The connection's suspensions and those of its units. */
+  connectionId: z.coerce.number().int().positive().optional(),
+  unitId: z.coerce.number().int().positive().optional(),
+});
+
+export const suspensionListItemSchema = suspensionSchema.extend({
+  target: z.enum(['connection', 'unit']),
+  agreement: z.object({ id: z.int(), folio: z.string() }),
+  /** The suspended connection, or the connection of the suspended unit. */
+  connection: z.object({
+    id: z.int(),
+    folio: z.string(),
+    address: z.string(),
+    blockCode: z.string().nullable(),
+    unitCount: z.int(),
+  }),
+  /** The suspended unit with its current holder; null when the whole connection is suspended. */
+  unit: z
+    .object({
+      id: z.int(),
+      folio: z.string(),
+      reference: z.string().nullable(),
+      holderName: z.string().nullable(),
+    })
+    .nullable(),
+  createdAt: z.iso.datetime(),
+});
+
+export const suspensionPageSchema = page(suspensionListItemSchema);
+
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
 export type PersonMatchesQuery = z.infer<typeof personMatchesQuerySchema>;
 export type CreatePersonRequest = z.infer<typeof createPersonRequestSchema>;
@@ -236,3 +281,5 @@ export type UnitDetail = z.infer<typeof unitDetailSchema>;
 export type UnitHolderChangeRequest = z.infer<typeof unitHolderChangeRequestSchema>;
 export type CreateSuspensionRequest = z.infer<typeof createSuspensionRequestSchema>;
 export type Suspension = z.infer<typeof suspensionSchema>;
+export type SuspensionListQuery = z.infer<typeof suspensionListQuerySchema>;
+export type SuspensionListItem = z.infer<typeof suspensionListItemSchema>;

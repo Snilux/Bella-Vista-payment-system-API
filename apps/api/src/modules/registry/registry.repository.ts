@@ -6,6 +6,7 @@ import {
   eq,
   inArray,
   isNull,
+  lt,
   notInArray,
   or,
   type SQL,
@@ -485,6 +486,79 @@ export async function findAgreement(db: Executor, id: number) {
     .limit(1);
   return row ?? null;
 }
+
+/**
+ * Suspensions for S-08, newest first, with their target: the connection (the suspended one, or
+ * the one of the suspended unit, with its block and number of units) and the unit with its
+ * current holder. `currentMonth` is the first day of the business month: a suspension is active
+ * while it has no end or ends in that month or later.
+ */
+export function listSuspensions(
+  db: Executor,
+  filter: {
+    status: 'active' | 'ended' | 'all';
+    currentMonth: string;
+    connectionId?: number | undefined;
+    unitId?: number | undefined;
+    limit: number;
+    cursor?: number | undefined;
+  },
+) {
+  const targetConnectionId = sql<number>`coalesce(${suspension.connectionId}, ${vUnit.connectionId})`;
+  const conditions: SQL[] = [];
+  if (filter.status === 'active') {
+    const active = or(
+      isNull(suspension.periodTo),
+      sql`${suspension.periodTo} >= ${filter.currentMonth}::date`,
+    );
+    if (active) conditions.push(active);
+  } else if (filter.status === 'ended') {
+    conditions.push(sql`${suspension.periodTo} < ${filter.currentMonth}::date`);
+  }
+  if (filter.connectionId !== undefined) {
+    conditions.push(sql`${targetConnectionId} = ${filter.connectionId}`);
+  }
+  if (filter.unitId !== undefined) conditions.push(eq(suspension.unitId, filter.unitId));
+  if (filter.cursor !== undefined) conditions.push(lt(suspension.id, filter.cursor));
+
+  return db
+    .select({
+      id: suspension.id,
+      connectionId: suspension.connectionId,
+      unitId: suspension.unitId,
+      periodFrom: suspension.periodFrom,
+      periodTo: suspension.periodTo,
+      reason: suspension.reason,
+      agreementId: suspension.agreementId,
+      agreementFolio: agreement.folio,
+      createdAt: suspension.createdAt,
+      connection: {
+        id: vConnection.id,
+        folio: vConnection.folio,
+        address: vConnection.address,
+        unitCount: vConnection.unitCount,
+      },
+      blockCode: vBlock.code,
+      unitFolio: vUnit.folio,
+      unitReference: vUnit.reference,
+      holder: {
+        givenNames: person.givenNames,
+        paternalSurname: person.paternalSurname,
+        maternalSurname: person.maternalSurname,
+      },
+    })
+    .from(suspension)
+    .innerJoin(agreement, eq(agreement.id, suspension.agreementId))
+    .leftJoin(vUnit, eq(vUnit.id, suspension.unitId))
+    .innerJoin(vConnection, sql`${vConnection.id} = ${targetConnectionId}`)
+    .leftJoin(vBlock, eq(vBlock.id, vConnection.blockId))
+    .leftJoin(person, eq(person.id, vUnit.holderPersonId))
+    .where(and(...conditions))
+    .orderBy(desc(suspension.id))
+    .limit(filter.limit + 1);
+}
+
+export type SuspensionListRow = Awaited<ReturnType<typeof listSuspensions>>[number];
 
 /** A suspension of the same target overlapping the open period starting at `from`. */
 export async function overlappingSuspension(

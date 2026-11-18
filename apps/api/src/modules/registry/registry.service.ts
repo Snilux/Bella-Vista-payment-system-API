@@ -7,6 +7,8 @@ import type {
   PersonMatchesQuery,
   SearchResponse,
   Suspension,
+  SuspensionListItem,
+  SuspensionListQuery,
   UnitDetail,
   UnitHolderChangeRequest,
 } from '@bella-vista/shared';
@@ -405,6 +407,24 @@ export function createRegistryService(deps: RegistryServiceDeps) {
       });
     },
 
+    /** S-08: the suspensions with their target, newest first (committee). */
+    async listSuspensions(query: SuspensionListQuery) {
+      const rows = await repo.listSuspensions(db, {
+        status: query.status,
+        currentMonth: periodToDate(periodOf(today())),
+        connectionId: query.connectionId,
+        unitId: query.unitId,
+        limit: query.limit,
+        cursor: query.cursor,
+      });
+      const hasMore = rows.length > query.limit;
+      const data = hasMore ? rows.slice(0, query.limit) : rows;
+      return {
+        data: data.map(toSuspensionListItem),
+        next: hasMore ? String(data.at(-1)?.id) : null,
+      };
+    },
+
     /** D-06: a suspended connection or unit generates no monthly fees. */
     async createSuspension(
       actor: Actor,
@@ -491,6 +511,28 @@ export function createRegistryService(deps: RegistryServiceDeps) {
         return { suspension: toSuspension(row) };
       });
     },
+  };
+}
+
+function toSuspensionListItem(row: repo.SuspensionListRow): SuspensionListItem {
+  const holder = [row.holder?.givenNames, row.holder?.paternalSurname, row.holder?.maternalSurname]
+    .filter(Boolean)
+    .join(' ');
+  return {
+    ...toSuspension(row),
+    target: row.unitId === null ? 'connection' : 'unit',
+    agreement: { id: row.agreementId, folio: row.agreementFolio },
+    connection: { ...row.connection, blockCode: row.blockCode },
+    unit:
+      row.unitId === null || row.unitFolio === null
+        ? null
+        : {
+            id: row.unitId,
+            folio: row.unitFolio,
+            reference: row.unitReference,
+            holderName: holder === '' ? null : holder,
+          },
+    createdAt: row.createdAt.toISOString(),
   };
 }
 

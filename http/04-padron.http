@@ -137,3 +137,19 @@ Content-Type: application/json
 #   debt } ], totalDue, connectionRequests: [] } }   (cancelled requests are not listed)
 GET {{baseUrl}}/people/{{personId}}
 Authorization: Bearer {{loginLeader.response.body.$.accessToken}}
+
+### --- Suspensions (S-08, committee) -----------------------------------------------------------
+
+### Login: secretary
+# @name loginSecretary
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "secretario", "password": "{{password}}" }
+
+### Active suspensions, newest first (status=ended or status=all for the others)
+# Expected: 200 { data: [ { id, target: "connection" | "unit", periodFrom, periodTo, reason,
+#   agreement: { id, folio }, connection: { folio, address, blockCode, unitCount },
+#   unit: { folio, holderName } | null } ], next }. A block leader → 403 FORBIDDEN.
+GET {{baseUrl}}/suspensions?status=active&limit=20
+Authorization: Bearer {{loginSecretary.response.body.$.accessToken}}

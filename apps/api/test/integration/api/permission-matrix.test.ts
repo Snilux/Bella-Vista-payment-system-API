@@ -80,6 +80,7 @@ const MATRIX: Record<string, R[]> = {
   'GET /v1/units/:id/account-statement': COMMITTEE_AND_JM,
   'POST /v1/units/:id/request-deactivation': [JM, SEC],
   'POST /v1/units/:id/request-holder-change': [JM, SEC],
+  'GET /v1/suspensions': COMMITTEE,
   'POST /v1/suspensions': [SEC, PRE],
   'POST /v1/suspensions/:id/end': [SEC, PRE],
   'GET /v1/connection-requests': COMMITTEE_AND_JM,
