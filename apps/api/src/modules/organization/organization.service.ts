@@ -11,7 +11,7 @@ import type {
   UpdateBlockRequest,
   UpdateSectionRequest,
 } from '@bella-vista/shared';
-import { isBlockScoped } from '@bella-vista/shared';
+import { formatDate, isBlockScoped } from '@bella-vista/shared';
 import { type Actor, writeAudit } from '../../db/audit.js';
 import type { Database, Transaction } from '../../db/client.js';
 import { isUniqueViolation } from '../../db/errors.js';
@@ -30,6 +30,7 @@ import {
   type BlockRow,
   blockCodeExists,
   deactivateAccount,
+  endedLeadersOf,
   findAccountOfAssignment,
   findAssignment,
   findBlock,
@@ -601,21 +602,52 @@ export const roleAssignmentApprovalHandler: ApprovalHandler = {
     }
   },
 
+  /**
+   * Everything the president needs to decide without opening another screen: the role, the
+   * block, who leaves and who comes in (a substitution) and the start date. Who requested it
+   * and why travel in the approval itself.
+   */
   async describe(executor, approvalIds) {
     const rows = await assignmentsByApproval(executor, approvalIds);
-    return new Map(
-      rows.flatMap((row) =>
-        row.approvalId === null
-          ? []
-          : [
-              [
-                row.approvalId,
-                `${capitalize(ROLE_LABELS[row.role] ?? row.role)}${row.blockCode ? ` ${row.blockCode}` : ''}: ${fullName(row)} (desde ${row.startDate})`,
-              ] as const,
-            ],
-      ),
-    );
+    const blockIds = [
+      ...new Set(rows.flatMap((row) => (row.blockId === null ? [] : [row.blockId]))),
+    ];
+    const ended = blockIds.length > 0 ? await endedLeadersOf(executor, blockIds) : [];
+    const texts = new Map<number, string>();
+    for (const row of rows) {
+      if (row.approvalId === null) continue;
+      texts.set(row.approvalId, describeAssignment(row, outgoingLeaderOf(row, ended)));
+    }
+    return texts;
   },
 };
+
+/**
+ * The leader a substitution replaced: an approved leader of the same block whose assignment
+ * ended the day the new one starts (D-08). A rejected request also ends (end = start), so only
+ * approved (or seeded, without approval) assignments count.
+ */
+function outgoingLeaderOf(row: AssignmentRow, ended: AssignmentRow[]): AssignmentRow | null {
+  if (row.role !== 'block_leader' || row.blockId === null) return null;
+  return (
+    ended.find(
+      (other) =>
+        other.id !== row.id &&
+        other.blockId === row.blockId &&
+        other.endDate === row.startDate &&
+        (other.approvalId === null || other.approvalResult === 'approved'),
+    ) ?? null
+  );
+}
+
+/** "Sustitución de jefe de manzana S1-M01: sale …, entra …, desde el 18 nov 2026". */
+function describeAssignment(row: AssignmentRow, outgoing: AssignmentRow | null): string {
+  const since = `desde el ${formatDate(row.startDate)}`;
+  const block = row.blockCode ? ` ${row.blockCode}` : '';
+  if (outgoing) {
+    return `Sustitución de jefe de manzana${block}: sale ${fullName(outgoing)}, entra ${fullName(row)}, ${since}`;
+  }
+  return `${capitalize(ROLE_LABELS[row.role] ?? row.role)}${block}: ${fullName(row)}, ${since}`;
+}
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
