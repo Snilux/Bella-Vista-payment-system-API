@@ -92,7 +92,7 @@ export function closing(change: Partial<Closing> & Pick<Closing, 'id'>): Closing
     countedCash: 50_000,
     difference: 0,
     notes: null,
-    preparedBy: { userAccountId: 2, username: 'tesorero' },
+    preparedBy: { userAccountId: 2, username: 'tesorero', fullName: 'Jorge Méndez Soto' },
     reviewedBy: null,
     reviewedAt: null,
     closedBy: null,

@@ -259,6 +259,7 @@ export function fakeM6Api() {
           pendingHandover: 100_000,
           available: 245_000,
           openingBalance: null,
+          nextClosingPeriod: null,
         },
       });
     }

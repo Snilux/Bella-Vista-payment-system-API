@@ -66,6 +66,12 @@ describe.skipIf(!testDatabaseUrl)('audit log', () => {
       'presidente',
     );
     expect(one.body.data.map((e: { id: number }) => e.id)).toContain(first.id);
+    expect(first.fullName).toMatch(/\S+ \S+/);
+    // R-05 "Cargo": the role of the account when it acted.
+    const leaders = await get('/v1/audit-log?role=block_leader&limit=100', 'presidente');
+    expect(leaders.body.data.length).toBeGreaterThan(0);
+    expect(leaders.body.data.every((e: { role: string }) => e.role === 'block_leader')).toBe(true);
+    expect((await get('/v1/audit-log?role=nobody', 'presidente')).status).toBe(400);
     // `from` filters by business date (America/Mexico_City), not by the UTC day of createdAt:
     // between 00:00 and 06:00 UTC they differ.
     const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(

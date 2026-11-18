@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNotNull, lt, lte } from 'drizzle-orm';
+import { and, desc, eq, gte, isNotNull, lt, lte, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { Database, Transaction } from '../../db/client.js';
 import { closing, userAccount, vCashboxMovement, vClosing } from '../../db/schema/index.js';
@@ -38,6 +38,9 @@ function closingQuery(db: Executor) {
       notes: closing.notes,
       preparedById: preparer.id,
       preparedByUsername: preparer.username,
+      preparedByName: sql<string>`(SELECT concat_ws(' ', p.given_names, p.paternal_surname, p.maternal_surname)
+        FROM role_assignment ra JOIN person p ON p.id = ra.person_id
+        WHERE ra.id = ${preparer.roleAssignmentId})`,
       reviewedById: reviewer.id,
       reviewedByUsername: reviewer.username,
       reviewedAt: closing.reviewedAt,

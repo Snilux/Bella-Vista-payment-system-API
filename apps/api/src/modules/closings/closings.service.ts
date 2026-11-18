@@ -93,7 +93,11 @@ export function createClosingsService(deps: ClosingsServiceDeps) {
         countedCash: row.countedCash,
         difference: row.difference,
         notes: row.notes,
-        preparedBy: { userAccountId: row.preparedById, username: row.preparedByUsername },
+        preparedBy: {
+          userAccountId: row.preparedById,
+          username: row.preparedByUsername,
+          fullName: row.preparedByName,
+        },
         reviewedBy:
           row.reviewedById !== null && row.reviewedByUsername !== null
             ? { userAccountId: row.reviewedById, username: row.reviewedByUsername }

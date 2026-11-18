@@ -10,6 +10,7 @@ export function listAuditLog(
   filter: {
     technicalOnly: boolean;
     userAccountId?: number | undefined;
+    role?: (typeof auditLog.role)['_']['data'] | undefined;
     tableName?: string | undefined;
     recordId?: number | undefined;
     action?: string | undefined;
@@ -25,6 +26,9 @@ export function listAuditLog(
       id: auditLog.id,
       userAccountId: auditLog.userAccountId,
       username: userAccount.username,
+      fullName: sql<string>`(SELECT concat_ws(' ', p.given_names, p.paternal_surname, p.maternal_surname)
+        FROM role_assignment ra JOIN person p ON p.id = ra.person_id
+        WHERE ra.id = ${userAccount.roleAssignmentId})`,
       role: auditLog.role,
       action: auditLog.action,
       tableName: auditLog.tableName,
@@ -43,6 +47,7 @@ export function listAuditLog(
         filter.userAccountId !== undefined
           ? eq(auditLog.userAccountId, filter.userAccountId)
           : undefined,
+        filter.role !== undefined ? eq(auditLog.role, filter.role) : undefined,
         filter.tableName !== undefined ? eq(auditLog.tableName, filter.tableName) : undefined,
         filter.recordId !== undefined ? eq(auditLog.recordId, filter.recordId) : undefined,
         filter.action !== undefined ? eq(auditLog.action, filter.action) : undefined,

@@ -204,6 +204,7 @@ export function fakeM7Api() {
         pendingHandover: 0,
         available: state.committee.balance,
         openingBalance: state.openings.get(1) ?? null,
+        nextClosingPeriod: null,
       };
     }
     if (state.mine === 'support') {
@@ -216,6 +217,7 @@ export function fakeM7Api() {
         pendingHandover: pending,
         available: state.support.balance - pending,
         openingBalance: null,
+        nextClosingPeriod: null,
       };
     }
     const pending = pendingOf(BLOCK.id);
@@ -234,6 +236,7 @@ export function fakeM7Api() {
         status: 'approved',
         approvalId: 4,
       },
+      nextClosingPeriod: null,
     };
   };
 
@@ -242,14 +245,21 @@ export function fakeM7Api() {
       ...COMMITTEE,
       balance: state.committee.balance,
       openingBalance: state.openings.get(1) ?? null,
+      nextClosingPeriod: null,
     },
-    { ...BLOCK, balance: state.block.balance, openingBalance: state.openings.get(3) ?? null },
+    {
+      ...BLOCK,
+      balance: state.block.balance,
+      openingBalance: state.openings.get(3) ?? null,
+      nextClosingPeriod: null,
+    },
     {
       id: 4,
       type: 'block',
       label: 'S2-M01',
       balance: 0,
       openingBalance: state.openings.get(4) ?? null,
+      nextClosingPeriod: null,
     },
   ];
 
