@@ -167,7 +167,7 @@ export const ERROR_MESSAGES: Record<ApiErrorCode, ErrorInfo> = {
     action: 'reload',
   },
   FEE_WITHOUT_AMOUNT: {
-    message: 'Este concepto aún no tiene importe. El tesorero debe registrarlo.',
+    message: 'Este concepto aún no tiene importe. El tesorero debe registrarlo en Más → Conceptos.',
     action: 'ask-treasurer',
   },
   OPENING_NOT_PAID: {
