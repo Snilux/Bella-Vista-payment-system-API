@@ -78,10 +78,16 @@ export function searchPeople(db: Executor, q: string) {
     .limit(SEARCH_LIMIT);
 }
 
+/** Whether the person `column` points to has a name like `q` (fuzzy, as searchPeople). */
+const holderNameLike = (personId: SQL | AnyColumn, q: string) =>
+  sql`EXISTS (SELECT 1 FROM person holder WHERE holder.id = ${personId} AND word_similarity(${normalized(q)}, f_normalize_name(holder.given_names, holder.paternal_surname, holder.maternal_surname)) >= ${NAME_SIMILARITY})`;
+
 export function searchConnections(db: Executor, q: string, blockId: number | null) {
+  // By folio, address or the holder of one of its families ("hernandez" finds his connection).
   const match = or(
     sql`${vConnection.folio} ILIKE ${containing(q)}`,
     plainContains(vConnection.address, q),
+    sql`EXISTS (SELECT 1 FROM v_unit family WHERE family.connection_id = ${vConnection.id} AND ${holderNameLike(sql`family.holder_person_id`, q)})`,
   );
   return db
     .select({
@@ -101,7 +107,14 @@ export function searchConnections(db: Executor, q: string, blockId: number | nul
 }
 
 export function searchUnits(db: Executor, q: string, blockId: number | null) {
-  const match = or(sql`${vUnit.folio} ILIKE ${containing(q)}`, plainContains(vUnit.reference, q));
+  // By folio, reference, the connection's address or the holder's name: the search fields say
+  // "calle, folio o titular".
+  const match = or(
+    sql`${vUnit.folio} ILIKE ${containing(q)}`,
+    plainContains(vUnit.reference, q),
+    plainContains(vConnection.address, q),
+    holderNameLike(vUnit.holderPersonId, q),
+  );
   return unitListQuery(db)
     .where(and(match, blockId === null ? undefined : eq(vConnection.blockId, blockId)))
     .orderBy(asc(vUnit.folio))

@@ -91,7 +91,7 @@ describe.skipIf(!testDatabaseUrl)('registry', () => {
 
   // --- Search ---------------------------------------------------------------------------------
 
-  it('finds people ignoring accents and tolerating typos, and connections and units by folio or address', async () => {
+  it('finds people ignoring accents and tolerating typos, and connections and units by folio, address or holder', async () => {
     const noAccents = await call('GET', '/v1/search?q=jose%20luis%20hernandez', 'secretario');
     expect(noAccents.status).toBe(200);
     expect(searchResponseSchema.safeParse(noAccents.body).success).toBe(true);
@@ -122,6 +122,20 @@ describe.skipIf(!testDatabaseUrl)('registry', () => {
         holder: expect.objectContaining({ fullName: 'José Luis Hernández García' }),
       }),
     ]);
+
+    // Families by street and by holder; connections by the holder of one of their families.
+    const unitsOnStreet = await call('GET', '/v1/search?q=av%20hidalgo', 'secretario');
+    expect(unitsOnStreet.body.units.map((u: { address: string }) => u.address)).toEqual(
+      Array(3).fill('Av. Hidalgo 12'),
+    );
+    const byHolder = await call('GET', '/v1/search?q=hernandes%20garcia', 'secretario');
+    expect(byHolder.body.units).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: frente.id })]),
+    );
+    expect(byHolder.body.connections).toEqual(
+      expect.arrayContaining([expect.objectContaining({ address: 'Av. Hidalgo 12' })]),
+    );
+    expect((await call('GET', '/v1/search?q=hidalgo', 'jm.s1m02')).body.units).toEqual([]);
 
     expect((await call('GET', '/v1/search?q=a', 'secretario')).body.error.code).toBe(
       'VALIDATION_ERROR',
