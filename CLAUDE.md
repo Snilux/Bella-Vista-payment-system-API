@@ -46,7 +46,7 @@ apps/api/src/
   config/              environment variables validated with Zod; pino logger options (redaction)
   db/schema/           Drizzle tables;  db/migrations/  generated migrations
   db/audit.ts, db/idempotency.ts   audit log writes and Idempotency-Key storage (inside transactions)
-  db/seed/             pnpm db:seed (bootstrap, D-27) and pnpm db:seed:dev
+  db/seed/             pnpm db:seed (bootstrap, D-27), pnpm db:seed:dev and pnpm db:seed:demo (through the API)
   plugins/             auth (/v1 secure by default), permissions, idempotency, audit context, errors
   routes/              routes outside the modules (/health)
   lib/                 domain-free utilities (money, dates, errors)
