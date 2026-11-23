@@ -174,6 +174,12 @@ export const ERROR_MESSAGES: Record<ApiErrorCode, ErrorInfo> = {
     message: 'Primero hay que cobrar la cuota de apertura.',
     action: 'go-to-charge',
   },
+  DUPLICATE_CONNECTION_REQUEST: {
+    message: 'Esta persona ya tiene una solicitud abierta para esa dirección.',
+    action: 'none',
+    // The API's text names the open request's folio.
+    useServerMessage: true,
+  },
   INVALID_STATE: {
     message: (details) =>
       (details.action === 'substitute_leader' ? substitutionMessage(details.status) : null) ??
