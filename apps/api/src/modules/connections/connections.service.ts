@@ -55,6 +55,13 @@ export const connectionErrors = {
       422,
       'La cuota de apertura no está pagada; no se puede activar la toma.',
     ),
+  duplicateRequest: (open: { id: number; folio: string }) =>
+    new AppError(
+      'DUPLICATE_CONNECTION_REQUEST',
+      409,
+      `Esta persona ya tiene la solicitud ${open.folio} abierta para esa dirección.`,
+      { requestId: open.id, folio: open.folio },
+    ),
   invalidField: (path: string, message: string) =>
     errors.validation({ issues: [{ path, message }] }),
 };
@@ -299,6 +306,10 @@ export function createConnectionsService(deps: ConnectionsServiceDeps) {
       return db.transaction(async (tx) => {
         await usableBlock(tx, viewer, input.blockId);
         if (!(await findPerson(tx, input.applicantId))) throw notFound('esa persona');
+        // One open request per applicant and address: the same request is not registered twice.
+        await repo.lockApplicantRequests(tx, input.applicantId);
+        const open = await repo.findOpenRequestFor(tx, input.applicantId, input.address);
+        if (open) throw connectionErrors.duplicateRequest(open);
         const id = await repo.insertRequest(tx, {
           applicantId: input.applicantId,
           address: input.address,

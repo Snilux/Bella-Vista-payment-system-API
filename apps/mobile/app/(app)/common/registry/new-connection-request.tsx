@@ -137,7 +137,7 @@ export default function NewConnectionRequest() {
         {...(opening.isSuccess && amount === null
           ? {
               detail:
-                'La apertura aún no tiene importe: el tesorero debe registrarlo antes de aprobarla.',
+                'La apertura aún no tiene importe: el tesorero debe registrarlo en Más → Conceptos antes de aprobarla.',
             }
           : {})}
       />

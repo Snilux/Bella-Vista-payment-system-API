@@ -120,6 +120,30 @@ Todas usan la contraseña `desarrollo-bella-vista` y no piden cambiarla. `pnpm d
 
 S2-M02 queda sin jefe a propósito. Si las cuentas de presidente, tesorero o secretario ya las había creado el superadministrador desde la app, `pnpm db:seed:dev` las respeta y conservan su contraseña.
 
+### Datos de prueba ampliados
+
+Para que cada pantalla tenga algo que mostrar, después de `pnpm db:seed:dev` ejecute:
+
+```bash
+pnpm db:seed:demo
+```
+
+Carga los casos **a través de la API** (mismas reglas, bitácora y cajas que la app) con fechas relativas a hoy, y al final imprime un resumen con los folios. Se ejecuta una sola vez: la segunda avisa que ya se cargaron y no hace nada. Si un paso falla, lo anterior se queda; para empezar de cero borre los datos de la base (en [Mantenimiento](#mantenimiento)) y repita `pnpm db:migrate`, `pnpm db:seed`, `pnpm db:seed:dev` y `pnpm db:seed:demo`. No se ejecuta con `NODE_ENV=production`.
+
+Qué agrega y cómo probarlo (todas las cuentas usan `desarrollo-bella-vista`):
+
+| Entre como | Qué hay | Pruébelo en |
+|---|---|---|
+| `jm.s1m01` | Alberto Ríos (Calle Allende 22) debe varios meses y ya pagó 4 con la reparación de la toma; su caja tiene una entrega preparada; Gabriela Mora pidió una toma | **Cobrar** (busque «allende» o «rios»), **Mi caja → Mis entregas**, **Más → Solicitudes de toma** |
+| `jm.s2m01` | Av. Las Palmas 5 con dos familias: Claudia Fuentes (más de un año de adeudo y una reinstalación por cobrar) y Fernando Cano (suspendido) | **Cobrar**: los meses con recargo y el cargo junto con ellos; **Mi caja**: la entrega confirmada |
+| `jm.s1m02` | Pidió cancelar el pago de Beatriz Salas (Calle Allende 30); la resuelve el presidente | Después de autorizarla, **Cobrar** (busque «salas»): sus meses vuelven a deberse |
+| `presidente` | Daniel Ortega (Calle Encino 14, S2-M02 sin jefe) pagó 2 meses en apoyo y aún debe; Estela Juárez (Calle Encino 16) pagó directo al tesorero | **Más → Cobrar en apoyo**, **Más → Mi caja de apoyo** (preparar la entrega), **Autorizaciones**: la cancelación del pago de Beatriz, el salario del fontanero y la tarifa del año próximo |
+| `tesorero` | Una entrega de S1-M01 por confirmar, un gasto de $650.00 por pagar, ingreso y gasto pagado, Reinstalación ($800.00) y Reparación ($350.00) con importe | **Entregas** (confírmela con menos para probar un faltante), **Caja** (pagar el gasto), **Más → Conceptos**, **Más → Fontanero** |
+| `secretario` | Solicitudes de toma en los cuatro estados: Gabriela Mora por resolver, Hugo Peña aprobada con la apertura por cobrar, Irma Campos rechazada y Jorge Luna cancelada; la suspensión de Fernando | **Tomas** (resolver la de Gabriela con el acuerdo aprobado), **Más → Suspensiones** (reactivar o suspender otra; busque «palmas» o «encino») |
+| `vocal` | Todo lo anterior en modo consulta | **Inicio** y **Reportes** |
+
+Para probar que no se duplica una solicitud: como `secretario`, registre otra solicitud para Gabriela Mora en «Calle Nogal 3» (o «calle nogal #3»); debe decir que ya tiene una abierta.
+
 ### Probar la API a mano (REST Client)
 
 La carpeta `http/` tiene un archivo por escenario para la extensión **REST Client** (`humao.rest-client`, ya incluida en el Dev Container). Con `pnpm dev` corriendo, abra un archivo y use *Send Request* sobre cada petición, **en orden**: los login guardan su token en una variable que usan las peticiones siguientes. Cada petición indica en un comentario lo que debe responder.

@@ -199,6 +199,40 @@ export async function lockRequest(tx: Transaction, id: number) {
   return findRequest(tx, id);
 }
 
+/** An address as typed, without accents, case or punctuation ("Calle Encino #8" = "calle encino 8"). */
+const plainAddress = (value: SQL) =>
+  sql`regexp_replace(f_normalize_name(${value}, NULL, NULL), '[[:punct:]]', '', 'g')`;
+
+/**
+ * The open request (requested, approved pending payment or pending installation) of
+ * `applicantId` for the same address, if any. The caller holds lockApplicantRequests.
+ */
+export async function findOpenRequestFor(tx: Transaction, applicantId: number, address: string) {
+  const [row] = await tx
+    .select({ id: vConnectionRequest.id, folio: vConnectionRequest.folio })
+    .from(vConnectionRequest)
+    .where(
+      and(
+        eq(vConnectionRequest.applicantId, applicantId),
+        inArray(vConnectionRequest.status, [
+          'requested',
+          'approved_pending_payment',
+          'pending_installation',
+        ]),
+        sql`${plainAddress(sql`${vConnectionRequest.address}`)} = ${plainAddress(sql`${address}::text`)}`,
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/** Serializes the requests of one applicant, so two at once cannot both pass the check. */
+export async function lockApplicantRequests(tx: Transaction, applicantId: number) {
+  await tx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtext(${`connection_request:applicant:${applicantId}`}))`,
+  );
+}
+
 export async function insertRequest(
   tx: Transaction,
   values: typeof connectionRequest.$inferInsert,

@@ -402,6 +402,34 @@ describe.skipIf(!testDatabaseUrl)('connections', () => {
     });
   });
 
+  it('does not register the same open request twice for one applicant and address', async () => {
+    const first = await newRequest('secretario', 'S1-M01', 'Herminia Duplicada');
+    const { applicant, address, id, folio } = first.body.request;
+    const again = (typed: string) =>
+      call('POST', '/v1/connection-requests', 'secretario', {
+        applicantId: applicant.id,
+        address: typed,
+        blockId: first.body.request.blockId,
+      });
+
+    // The same address, typed with other case, punctuation or accents.
+    const duplicate = await again(`  ${address.toUpperCase()}.`);
+    expect(duplicate).toMatchObject({
+      status: 409,
+      body: { error: { code: 'DUPLICATE_CONNECTION_REQUEST', details: { requestId: id, folio } } },
+    });
+    expect(duplicate.body.error.message).toContain(folio);
+
+    // Another address of the same person is a different request.
+    expect((await again('Calle Otra 99')).status).toBe(201);
+
+    // A cancelled request frees the address.
+    await call('POST', `/v1/connection-requests/${id}/cancel`, 'secretario', {
+      reason: 'Retirada',
+    });
+    expect((await again(address)).status).toBe(201);
+  });
+
   it('validates applicants and blocks', async () => {
     expect(
       (

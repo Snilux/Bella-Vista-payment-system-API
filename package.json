@@ -24,6 +24,7 @@
     "db:migrate": "pnpm --filter @bella-vista/api db:migrate",
     "db:seed": "pnpm --filter @bella-vista/api db:seed",
     "db:seed:dev": "pnpm --filter @bella-vista/api db:seed:dev",
+    "db:seed:demo": "pnpm --filter @bella-vista/api db:seed:demo",
     "db:studio": "pnpm --filter @bella-vista/api db:studio",
     "docker:up": "docker compose up -d --build",
     "docker:rebuild": "docker compose up -d --build --renew-anon-volumes api",

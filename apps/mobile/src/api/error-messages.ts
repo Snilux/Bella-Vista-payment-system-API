@@ -167,12 +167,18 @@ export const ERROR_MESSAGES: Record<ApiErrorCode, ErrorInfo> = {
     action: 'reload',
   },
   FEE_WITHOUT_AMOUNT: {
-    message: 'Este concepto aún no tiene importe. El tesorero debe registrarlo.',
+    message: 'Este concepto aún no tiene importe. El tesorero debe registrarlo en Más → Conceptos.',
     action: 'ask-treasurer',
   },
   OPENING_NOT_PAID: {
     message: 'Primero hay que cobrar la cuota de apertura.',
     action: 'go-to-charge',
+  },
+  DUPLICATE_CONNECTION_REQUEST: {
+    message: 'Esta persona ya tiene una solicitud abierta para esa dirección.',
+    action: 'none',
+    // The API's text names the open request's folio.
+    useServerMessage: true,
   },
   INVALID_STATE: {
     message: (details) =>

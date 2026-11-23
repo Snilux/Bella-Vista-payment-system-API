@@ -9,6 +9,7 @@ import { businessToday } from '../../src/features/forms/business-date.js';
 import {
   NEEDS_AGREEMENT,
   NEEDS_REJECTION_REASON,
+  OPENING_WITHOUT_AMOUNT,
 } from '../../src/features/registry/agreement-view.js';
 import {
   COLLECT_ELSEWHERE,
@@ -16,8 +17,9 @@ import {
   SUSPENSION_EFFECT,
 } from '../../src/features/registry/registry-view.js';
 import { sessionStore } from '../../src/session/session-store.js';
+import { json } from '../api/fake-api.js';
 import { largeTextProblems, setFontScale } from '../ui/render.js';
-import { fakeM5Api } from './fake-m5-api.js';
+import { fakeM5Api, OPENING_FEE } from './fake-m5-api.js';
 
 // M5 · Tomas, acuerdos y suspensiones with the real app/ folder and a scripted API (3.2 §10.4,
 // §10.5, §10.7, §12): S-02 has a chip per status with "Por resolver" first; in S-03 the
@@ -143,6 +145,18 @@ describe('S-03 · Resolver solicitud', () => {
       agreementId: 47,
       resolutionReason: null,
     });
+  });
+
+  it('without an opening amount it cannot approve and says the treasurer sets it in Conceptos', async () => {
+    server.override(
+      (call) => call.method === 'GET' && new URL(call.url).pathname === '/v1/fees',
+      json(200, { fees: [{ ...OPENING_FEE, currentAmount: null, amounts: [] }] }),
+    );
+    await open('/secretary/connection-requests/3/resolve');
+    expect(await screen.findByText(OPENING_WITHOUT_AMOUNT)).toBeTruthy();
+    await choose(/^Acuerdo de junta/, /^AC-000047 · Aprobado por mayoría/);
+    await fireEvent.press(screen.getByRole('button', { name: 'Registrar aprobación' }));
+    expect(server.posts('/connection-requests/3/resolve')).toHaveLength(0);
   });
 
   it('a rejected agreement registers the rejection only with a reason', async () => {

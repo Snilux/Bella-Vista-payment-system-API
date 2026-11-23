@@ -14,6 +14,7 @@ import {
   agreementLabel,
   NEEDS_AGREEMENT,
   NEEDS_REJECTION_REASON,
+  OPENING_WITHOUT_AMOUNT,
 } from '../../../../../src/features/registry/agreement-view.js';
 import { requestStatusView } from '../../../../../src/features/registry/registry-view.js';
 import {
@@ -117,12 +118,15 @@ export default function ResolveConnectionRequest() {
       ? describeError(resolve.error).message
       : null;
 
+  const withoutAmount = opening.isSuccess && amount === null;
   const missing =
     chosen === null
       ? NEEDS_AGREEMENT
-      : !approving && reason.trim() === ''
-        ? NEEDS_REJECTION_REASON
-        : null;
+      : approving && withoutAmount
+        ? OPENING_WITHOUT_AMOUNT
+        : !approving && reason.trim() === ''
+          ? NEEDS_REJECTION_REASON
+          : null;
 
   return (
     <ScreenLayout
@@ -150,6 +154,7 @@ export default function ResolveConnectionRequest() {
     >
       {header}
       {data}
+      {withoutAmount ? <Notice title={OPENING_WITHOUT_AMOUNT} /> : null}
       <Select
         optionsQuery={agreements}
         label="Acuerdo de junta"
@@ -179,9 +184,6 @@ export default function ResolveConnectionRequest() {
               ? 'Al aprobar se genera el cargo de apertura con el importe vigente.'
               : `Al aprobar se genera el cargo de apertura con el importe vigente: ${formatMoney(amount)}.`
           }
-          {...(opening.isSuccess && amount === null
-            ? { detail: 'La apertura aún no tiene importe: el tesorero debe registrarlo primero.' }
-            : {})}
         />
       ) : null}
       {chosen && !approving ? (

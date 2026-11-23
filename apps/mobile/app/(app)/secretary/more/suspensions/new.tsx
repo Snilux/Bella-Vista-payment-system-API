@@ -34,7 +34,8 @@ import {
 
 // Suspend a connection (all its families) or one family (S-08; 3.2 §10.7; D-06), with the first
 // suspended month, a reason and an approved meeting agreement. The target is found with the
-// registry search; a deactivated one is not offered (the API refuses it).
+// registry search (street, folio or holder; the matches are listed to choose one); a
+// deactivated one is not offered (the API refuses it).
 
 type Target = { kind: 'connection' | 'unit'; id: number; title: string; detail: string };
 type Field = 'target' | 'periodFrom' | 'reason' | 'agreementId';
@@ -113,7 +114,13 @@ export default function Suspend() {
           {errorOf('target') ? <FieldMessage error={errorOf('target')} /> : null}
           {search.tooShort ? (
             <AppText variant="caption" color={colors.textSecondary}>
-              Escriba al menos 2 letras.
+              Escriba al menos 2 letras de la calle, el folio o el titular.
+            </AppText>
+          ) : search.isError ? (
+            <FieldMessage error={describeError(search.error).message} />
+          ) : !search.isSuccess || search.searchedText !== text.trim() ? (
+            <AppText variant="caption" color={colors.textSecondary}>
+              Buscando...
             </AppText>
           ) : connections.length + units.length > 0 ? (
             <MenuGroup>
@@ -148,11 +155,11 @@ export default function Suspend() {
                 />
               ))}
             </MenuGroup>
-          ) : search.isSuccess ? (
+          ) : (
             <AppText variant="caption" color={colors.textSecondary}>
               {`Ninguna toma ni familia coincide con «${search.searchedText}».`}
             </AppText>
-          ) : null}
+          )}
         </>
       )}
 

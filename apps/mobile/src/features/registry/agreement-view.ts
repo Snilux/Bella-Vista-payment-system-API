@@ -25,4 +25,8 @@ export function votesLine(agreement: Agreement): string | null {
 
 /** S-03: why "Registrar resolución" is disabled. */
 export const NEEDS_AGREEMENT = 'Elija el acuerdo de junta.';
+
+/** Approving charges the opening fee in force: without an amount the request cannot be approved. Only the treasurer sets it (T-11). */
+export const OPENING_WITHOUT_AMOUNT =
+  'La apertura aún no tiene importe. El tesorero debe registrarlo en Más → Conceptos antes de aprobar.';
 export const NEEDS_REJECTION_REASON = 'Escriba el motivo del rechazo.';
